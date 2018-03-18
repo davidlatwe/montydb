@@ -2,8 +2,7 @@
 import re
 
 from ..errors import OperationFailure
-
-from ..vendor.six import string_types
+from ..vendor.six import string_types, integer_types
 
 
 class FieldContext(object):
@@ -32,67 +31,50 @@ class FieldContext(object):
     def __exit__(self, *args):
         self.reset()
 
-    def __call__(self, path, sub_doc=None, nested=None):
+    def __call__(self, path):
         """For `LogicBox` calling on `with` statement and cache field value"""
-        try:
-            self.field, self.sub_path = path.split(".", 1)
-        except ValueError:
-            self.field, self.sub_path = path, ""
+        _doc = self.doc
+        for field in path.split("."):
+            in_array = False
 
-        value = self.doc if sub_doc is None else sub_doc
-        nested = exists = in_array = False
-
-        if self.field and isinstance(value, (list, tuple)):
-            if self.field.isdigit():
-                # Currently inside an array type value
-                # with given index path.
-                nested = False
-                in_array = True
-                self.field = int(self.field)
-            else:
-                # Possible quering from an array of documents.
-                nested = True
-                collect = []
-                for _sub in value:
-                    if _sub and isinstance(_sub, dict):
-                        _nes, _ext, _ina, _val = self(self.sub_path, _sub, True)
-                        if _nes and _val:
-                            collect += _val
-                        elif _ext:
-                            collect.append(_val)
-                        if _ina:
-                            in_array = True
-                value = collect
-        else:
-            nested = False
-
-        if nested:
-            exists = any(value)
-            return nested, exists, in_array, value
-        else:
+            if isinstance(_doc, (list, tuple)):
+                if field.isdigit():
+                    # Currently inside an array type value
+                    # with given index path.
+                    in_array = True
+                    field = int(field)
+                else:
+                    # Possible quering from an array of documents.
+                    nest = []
+                    for emb_doc in _doc:
+                        if not isinstance(emb_doc, dict):
+                            continue
+                        emb_field = FieldContext(emb_doc)(field)
+                        if emb_field.exists:
+                            nest += emb_field.value
+                    if nest:
+                        self.nested = True
+                        _doc = {field: nest}
+                    else:
+                        _doc = None
             try:
-                value = value[self.field]
-                exists = True
+                _doc = _doc[field]
+                self.exists = True
             except (KeyError, IndexError, TypeError):
-                value = None
-                exists = False
-                in_array = False
+                _doc = None
+                self.reset()
+                break
 
-            if self.sub_path:
-                _fc = self(self.sub_path, value)
-                value = _fc.value
-                exists = _fc.exists
-                in_array = _fc.in_array
+        if not in_array and isinstance(_doc, (list, tuple)):
+            self.value += _doc
+        self.value.append(_doc)
 
-            self.value = value
-            self.exists = exists
-            self.in_array = in_array
-            return self
+        return self
 
     def reset(self):
-        self.value = None
+        self.value = []
         self.exists = False
-        self.in_array = False
+        self.nested = False
 
 
 class LogicBox(list):
@@ -111,14 +93,14 @@ class LogicBox(list):
 
     def __init__(self, theme):
         self.theme = theme
-        self.gen = None
-
         self._logic = {
 
             "$and": self.__call_and,
             "$or": self.__call_or,
             "$nor": self.__call_nor,
             "$not": self.__call_not,
+
+            "$elemMatch": self.__call_elemMatch,
 
         }
 
@@ -149,28 +131,41 @@ class LogicBox(list):
             field_context (FieldContext): Recived from `QueryFilter` instance.
 
         """
-        self.gen = (cond(field_context) for cond in self[:])
         try:
-            return self._logic[self.theme]()
+            return self._logic[self.theme](field_context)
         except KeyError:
             return self.__call_field(field_context)
+
+    def __gen(self, field_context):
+        return (cond(field_context) for cond in self[:])
 
     def __call_field(self, field_context):
         """Entering document field context before process"""
         with field_context(self.theme):
-            return all(self.gen)
+            return all(self.__gen(field_context))
 
-    def __call_and(self):
-        return all(self.gen)
+    def __call_elemMatch(self, field_context):
+        """"""
+        field_value = field_context.value[:-1]
+        if field_context.nested:
+            field_value = [fv for fv in field_value
+                           if isinstance(fv, (list, tuple))]
+        for value in field_value:
+            field_context.value = [value]
+            if all(self.__gen(field_context)):
+                return True
 
-    def __call_or(self):
-        return any(self.gen)
+    def __call_and(self, field_context):
+        return all(self.__gen(field_context))
 
-    def __call_nor(self):
-        return not any(self.gen)
+    def __call_or(self, field_context):
+        return any(self.__gen(field_context))
 
-    def __call_not(self):
-        return not all(self.gen)
+    def __call_nor(self, field_context):
+        return not any(self.__gen(field_context))
+
+    def __call_not(self, field_context):
+        return not all(self.__gen(field_context))
 
 
 class QueryFilter(object):
@@ -221,8 +216,8 @@ class QueryFilter(object):
 
             # Array
             "$all": parse_all,
-            "$elemMatch": None,
-            "$size": None,
+            "$elemMatch": self.parse_elemMatch(),
+            "$size": parse_size,
 
         }
 
@@ -326,9 +321,29 @@ class QueryFilter(object):
         """
         def _parse_not(sub_spec):
             # $not logic only available in field-level
+            for op in sub_spec:
+                if op not in self.field_ops:
+                    raise OperationFailure("unknown operator: {}".format(op))
+
             return self.subparser("$not", sub_spec)
 
         return _parse_not
+
+    def parse_elemMatch(self):
+        """`$elemMatch` field-level operator
+        """
+        def _parse_elemMatch(sub_spec):
+            # $elemMatch only available in field-level
+            if not isinstance(sub_spec, dict):
+                raise OperationFailure("$elemMatch needs an Object")
+
+            for op in sub_spec:
+                if op in self.field_ops:
+                    return self.subparser("$elemMatch", sub_spec)
+                if not op.startswith("$") or op in self.pathless_ops:
+                    return parse_elemMatch(sub_spec)
+
+        return _parse_elemMatch
 
 
 def _is_expression_obj(sub_spec):
@@ -395,25 +410,10 @@ Comparison Query Operators
 """
 
 
-def _is_equal(field_context, query):
-    """Helper function for $eq and $ne
-    """
-    if field_context.value == query:
-        return True
-    if isinstance(field_context.value, (list, tuple)):
-        # If the field path is not end with an array index, then find
-        # equal member in array.
-        # If does end with an index, then this array type value is alreay
-        # a member of an array which we specified, no need to dig in to
-        # next level.
-        if not field_context.in_array:
-            return query in field_context.value
-
-
 def parse_eq(query):
     @__keep(query)
     def _eq(field_context):
-        return _is_equal(field_context, query)
+        return query in field_context.value
 
     return _eq
 
@@ -421,28 +421,29 @@ def parse_eq(query):
 def parse_ne(query):
     @__keep(query)
     def _ne(field_context):
-        return not _is_equal(field_context, query)
+        return query not in field_context.value
 
     return _ne
 
 
-def _is_same_type(value1, value2):
-    if type(value1) is type(value2):
+def _is_comparable(v1, v2):
+    if type(v1) is type(v2):
         return True
-    if isinstance(value1, string_types) and isinstance(value2, string_types):
+    if isinstance(v1, string_types) and isinstance(v2, string_types):
         return True
+    if not any([isinstance(v1, bool), isinstance(v2, bool)]):
+        number_type = (integer_types, float)
+        if isinstance(v1, number_type) and isinstance(v2, number_type):
+            return True
     return False
 
 
 def parse_gt(query):
     @__keep(query)
     def _gt(field_context):
-        if _is_same_type(field_context.value, query):
-            return field_context.value > query
-        if isinstance(field_context.value, (list, tuple)):
-            for value in field_context.value:
-                if _is_same_type(value, query) and value > query:
-                    return True
+        for value in field_context.value:
+            if _is_comparable(value, query) and value > query:
+                return True
 
     return _gt
 
@@ -450,12 +451,9 @@ def parse_gt(query):
 def parse_gte(query):
     @__keep(query)
     def _gte(field_context):
-        if _is_same_type(field_context.value, query):
-            return field_context.value >= query
-        if isinstance(field_context.value, (list, tuple)):
-            for value in field_context.value:
-                if _is_same_type(value, query) and value >= query:
-                    return True
+        for value in field_context.value:
+            if _is_comparable(value, query) and value >= query:
+                return True
 
     return _gte
 
@@ -463,12 +461,9 @@ def parse_gte(query):
 def parse_lt(query):
     @__keep(query)
     def _lt(field_context):
-        if _is_same_type(field_context.value, query):
-            return field_context.value < query
-        if isinstance(field_context.value, (list, tuple)):
-            for value in field_context.value:
-                if _is_same_type(value, query) and value < query:
-                    return True
+        for value in field_context.value:
+            if _is_comparable(value, query) and value < query:
+                return True
 
     return _lt
 
@@ -476,12 +471,9 @@ def parse_lt(query):
 def parse_lte(query):
     @__keep(query)
     def _lte(field_context):
-        if _is_same_type(field_context.value, query):
-            return field_context.value <= query
-        if isinstance(field_context.value, (list, tuple)):
-            for value in field_context.value:
-                if _is_same_type(value, query) and value <= query:
-                    return True
+        for value in field_context.value:
+            if _is_comparable(value, query) and value <= query:
+                return True
 
     return _lte
 
@@ -497,9 +489,7 @@ def _in_match(field_value, query):
         if isinstance(value, string_types) and q_regex:
             return any(q.search(value) for q in q_regex)
 
-    if isinstance(field_value, (list, tuple)):
-        return any(search(fv) for fv in field_value)
-    return search(field_value)
+    return any(search(fv) for fv in field_value)
 
 
 def parse_in(query):
@@ -542,11 +532,7 @@ def parse_all(query):
         raise OperationFailure("$all needs an array")
 
     @__keep(query)
-    def _all(field_context):  # Query an Array of Embedded Documents ($in)
-        if len(query) == 1 and query[0] == field_context.value:
-            return True
-        elif not isinstance(field_context.value, (list, tuple)):
-            return False
+    def _all(field_context):
         for q in query:
             if q not in field_context.value:
                 return False
@@ -558,15 +544,23 @@ def parse_all(query):
 def parse_elemMatch(query):
     @__keep(query)
     def _elemMatch(field_context):
-        pass
+        doc_filter = QueryFilter(query)
+        for emb_doc in field_context.value[:-1]:
+            if doc_filter(emb_doc):
+                return True
 
     return _elemMatch
 
 
 def parse_size(query):
+    if isinstance(query, float):
+        raise OperationFailure("$size must be a whole number")
+    if not isinstance(query, int):
+        raise OperationFailure("$size needs a number")
+
     @__keep(query)
     def _size(field_context):
-        pass
+        return len(field_context.value[:-1]) == query
 
     return _size
 
