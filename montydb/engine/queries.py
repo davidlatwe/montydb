@@ -32,24 +32,62 @@ class FieldContext(object):
     def __exit__(self, *args):
         self.reset()
 
-    def __call__(self, path):
+    def __call__(self, path, sub_doc=None, nested=None):
         """For `LogicBox` calling on `with` statement and cache field value"""
-        self.value = self.doc
-        for field in path.split("."):
-            try:
-                self.in_array = False
-                if isinstance(self.value, (list, tuple)) and field.isdigit():
-                    # Currently inside an array type value
-                    # with given index path.
-                    self.in_array = True
-                    field = int(field)
-                self.value = self.value[field]
-                self.exists = True
-            except (KeyError, IndexError, TypeError):
-                self.reset()
-                break
+        try:
+            self.field, self.sub_path = path.split(".", 1)
+        except ValueError:
+            self.field, self.sub_path = path, ""
 
-        return self
+        value = self.doc if sub_doc is None else sub_doc
+        nested = exists = in_array = False
+
+        if self.field and isinstance(value, (list, tuple)):
+            if self.field.isdigit():
+                # Currently inside an array type value
+                # with given index path.
+                nested = False
+                in_array = True
+                self.field = int(self.field)
+            else:
+                # Possible quering from an array of documents.
+                nested = True
+                collect = []
+                for _sub in value:
+                    if _sub and isinstance(_sub, dict):
+                        _nes, _ext, _ina, _val = self(self.sub_path, _sub, True)
+                        if _nes and _val:
+                            collect += _val
+                        elif _ext:
+                            collect.append(_val)
+                        if _ina:
+                            in_array = True
+                value = collect
+        else:
+            nested = False
+
+        if nested:
+            exists = any(value)
+            return nested, exists, in_array, value
+        else:
+            try:
+                value = value[self.field]
+                exists = True
+            except (KeyError, IndexError, TypeError):
+                value = None
+                exists = False
+                in_array = False
+
+            if self.sub_path:
+                _fc = self(self.sub_path, value)
+                value = _fc.value
+                exists = _fc.exists
+                in_array = _fc.in_array
+
+            self.value = value
+            self.exists = exists
+            self.in_array = in_array
+            return self
 
     def reset(self):
         self.value = None
@@ -357,14 +395,25 @@ Comparison Query Operators
 """
 
 
+def _is_equal(field_context, query):
+    """Helper function for $eq and $ne
+    """
+    if field_context.value == query:
+        return True
+    if isinstance(field_context.value, (list, tuple)):
+        # If the field path is not end with an array index, then find
+        # equal member in array.
+        # If does end with an index, then this array type value is alreay
+        # a member of an array which we specified, no need to dig in to
+        # next level.
+        if not field_context.in_array:
+            return query in field_context.value
+
+
 def parse_eq(query):
     @__keep(query)
     def _eq(field_context):
-        if field_context.value == query:
-            return True
-        if isinstance(field_context.value, (list, tuple)):
-            if not field_context.in_array:
-                return query in field_context.value
+        return _is_equal(field_context, query)
 
     return _eq
 
@@ -372,9 +421,7 @@ def parse_eq(query):
 def parse_ne(query):
     @__keep(query)
     def _ne(field_context):
-        if isinstance(field_context.value, (list, tuple)):
-            return query not in field_context.value
-        return field_context.value != query
+        return not _is_equal(field_context, query)
 
     return _ne
 
