@@ -1,9 +1,10 @@
+
+from bson.py3compat import string_type
+
 from . import errors
 from .collection import MontyCollection
 from .engine import DatabaseEngine
 from .base import BaseObject
-
-from .vendor.six import string_types
 
 
 class MontyDatabase(BaseObject):
@@ -79,7 +80,7 @@ class MontyDatabase(BaseObject):
         name = name_or_collection
         if isinstance(name_or_collection, MontyCollection):
             name = name_or_collection.name
-        elif not isinstance(name_or_collection, string_types):
+        elif not isinstance(name_or_collection, string_type):
             raise TypeError("name_or_collection must be an instance of "
                             "basestring")
         self._engine.drop_collection(name)

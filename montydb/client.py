@@ -1,11 +1,10 @@
 import platform
+from bson.py3compat import string_type
 
 from . import errors
 from .base import BaseObject, ClientOptions
 from .database import MontyDatabase
 from .engine import RepositoryEngine
-
-from .vendor.six import string_types
 
 
 class MontyClient(BaseObject):
@@ -83,7 +82,7 @@ class MontyClient(BaseObject):
         name = name_or_database
         if isinstance(name_or_database, MontyDatabase):
             name = name_or_database.name
-        elif not isinstance(name_or_database, string_types):
+        elif not isinstance(name_or_database, string_type):
             raise TypeError("name_or_database must be an instance of "
                             "basestring or a Database")
         self._engine.drop_database(name)

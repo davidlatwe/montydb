@@ -1,8 +1,8 @@
 
 import re
+from bson.py3compat import abc, integer_types, string_type
 
 from ..errors import OperationFailure
-from ..vendor.six import string_types, integer_types
 
 
 class FieldContext(object):
@@ -47,7 +47,7 @@ class FieldContext(object):
                     # Possible quering from an array of documents.
                     nest = []
                     for emb_doc in _doc:
-                        if not isinstance(emb_doc, dict):
+                        if not isinstance(emb_doc, abc.Mapping):
                             continue
                         emb_field = FieldContext(emb_doc)(field)
                         if emb_field.exists:
@@ -212,12 +212,16 @@ class QueryFilter(object):
 
             # Element
             "$exists": parse_exists,
-            "$type": parse_type,
+            "$type": None,
 
             # Array
             "$all": parse_all,
             "$elemMatch": self.parse_elemMatch(),
             "$size": parse_size,
+
+            # Evaluation
+            "$jsonSchema": None,
+            "$mod": None,
 
         }
 
@@ -307,7 +311,7 @@ class QueryFilter(object):
             logic_box = LogicBox(theme)
 
             for cond in sub_spec:
-                if not isinstance(cond, dict):
+                if not isinstance(cond, abc.Mapping):
                     raise OperationFailure(
                         "$or/$and/$nor entries need to be full objects")
 
@@ -334,7 +338,7 @@ class QueryFilter(object):
         """
         def _parse_elemMatch(sub_spec):
             # $elemMatch only available in field-level
-            if not isinstance(sub_spec, dict):
+            if not isinstance(sub_spec, abc.Mapping):
                 raise OperationFailure("$elemMatch needs an Object")
 
             for op in sub_spec:
@@ -347,7 +351,7 @@ class QueryFilter(object):
 
 
 def _is_expression_obj(sub_spec):
-    return (isinstance(sub_spec, dict) and
+    return (isinstance(sub_spec, abc.Mapping) and
             next(iter(sub_spec)).startswith("$"))
 
 
@@ -429,7 +433,7 @@ def parse_ne(query):
 def _is_comparable(v1, v2):
     if type(v1) is type(v2):
         return True
-    if isinstance(v1, string_types) and isinstance(v2, string_types):
+    if isinstance(v1, string_type) and isinstance(v2, string_type):
         return True
     if not any([isinstance(v1, bool), isinstance(v2, bool)]):
         number_type = (integer_types, float)
@@ -486,7 +490,7 @@ def _in_match(field_value, query):
     def search(value):
         if value in query:
             return True
-        if isinstance(value, string_types) and q_regex:
+        if isinstance(value, string_type) and q_regex:
             return any(q.search(value) for q in q_regex)
 
     return any(search(fv) for fv in field_value)
