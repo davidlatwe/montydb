@@ -1,11 +1,21 @@
 
 import re
-from bson.py3compat import abc, integer_types, string_type
+from bson.py3compat import integer_types, string_type
 
 from ..errors import OperationFailure
 
+from .core import (
+    FieldWalker,
+    Weighted,
 
-class FieldContext(object):
+    BSON_TYPE_ALIAS_ID,
+    is_mapping_type,
+    is_array_type,
+    keep,
+)
+
+
+class FieldContext(FieldWalker):
     """Document traversal context manager
 
     A helper for document field-level operators working inside a field-themed
@@ -22,59 +32,13 @@ class FieldContext(object):
     """
 
     def __init__(self, doc):
-        self.doc = doc
-        self.reset()
+        super(FieldContext, self).__init__(doc)
 
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
         self.reset()
-
-    def __call__(self, path):
-        """For `LogicBox` calling on `with` statement and cache field value"""
-        _doc = self.doc
-        for field in path.split("."):
-            in_array = False
-
-            if isinstance(_doc, (list, tuple)):
-                if field.isdigit():
-                    # Currently inside an array type value
-                    # with given index path.
-                    in_array = True
-                    field = int(field)
-                else:
-                    # Possible quering from an array of documents.
-                    nest = []
-                    for emb_doc in _doc:
-                        if not isinstance(emb_doc, abc.Mapping):
-                            continue
-                        emb_field = FieldContext(emb_doc)(field)
-                        if emb_field.exists:
-                            nest += emb_field.value
-                    if nest:
-                        self.nested = True
-                        _doc = {field: nest}
-                    else:
-                        _doc = None
-            try:
-                _doc = _doc[field]
-                self.exists = True
-            except (KeyError, IndexError, TypeError):
-                _doc = None
-                self.reset()
-                break
-
-        if not in_array and isinstance(_doc, (list, tuple)):
-            self.value += _doc
-        self.value.append(_doc)
-
-        return self
-
-    def reset(self):
-        self.value = []
-        self.exists = False
-        self.nested = False
 
 
 class LogicBox(list):
@@ -148,8 +112,7 @@ class LogicBox(list):
         """"""
         field_value = field_context.value[:-1]
         if field_context.nested:
-            field_value = [fv for fv in field_value
-                           if isinstance(fv, (list, tuple))]
+            field_value = [fv for fv in field_value if is_array_type(fv)]
         for value in field_value:
             field_context.value = [value]
             if all(self.__gen(field_context)):
@@ -305,13 +268,13 @@ class QueryFilter(object):
         def _parse_logic(sub_spec):
             """Themed logical operator
             """
-            if not isinstance(sub_spec, (list, tuple)):
+            if not is_array_type(sub_spec):
                 raise OperationFailure("{} must be an array".format(theme))
 
             logic_box = LogicBox(theme)
 
             for cond in sub_spec:
-                if not isinstance(cond, abc.Mapping):
+                if not is_mapping_type(cond):
                     raise OperationFailure(
                         "$or/$and/$nor entries need to be full objects")
 
@@ -338,7 +301,7 @@ class QueryFilter(object):
         """
         def _parse_elemMatch(sub_spec):
             # $elemMatch only available in field-level
-            if not isinstance(sub_spec, abc.Mapping):
+            if not is_mapping_type(sub_spec):
                 raise OperationFailure("$elemMatch needs an Object")
 
             for op in sub_spec:
@@ -351,7 +314,7 @@ class QueryFilter(object):
 
 
 def _is_expression_obj(sub_spec):
-    return (isinstance(sub_spec, abc.Mapping) and
+    return (is_mapping_type(sub_spec) and
             next(iter(sub_spec)).startswith("$"))
 
 
@@ -360,62 +323,13 @@ Field-level Query Operators
 """
 
 
-BSON_TYPE_ALIAS_ID = {
-
-    "double": 1,
-    "string": 2,
-    "object": 3,
-    "array": 4,
-    "binData": 5,
-    # undefined (Deprecated)
-    "objectId": 7,
-    "bool": 8,
-    "date": 9,
-    "null": 10,
-    "regex": 11,
-    # dbPointer (Deprecated)
-    "javascript": 13,
-    # symbol (Deprecated)
-    "javascriptWithScope": 15,
-    "int": 16,
-    "timestamp": 17,
-    "long": 18,
-    "decimal": 19,
-    "minKey": -1,
-    "maxKey": 127
-
-}
-
-
-def bson_type_id(value):
-    pass
-
-
-def __add_attrib(deco):
-    """Decorator helper"""
-    def meta_decorator(value):
-        def add_attrib(func):
-            func._keep = lambda: value
-            return func
-        return add_attrib
-    return meta_decorator
-
-
-@__add_attrib
-def __keep(query):
-    """A decorator that preserve operation query for operator"""
-    def _(func):
-        return query
-    return _
-
-
 """
 Comparison Query Operators
 """
 
 
 def parse_eq(query):
-    @__keep(query)
+    @keep(query)
     def _eq(field_context):
         return query in field_context.value
 
@@ -423,7 +337,7 @@ def parse_eq(query):
 
 
 def parse_ne(query):
-    @__keep(query)
+    @keep(query)
     def _ne(field_context):
         return query not in field_context.value
 
@@ -435,6 +349,8 @@ def _is_comparable(v1, v2):
         return True
     if isinstance(v1, string_type) and isinstance(v2, string_type):
         return True
+    if is_mapping_type(v1) and is_mapping_type(v2):
+        return True
     if not any([isinstance(v1, bool), isinstance(v2, bool)]):
         number_type = (integer_types, float)
         if isinstance(v1, number_type) and isinstance(v2, number_type):
@@ -443,41 +359,45 @@ def _is_comparable(v1, v2):
 
 
 def parse_gt(query):
-    @__keep(query)
+    @keep(query)
     def _gt(field_context):
         for value in field_context.value:
-            if _is_comparable(value, query) and value > query:
-                return True
+            if _is_comparable(value, query):
+                if Weighted(value) > Weighted(query):
+                    return True
 
     return _gt
 
 
 def parse_gte(query):
-    @__keep(query)
+    @keep(query)
     def _gte(field_context):
         for value in field_context.value:
-            if _is_comparable(value, query) and value >= query:
-                return True
+            if _is_comparable(value, query):
+                if Weighted(value) >= Weighted(query):
+                    return True
 
     return _gte
 
 
 def parse_lt(query):
-    @__keep(query)
+    @keep(query)
     def _lt(field_context):
         for value in field_context.value:
-            if _is_comparable(value, query) and value < query:
-                return True
+            if _is_comparable(value, query):
+                if Weighted(value) < Weighted(query):
+                    return True
 
     return _lt
 
 
 def parse_lte(query):
-    @__keep(query)
+    @keep(query)
     def _lte(field_context):
         for value in field_context.value:
-            if _is_comparable(value, query) and value <= query:
-                return True
+            if _is_comparable(value, query):
+                if Weighted(value) <= Weighted(query):
+                    return True
 
     return _lte
 
@@ -497,13 +417,13 @@ def _in_match(field_value, query):
 
 
 def parse_in(query):
-    if not isinstance(query, (list, tuple)):
+    if not is_array_type(query):
         raise OperationFailure("$in needs an array")
 
     if any(_is_expression_obj(q) for q in query):
         raise OperationFailure("cannot nest $ under $in")
 
-    @__keep(query)
+    @keep(query)
     def _in(field_context):
         return _in_match(field_context.value, query)
 
@@ -511,7 +431,7 @@ def parse_in(query):
 
 
 def parse_nin(query):
-    if not isinstance(query, (list, tuple)):
+    if not is_array_type(query):
         raise OperationFailure("$nin needs an array")
 
     if any(_is_expression_obj(q) for q in query):
@@ -519,7 +439,7 @@ def parse_nin(query):
         #          this should be *$nin*, but leave it as is for now.
         raise OperationFailure("cannot nest $ under $in")
 
-    @__keep(query)
+    @keep(query)
     def _nin(field_context):
         return not _in_match(field_context.value, query)
 
@@ -532,10 +452,10 @@ Array Query Operators
 
 
 def parse_all(query):
-    if not isinstance(query, (list, tuple)):
+    if not is_array_type(query):
         raise OperationFailure("$all needs an array")
 
-    @__keep(query)
+    @keep(query)
     def _all(field_context):
         for q in query:
             if q not in field_context.value:
@@ -546,7 +466,7 @@ def parse_all(query):
 
 
 def parse_elemMatch(query):
-    @__keep(query)
+    @keep(query)
     def _elemMatch(field_context):
         doc_filter = QueryFilter(query)
         for emb_doc in field_context.value[:-1]:
@@ -562,7 +482,7 @@ def parse_size(query):
     if not isinstance(query, int):
         raise OperationFailure("$size needs a number")
 
-    @__keep(query)
+    @keep(query)
     def _size(field_context):
         return len(field_context.value[:-1]) == query
 
@@ -575,20 +495,24 @@ Element Query Operators
 
 
 def parse_exists(query):
-    @__keep(query)
+    @keep(query)
     def _exists(field_context):
         return field_context.exists == query
 
     return _exists
 
 
+def bson_type_id(value):
+    pass
+
+
 def parse_type(query):  # Not finished
-    if not isinstance(query, (list, tuple)):
+    if not is_array_type(query):
         query = tuple(query)
     query = [BSON_TYPE_ALIAS_ID.get(v, v) for v in query]
 
-    @__keep(query)
+    @keep(query)
     def _type(field_context):
-        return bson_type_id(field_context.value) in query
+        return bson_type_id(field_context.value[:-1]) in query
 
     return _type
