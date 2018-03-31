@@ -12,6 +12,13 @@ from bson.binary import Binary
 from bson.regex import Regex
 
 
+__all__ = [
+    "Weighted",
+    "FieldWalker",
+    "ordering",
+]
+
+
 class Weighted(tuple):
     """
     """

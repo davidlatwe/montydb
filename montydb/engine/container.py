@@ -1,15 +1,10 @@
 import os
-import sys
-import shutil
 import bson
 
 from sqlite3 import Binary
-from .connector import SQLazyConn
-
-FS_ENC = sys.getfilesystemencoding()
 
 
-class RepositoryEngine(object):
+"""class RepositoryEngine(object):
 
     def __init__(self, repository):
         if repository is None:
@@ -26,9 +21,6 @@ class RepositoryEngine(object):
         return os.path.join(self.repository, database_name)
 
     def database_list(self):
-        """
-        Return a list of sqlite database file name, without extention.
-        """
         return [
             db_dir.decode(FS_ENC) for db_dir in os.listdir(self.repository)
             if os.path.isdir(self.database_path(db_dir))
@@ -38,6 +30,7 @@ class RepositoryEngine(object):
         db_dir = self.database_path(database_name)
         if os.path.isdir(db_dir):
             shutil.rmtree(db_dir)
+"""
 
 
 class DatabaseEngine(object):

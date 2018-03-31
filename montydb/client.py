@@ -1,24 +1,35 @@
 import platform
+import shutil
+import sys
+import os
+
 from bson.py3compat import string_type
 
 from . import errors
 from .base import BaseObject, ClientOptions
 from .database import MontyDatabase
-from .engine import RepositoryEngine
+
+
+FS_ENC = sys.getfilesystemencoding()
 
 
 class MontyClient(BaseObject):
 
     def __init__(self, repository=None, document_class=dict, **kwargs):
-        """
-        if repository is None, repository = os.getcwd()
-        """
         kwargs["document_class"] = document_class
-        self._options = ClientOptions(kwargs)
-        super(MontyClient, self).__init__(self._options.codec_options,
-                                          self._options.write_concern)
+        self.__options = ClientOptions(kwargs)
+        super(MontyClient, self).__init__(self.__options.codec_options,
+                                          self.__options.write_concern)
 
-        self._engine = RepositoryEngine(repository)
+        if repository is None:
+            repository = os.getcwd()
+        if not os.path.isdir(repository):
+            os.makedirs(repository)
+
+        self.__storage = None
+
+        self.__repository = repository
+        self.__opened = True
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -31,12 +42,16 @@ class MontyClient(BaseObject):
     def __repr__(self):
         return ("MontyClient({})".format(
             ", ".join([
-                "repository={!r}".format(self.address),
+                "repository={!r}".format(
+                    self.address
+                ),
                 "document_class={}.{}".format(
-                    self._options._options["document_class"].__module__,
-                    self._options._options["document_class"].__name__),
+                    self.__options._options["document_class"].__module__,
+                    self.__options._options["document_class"].__name__
+                ),
                 "sqlite_jmode={!r}".format(
-                    self._options._options["sqlite_jmode"])
+                    self.__options._options["sqlite_jmode"]
+                ),
             ]))
         )
 
@@ -54,24 +69,28 @@ class MontyClient(BaseObject):
         return self
 
     def __exit__(self, *args):
-        if self._engine.opened:
+        if self.__opened:
             self.close()
+
+    def __database_path(self, database_name):
+        return os.path.join(self.__repository, database_name)
 
     @property
     def address(self):
-        """
-        """
-        return self._engine.database_repository
+        return self.__repository
 
     def close(self):
-        # do something
-        self._engine.opened = False
+        self.__opened = False
+        self.__storage.close()
 
     def database_names(self):
         """
         Return a list of database names.
         """
-        return self._engine.database_list()
+        return [
+            db_dir.decode(FS_ENC) for db_dir in os.listdir(self.__repository)
+            if os.path.isdir(self.__database_path(db_dir))
+        ]
 
     def drop_database(self, name_or_database):
         """
@@ -85,7 +104,10 @@ class MontyClient(BaseObject):
         elif not isinstance(name_or_database, string_type):
             raise TypeError("name_or_database must be an instance of "
                             "basestring or a Database")
-        self._engine.drop_database(name)
+
+        db_dir = self.__database_path(name)
+        if os.path.isdir(db_dir):
+            shutil.rmtree(db_dir)
 
     def get_database(self, name):
         """

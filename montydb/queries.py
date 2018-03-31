@@ -320,11 +320,7 @@ def _is_expression_obj(sub_spec):
 
 """
 Field-level Query Operators
-"""
-
-
-"""
-Comparison Query Operators
+- Comparison
 """
 
 
@@ -447,7 +443,8 @@ def parse_nin(query):
 
 
 """
-Array Query Operators
+Field-level Query Operators
+- Array
 """
 
 
@@ -490,7 +487,8 @@ def parse_size(query):
 
 
 """
-Element Query Operators
+Field-level Query Operators
+- Element
 """
 
 
