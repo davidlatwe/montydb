@@ -1,16 +1,11 @@
 import platform
-import shutil
-import sys
-import os
 
 from bson.py3compat import string_type
 
 from . import errors
 from .base import BaseObject, ClientOptions
+from .configure import MontyConfigure
 from .database import MontyDatabase
-
-
-FS_ENC = sys.getfilesystemencoding()
 
 
 class MontyClient(BaseObject):
@@ -21,15 +16,7 @@ class MontyClient(BaseObject):
         super(MontyClient, self).__init__(self.__options.codec_options,
                                           self.__options.write_concern)
 
-        if repository is None:
-            repository = os.getcwd()
-        if not os.path.isdir(repository):
-            os.makedirs(repository)
-
-        self.__storage = None
-
-        self.__repository = repository
-        self.__opened = True
+        self._storage = MontyConfigure(repository)._get_storage_engine()
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -49,8 +36,8 @@ class MontyClient(BaseObject):
                     self.__options._options["document_class"].__module__,
                     self.__options._options["document_class"].__name__
                 ),
-                "sqlite_jmode={!r}".format(
-                    self.__options._options["sqlite_jmode"]
+                "storage_engine={}".format(
+                    self._storage
                 ),
             ]))
         )
@@ -69,28 +56,21 @@ class MontyClient(BaseObject):
         return self
 
     def __exit__(self, *args):
-        if self.__opened:
+        if self._storage.is_open:
             self.close()
-
-    def __database_path(self, database_name):
-        return os.path.join(self.__repository, database_name)
 
     @property
     def address(self):
-        return self.__repository
+        return self._storage.repository
 
     def close(self):
-        self.__opened = False
-        self.__storage.close()
+        self._storage.close()
 
     def database_names(self):
         """
         Return a list of database names.
         """
-        return [
-            db_dir.decode(FS_ENC) for db_dir in os.listdir(self.__repository)
-            if os.path.isdir(self.__database_path(db_dir))
-        ]
+        return self._storage.list_databases()
 
     def drop_database(self, name_or_database):
         """
@@ -105,9 +85,7 @@ class MontyClient(BaseObject):
             raise TypeError("name_or_database must be an instance of "
                             "basestring or a Database")
 
-        db_dir = self.__database_path(name)
-        if os.path.isdir(db_dir):
-            shutil.rmtree(db_dir)
+        self._storage.drop_database(name)
 
     def get_database(self, name):
         """

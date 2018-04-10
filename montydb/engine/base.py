@@ -12,11 +12,30 @@ from bson.binary import Binary
 from bson.regex import Regex
 
 
-__all__ = [
-    "Weighted",
-    "FieldWalker",
-    "ordering",
-]
+BSON_TYPE_ALIAS_ID = {
+
+    "double": 1,
+    "string": 2,
+    "object": 3,
+    "array": 4,
+    "binData": 5,
+    # undefined (Deprecated)
+    "objectId": 7,
+    "bool": 8,
+    "date": 9,
+    "null": 10,
+    "regex": 11,
+    # dbPointer (Deprecated)
+    "javascript": 13,
+    # symbol (Deprecated)
+    "javascriptWithScope": 15,
+    "int": 16,
+    "timestamp": 17,
+    "long": 18,
+    "decimal": 19,
+    "minKey": -1,
+    "maxKey": 127
+}
 
 
 class Weighted(tuple):

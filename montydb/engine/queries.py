@@ -2,13 +2,15 @@
 import re
 from bson.py3compat import integer_types, string_type
 
-from ..errors import OperationFailure
+from .errors import OperationFailure
 
-from .core import (
+from .logic import (
     FieldWalker,
     Weighted,
-
     BSON_TYPE_ALIAS_ID,
+)
+
+from .helpers import (
     is_mapping_type,
     is_array_type,
     keep,

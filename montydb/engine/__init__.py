@@ -1,15 +1,17 @@
 from .container import (
-    RepositoryEngine,
     DatabaseEngine,
     CollectionEngine,
 )
 
 from .iterator import CursorEngine
 
+from .storages import SQLiteStorage
+
 
 __all__ = [
-    "RepositoryEngine",
     "DatabaseEngine",
     "CollectionEngine",
     "CursorEngine",
+
+    "SQLiteStorage",
 ]
