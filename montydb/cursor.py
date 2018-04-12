@@ -1,4 +1,3 @@
-from .engine import CursorEngine
 
 
 class CursorType(object):
@@ -35,7 +34,7 @@ class MontyCursor(object):
                  comment=None):
         """
         """
-        self._engine = CursorEngine(collection._engine)
+
         self._collection = collection
 
         self._filter = filter

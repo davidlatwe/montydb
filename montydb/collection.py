@@ -1,7 +1,6 @@
 import collections
 
 from .cursor import MontyCursor
-from .engine import CollectionEngine
 from .base import BaseObject
 from .results import (BulkWriteResult,
                       DeleteResult,
@@ -20,7 +19,6 @@ class MontyCollection(BaseObject):
             codec_options or database.codec_options,
             write_concern or database.write_concern)
 
-        self._engine = CollectionEngine(database._engine, name)
         self._database = database
         self._name = name
 
@@ -38,14 +36,14 @@ class MontyCollection(BaseObject):
 
     def __getattr__(self, name):
         if name.startswith('_'):
-            full_name = u".".join((self._name, name))
+            full_name = ".".join((self._name, name))
             raise AttributeError(
                 "MontyCollection has no attribute {0!r}. To access the {1}"
-                " collection, use database[{1!r}]." % (name, full_name))
+                " collection, use database[{1!r}].".format(name, full_name))
         return self.__getitem__(name)
 
     def __getitem__(self, key):
-        return self._database.get_collection(u".".join((self._name, key)))
+        return self._database.get_collection(".".join((self._name, key)))
 
     @property
     def full_name(self):
@@ -77,9 +75,11 @@ class MontyCollection(BaseObject):
         """
         """
         return InsertOneResult(
-            self._engine.insert(self.write_concern,
-                                document,
-                                bypass_document_validation))
+            self.database.client._storage.insert(
+                self.write_concern,
+                document,
+                bypass_document_validation
+            ))
 
     def insert_many(self,
                     documents,
@@ -88,10 +88,12 @@ class MontyCollection(BaseObject):
         """
         """
         return InsertManyResult(
-            self._engine.insert_many(self.write_concern,
-                                     documents,
-                                     ordered,
-                                     bypass_document_validation))
+            self.database.client._storage.insert_many(
+                self.write_concern,
+                documents,
+                ordered,
+                bypass_document_validation
+            ))
 
     def replace_one(self, filter, replacement, upsert=False):
         pass

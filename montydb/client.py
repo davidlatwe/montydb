@@ -70,7 +70,7 @@ class MontyClient(BaseObject):
         """
         Return a list of database names.
         """
-        return self._storage.list_databases()
+        return self._storage.database_list()
 
     def drop_database(self, name_or_database):
         """
@@ -85,7 +85,7 @@ class MontyClient(BaseObject):
             raise TypeError("name_or_database must be an instance of "
                             "basestring or a Database")
 
-        self._storage.drop_database(name)
+        self._storage.database_drop(name)
 
     def get_database(self, name):
         """

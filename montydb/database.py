@@ -3,8 +3,8 @@ from bson.py3compat import string_type
 
 from . import errors
 from .collection import MontyCollection
-from .engine import DatabaseEngine
 from .base import BaseObject
+from .engine.helpers import encode_
 
 
 class MontyDatabase(BaseObject):
@@ -16,11 +16,8 @@ class MontyDatabase(BaseObject):
             codec_options or client.codec_options,
             write_concern or client.write_concern)
 
-        self._engine = DatabaseEngine(client._engine, name)
         self._client = client
         self._name = name
-
-        client._engine.databases[name] = self
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -58,20 +55,19 @@ class MontyDatabase(BaseObject):
         return self._client
 
     def collection_names(self):
-        return self._engine.collection_list()
+        return self.client._storage.collection_list(self._name)
 
     def create_collection(self, name):
         """
         Create a collection, before any insertion,
         raise error if exists.
         """
-        if self._engine.collection_exists(name):
-            error_msg = "collection {} already exists".format(
-                name.encode("utf-8"))
+        if self.client._storage.collection_exists(self._name, name):
+            error_msg = "collection {} already exists".format(encode_(name))
             raise errors.CollectionInvalid(error_msg)
         else:
             collection = self.get_collection(name)
-            self._engine.create_collection(name)
+            self.client._storage.collection_create(self._name, name)
             return collection
 
     def drop_collection(self, name_or_collection):
@@ -83,7 +79,7 @@ class MontyDatabase(BaseObject):
         elif not isinstance(name_or_collection, string_type):
             raise TypeError("name_or_collection must be an instance of "
                             "basestring")
-        self._engine.drop_collection(name)
+        self.client._storage.collection_drop(self._name, name)
 
     def get_collection(self, name):
         """

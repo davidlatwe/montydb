@@ -1,7 +1,7 @@
 
 import sys
 
-from bson.py3compat import abc
+from bson.py3compat import abc, PY3
 
 
 FS_ENCODE = sys.getfilesystemencoding()
@@ -13,6 +13,20 @@ def is_mapping_type(obj):
 
 def is_array_type(obj):
     return isinstance(obj, (list, tuple))
+
+
+def decode_(s):
+    if PY3:
+        return s
+    else:
+        return s.decode(FS_ENCODE)
+
+
+def encode_(s):
+    if PY3:
+        return s
+    else:
+        return s.encode("utf-8")
 
 
 # Grab from six.py

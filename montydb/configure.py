@@ -20,6 +20,7 @@ class AttribDict(MutableMapping):
 
     def __init__(self, ordered):
         super(AttribDict, self).__setattr__('cnf', OrderedDict(ordered))
+        super(AttribDict, self).__setattr__('__lok__', False)
 
     def __getattr__(self, key):
         return self.__getitem__(key)
@@ -28,22 +29,25 @@ class AttribDict(MutableMapping):
         self.__setitem__(key, val)
 
     def __delitem__(self, key):
-        raise KeyError("Can not delete option.")
+        raise IOError("Can not delete option.")
 
     def __getitem__(self, key):
         if key not in self.cnf:
-            raise KeyError("Option {!r} does not exists.".format(key))
+            raise IOError("Option {!r} does not exists.".format(key))
         return self.cnf[key]
 
     def __setitem__(self, key, val):
+        if self.__lok__:
+            raise IOError("Locked, all values are not changeable now.")
         if key not in self.cnf:
-            raise KeyError("Adding new option is not allowed.")
+            raise IOError("Adding new option is not allowed.")
         if self.cnf[key] is not None and (
             not isinstance(val, type(self.cnf[key])) and
             val is not None
         ):
-            raise TypeError(
+            raise ValueError(
                 "Option value type is not changeable, except NoneType.")
+
         self.cnf[key] = val
 
     def __iter__(self):
@@ -51,6 +55,21 @@ class AttribDict(MutableMapping):
 
     def __len__(self):
         return len(self.cnf)
+
+    def __restriction__(self, *args, **kwargs):
+        raise TypeError('Can not use this method.')
+
+    clear = __restriction__
+    pop = __restriction__
+    popitem = __restriction__
+    setdefault = __restriction__
+    update = __restriction__
+
+    def lock(self):
+        super(AttribDict, self).__setattr__('__lok__', True)
+        for key in self.cnf:
+            if isinstance(self.cnf[key], AttribDict):
+                self.cnf[key].lock()
 
 
 def yaml_config_load(stream, Loader=Loader, object_pairs_hook=AttribDict):
