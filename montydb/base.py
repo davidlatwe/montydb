@@ -85,6 +85,9 @@ def _parse_write_concern(options):
 class ClientOptions(object):
     """ClientOptions"""
 
+    # (NOTE): Maybe this could hand over to MontyConfigure and pass
+    #         options to Storage.
+
     def __init__(self, options):
         self.__options = options
         self.__codec_options = _parse_codec_options(options)

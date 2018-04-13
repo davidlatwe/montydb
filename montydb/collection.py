@@ -75,8 +75,11 @@ class MontyCollection(BaseObject):
         """
         """
         return InsertOneResult(
-            self.database.client._storage.insert(
+            self.database.client._storage.insert_one(
+                self.database.name,
+                self._name,
                 self.write_concern,
+                self.codec_options,
                 document,
                 bypass_document_validation
             ))
@@ -89,17 +92,49 @@ class MontyCollection(BaseObject):
         """
         return InsertManyResult(
             self.database.client._storage.insert_many(
+                self.database.name,
+                self._name,
                 self.write_concern,
+                self.codec_options,
                 documents,
                 ordered,
                 bypass_document_validation
             ))
 
-    def replace_one(self, filter, replacement, upsert=False):
-        pass
+    def replace_one(self,
+                    filter,
+                    replacement,
+                    upsert=False,
+                    bypass_document_validation=False, *args, **kwargs):
+        """
+        """
+        return UpdateResult(
+            self.database.client._storage._update_retryable(
+                self.database.name,
+                self._name,
+                filter,
+                replacement,
+                upsert,
+                bypass_document_validation
+            ))
 
-    def update_one(self, filter, update, upsert=False):
-        pass
+    def update_one(self,
+                   filter,
+                   update,
+                   upsert=False,
+                   bypass_document_validation=False,
+                   array_filters=None, *args, **kwargs):
+        """
+        """
+        return UpdateResult(
+            self.database.client._storage._update_retryable(
+                self.database.name,
+                self._name,
+                filter,
+                update,
+                upsert,
+                bypass_document_validation
+            ))
 
     def update_many(self, filter, update, upsert=False):
         pass

@@ -157,6 +157,14 @@ class SQLiteTable(AbstractTable):
     def write_with_concern(self):
         return NotImplemented
 
+    @_ensure_table
+    def insert_one(self, write_concern, doc, skip_validation):
+        return NotImplemented
+
+    @_ensure_table
+    def insert_many(self, write_concern, docs, ordered, skip_validation):
+        return NotImplemented
+
 
 SQLiteDatabase.table_cls = SQLiteTable
 

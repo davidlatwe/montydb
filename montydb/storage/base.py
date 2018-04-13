@@ -49,7 +49,7 @@ class AbstractStorage(with_metaclass(ABCMeta, object)):
 
     @property
     def db_cls(self):
-        raise NotImplementedError
+        raise NotImplementedError("")
 
     @abstractmethod
     def database_create(self):
@@ -81,7 +81,7 @@ class AbstractDatabase(with_metaclass(ABCMeta, object)):
 
     @property
     def table_cls(self):
-        raise NotImplementedError
+        raise NotImplementedError("")
 
     @abstractmethod
     def collection_exists(self):
@@ -115,8 +115,16 @@ class AbstractTable(with_metaclass(ABCMeta, object)):
             return cursor.__getattribute__(attr)(*args, **kwargs)
         return to_cursor_level
 
+    @property
+    def cursor_cls(self):
+        raise NotImplementedError("")
+
     @abstractmethod
-    def write_with_concern(self):
+    def insert_one(self):
+        return NotImplemented
+
+    @abstractmethod
+    def insert_many(self):
         return NotImplemented
 
 
