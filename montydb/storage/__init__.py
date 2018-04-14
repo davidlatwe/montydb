@@ -2,7 +2,7 @@
 from .base import (
     AbstractStorage,
     AbstractDatabase,
-    AbstractTable,
+    AbstractCollection,
     AbstractCursor,
 )
 from .sqlite import (
@@ -14,7 +14,7 @@ from .sqlite import (
 __all__ = [
     "AbstractStorage",
     "AbstractDatabase",
-    "AbstractTable",
+    "AbstractCollection",
     "AbstractCursor",
 
     "SQLITE_CONFIG",

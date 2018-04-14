@@ -1,4 +1,6 @@
 
+from collections import deque
+
 
 class CursorType(object):
     EXHAUST = 64
@@ -34,43 +36,104 @@ class MontyCursor(object):
                  comment=None):
         """
         """
+        self._id = None
+        self._killed = False
 
+        spec = filter
+        if spec is None:
+            spec = {}
+
+        self._address = collection.database.client.address
         self._collection = collection
+        self._codec_options = collection.codec_options
 
-        self._filter = filter
+        self._spec = spec
         self._projection = projection
         self._skip = skip
         self._limit = limit
+        self._ordering = sort
+
+        self._empty = False
+        self._data = deque()
+        self._retrieved = 0
 
     def __getitem__(self, index):
+        """Get a single document or a slice of documents from this cursor.
+        """
         pass
+
+    def __iter__(self):
+        return self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
+    def __die(self):
+        pass
+
+    def __fetch(self):
+        storage = self._collection.database.client._storage
+        res = storage.query(self._collection.database.name,
+                            self._collection.name,
+                            self._skip,
+                            self._spec,
+                            self._projection,
+                            self._limit)
+
+        documents = self._decode(res)
+
+        self._data = deque(documents)
+        self._retrieved += len(documents)
+        self._id = 0
+
+        if self._id == 0:
+            self._killed = True
+            self.__die()
+
+        if self._limit and self._id and self._limit <= self._retrieved:
+            self.__die()
 
     def _refresh(self):
-        pass
+        """Refreshes the cursor with more data from Monty.
+        """
+        if len(self._data) or self._killed:
+            return len(self._data)
 
-    @property
-    def address(self):
-        pass
-
-    @property
-    def collection(self):
-        pass
-
-    @property
-    def cursor_id(self):
-        pass
-
-    @property
-    def retrieved(self):
-        pass
+        if self._id is None:
+            self.__fetch()
 
     def next(self):
-        pass
+        """Advance the cursor."""
+        if self._empty:
+            raise StopIteration
+        if len(self._data) or self._refresh():
+            return self._data.popleft()
+        else:
+            raise StopIteration
 
     __next__ = next
 
+    @property
+    def address(self):
+        return self._address
+
+    @property
+    def collection(self):
+        return self._collection
+
+    @property
+    def cursor_id(self):
+        return self._id
+
+    @property
+    def retrieved(self):
+        return self._retrieved
+
     def close(self):
-        pass
+        self.__die()
 
     def clone(self):
         pass
@@ -115,7 +178,12 @@ class MontyCursor(object):
         pass
 
     def rewind(self):
-        pass
+        self._data = deque()
+        self._id = None
+        self._retrieved = 0
+        self._killed = False
+
+        return self
 
     def skip(self, skip):
         pass

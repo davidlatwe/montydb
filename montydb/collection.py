@@ -112,6 +112,8 @@ class MontyCollection(BaseObject):
             self.database.client._storage._update_retryable(
                 self.database.name,
                 self._name,
+                self.write_concern,
+                self.codec_options,
                 filter,
                 replacement,
                 upsert,
@@ -130,6 +132,8 @@ class MontyCollection(BaseObject):
             self.database.client._storage._update_retryable(
                 self.database.name,
                 self._name,
+                self.write_concern,
+                self.codec_options,
                 filter,
                 update,
                 upsert,

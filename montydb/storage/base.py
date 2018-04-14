@@ -84,13 +84,13 @@ class AbstractDatabase(with_metaclass(ABCMeta, object)):
         return self._delegate(attr)
 
     def _delegate(self, attr):
-        def to_table_level(table_name, *args, **kwargs):
-            table = self.table_cls(table_name, self)
+        def to_table_level(collection_name, *args, **kwargs):
+            table = self.col_cls(collection_name, self)
             return table.__getattribute__(attr)(*args, **kwargs)
         return to_table_level
 
     @property
-    def table_cls(self):
+    def col_cls(self):
         raise NotImplementedError("")
 
     @abstractmethod
@@ -110,18 +110,20 @@ class AbstractDatabase(with_metaclass(ABCMeta, object)):
         return NotImplemented
 
 
-class AbstractTable(with_metaclass(ABCMeta, object)):
+class AbstractCollection(with_metaclass(ABCMeta, object)):
 
-    def __init__(self, name, database):
+    def __init__(self, name, database, write_concern, codec_options):
         self._name = name
         self._database = database
+        self._write_concern = write_concern
+        self._codec_options = codec_options
 
     def __getattr__(self, attr):
         return self._delegate(attr)
 
     def _delegate(self, attr):
-        def to_cursor_level(cursor_name, *args, **kwargs):
-            cursor = self.cursor_cls(cursor_name, self)
+        def to_cursor_level(*args, **kwargs):
+            cursor = self.cursor_cls(self)
             return cursor.__getattribute__(attr)(*args, **kwargs)
         return to_cursor_level
 
@@ -137,6 +139,21 @@ class AbstractTable(with_metaclass(ABCMeta, object)):
     def insert_many(self):
         return NotImplemented
 
+    @abstractmethod
+    def replace_one(self):
+        return NotImplemented
+
+    @abstractmethod
+    def update_one(self):
+        return NotImplemented
+
 
 class AbstractCursor(with_metaclass(ABCMeta, object)):
-    pass
+
+    def __init__(self, collection):
+        self._collection = collection
+        self._codec_options = collection._codec_options
+
+    @abstractmethod
+    def query(self):
+        return NotImplemented
