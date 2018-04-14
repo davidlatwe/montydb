@@ -10,13 +10,22 @@ from .database import MontyDatabase
 
 class MontyClient(BaseObject):
 
-    def __init__(self, repository=None, document_class=dict, **kwargs):
-        kwargs["document_class"] = document_class
-        self.__options = ClientOptions(kwargs)
+    def __init__(self,
+                 repository=None,
+                 document_class=dict,
+                 tz_aware=None,
+                 **kwargs):
+        """
+        """
+        self._storage = MontyConfigure(repository)._get_storage_engine()
+        wconcern = self._storage.wconcern_parser(kwargs)
+
+        options = kwargs
+        options["document_class"] = document_class
+        options["tz_aware"] = tz_aware or False
+        self.__options = ClientOptions(options, wconcern)
         super(MontyClient, self).__init__(self.__options.codec_options,
                                           self.__options.write_concern)
-
-        self._storage = MontyConfigure(repository)._get_storage_engine()
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):

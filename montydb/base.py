@@ -21,7 +21,7 @@
 
 import collections
 
-from bson.py3compat import integer_types, abc
+from bson.py3compat import integer_types
 from bson.codec_options import CodecOptions
 from bson.raw_bson import RawBSONDocument
 from bson.codec_options import _parse_codec_options
@@ -37,23 +37,18 @@ def validate_is_document_type(option, value):
 
 
 class WriteConcern(object):
-    """WriteConcern
+    """MontyWriteConcern
     """
 
     __slots__ = ("__document")
 
-    def __init__(self, wtimeout=None, montywc=None):
+    def __init__(self, wtimeout=None):
         self.__document = {}
 
         if wtimeout is not None:
             if not isinstance(wtimeout, integer_types):
                 raise TypeError("wtimeout must be an integer")
             self.__document["wtimeout"] = wtimeout
-
-        if montywc is not None:
-            if not isinstance(montywc, abc.Mapping):
-                raise TypeError("montywc must be a dict")
-            self.__document["montywc"] = montywc
 
     @property
     def document(self):
@@ -62,7 +57,7 @@ class WriteConcern(object):
         return self.__document.copy()
 
     def __repr__(self):
-        return ("WriteConcern({})".format(
+        return ("MontyWriteConcern({})".format(
             ", ".join("%s=%s" % kvt for kvt in self.document.items()),))
 
     def __eq__(self, other):
@@ -78,20 +73,20 @@ class WriteConcern(object):
 def _parse_write_concern(options):
     """Parse write concern options."""
     wtimeout = options.get('wtimeout')
-    montywc = options.get('montywc')
-    return WriteConcern(wtimeout, montywc)
+    return WriteConcern(wtimeout)
 
 
 class ClientOptions(object):
     """ClientOptions"""
 
-    # (NOTE): Maybe this could hand over to MontyConfigure and pass
-    #         options to Storage.
-
-    def __init__(self, options):
+    def __init__(self, options, storage_wconcern=None):
         self.__options = options
         self.__codec_options = _parse_codec_options(options)
-        self.__write_concern = _parse_write_concern(options)
+
+        if storage_wconcern is not None:
+            self.__write_concern = storage_wconcern
+        else:
+            self.__write_concern = _parse_write_concern(options)
 
     @property
     def _options(self):

@@ -43,6 +43,16 @@ class AbstractStorage(with_metaclass(ABCMeta, object)):
         """Could do some clean up"""
         self.is_opened = False
 
+    def wconcern_parser(self, client_kwargs):
+        """
+        Parsing storage specific write concern
+
+        Optional, use Monty WriteConcern by default.
+        Recive MontyClient kwargs, should parse kwargs and return a instance
+        of `montydb.base.WriteConcern` class.
+        """
+        pass
+
     @property
     def repository(self):
         return self._repository
