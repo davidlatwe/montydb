@@ -330,7 +330,7 @@ Field-level Query Operators
 def _eq_match(field_value, query):
     """
     Document key order matters
-    
+
     In PY3.6, `dict` has order-preserving, but two different key ordered
     dictionary are still equal.
     https://docs.python.org/3.6/whatsnew/3.6.html#new-dict-implementation
