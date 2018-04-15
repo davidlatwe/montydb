@@ -32,7 +32,7 @@ class AbstractStorage(with_metaclass(ABCMeta, object)):
     def _delegate(self, attr):
         def to_db_level(db_name, *args, **kwargs):
             db = self.db_cls(db_name, self)
-            return db.__getattribute__(attr)(*args, **kwargs)
+            return getattr(db, attr)(*args, **kwargs)
         return to_db_level
 
     def _re_open(self):
@@ -84,10 +84,17 @@ class AbstractDatabase(with_metaclass(ABCMeta, object)):
         return self._delegate(attr)
 
     def _delegate(self, attr):
-        def to_table_level(collection_name, *args, **kwargs):
-            table = self.col_cls(collection_name, self)
-            return table.__getattribute__(attr)(*args, **kwargs)
-        return to_table_level
+        def to_collection_level(collection_name,
+                                write_concern,
+                                codec_options,
+                                *args,
+                                **kwargs):
+            collection = self.col_cls(collection_name,
+                                      self,
+                                      write_concern,
+                                      codec_options)
+            return getattr(collection, attr)(*args, **kwargs)
+        return to_collection_level
 
     @property
     def col_cls(self):
@@ -115,8 +122,8 @@ class AbstractCollection(with_metaclass(ABCMeta, object)):
     def __init__(self, name, database, write_concern, codec_options):
         self._name = name
         self._database = database
-        self._write_concern = write_concern
-        self._codec_options = codec_options
+        self.wconcern = write_concern
+        self.coptions = codec_options
 
     def __getattr__(self, attr):
         return self._delegate(attr)
@@ -124,7 +131,7 @@ class AbstractCollection(with_metaclass(ABCMeta, object)):
     def _delegate(self, attr):
         def to_cursor_level(*args, **kwargs):
             cursor = self.cursor_cls(self)
-            return cursor.__getattribute__(attr)(*args, **kwargs)
+            return getattr(cursor, attr)(*args, **kwargs)
         return to_cursor_level
 
     @property
@@ -152,7 +159,6 @@ class AbstractCursor(with_metaclass(ABCMeta, object)):
 
     def __init__(self, collection):
         self._collection = collection
-        self._codec_options = collection._codec_options
 
     @abstractmethod
     def query(self):

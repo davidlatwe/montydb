@@ -1,10 +1,11 @@
 
 import re
-from bson.py3compat import integer_types, string_type
+from bson.py3compat import integer_types, string_type, abc
+from bson.son import SON
 
-from .errors import OperationFailure
+from ..errors import OperationFailure
 
-from .logic import (
+from .base import (
     FieldWalker,
     Weighted,
     BSON_TYPE_ALIAS_ID,
@@ -326,10 +327,42 @@ Field-level Query Operators
 """
 
 
+def _eq_match(field_value, query):
+    """
+    Document key order matters
+    
+    In PY3.6, `dict` has order-preserving, but two different key ordered
+    dictionary are still equal.
+    https://docs.python.org/3.6/whatsnew/3.6.html#new-dict-implementation
+
+    ```python 3.6
+    >>> print({'a': 1.0, 'b': 1.0})
+    {'a': 1.0, 'b': 1.0}
+    >>> print({'b': 1.0, 'a': 1.0})
+    {'b': 1.0, 'a': 1.0}
+    >>> {'a': 1.0, 'b': 1.0} == {'b': 1.0, 'a': 1.0}
+    True
+    ```
+
+    So before finding equal element in field, have to convert to `SON` first.
+
+    """
+    if isinstance(query, abc.Mapping):
+        if not isinstance(query, SON):
+            query = SON(query)
+        for val in field_value:
+            if isinstance(val, abc.Mapping) and not isinstance(val, SON):
+                val = SON(val)
+                if query == val:
+                    return True
+    else:
+        return query in field_value
+
+
 def parse_eq(query):
     @keep(query)
     def _eq(field_context):
-        return query in field_context.value
+        return _eq_match(field_context.value, query)
 
     return _eq
 
@@ -337,7 +370,7 @@ def parse_eq(query):
 def parse_ne(query):
     @keep(query)
     def _ne(field_context):
-        return query not in field_context.value
+        return not _eq_match(field_context.value, query)
 
     return _ne
 

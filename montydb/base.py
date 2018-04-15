@@ -40,21 +40,21 @@ class WriteConcern(object):
     """MontyWriteConcern
     """
 
-    __slots__ = ("__document")
+    __slots__ = ("_document")
 
     def __init__(self, wtimeout=None):
-        self.__document = {}
+        self._document = {}
 
         if wtimeout is not None:
             if not isinstance(wtimeout, integer_types):
                 raise TypeError("wtimeout must be an integer")
-            self.__document["wtimeout"] = wtimeout
+            self._document["wtimeout"] = wtimeout
 
     @property
     def document(self):
         """The document representation of this write concern.
         """
-        return self.__document.copy()
+        return self._document.copy()
 
     def __repr__(self):
         return ("MontyWriteConcern({})".format(

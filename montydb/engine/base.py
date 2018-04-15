@@ -1,4 +1,5 @@
 
+
 from bson.py3compat import abc, string_type
 
 from datetime import datetime
@@ -183,79 +184,17 @@ class FieldWalker(object):
         self.nested = False
 
 
-class Stack(object):
-
-    def __init__(self, specifier):
-        self.spec = specifier
-        self.drop()
-
-    def push(self, doc):
-        for path, revr in self.spec:
-            is_reverse = bool(1 - revr)
-            value = Weighted(FieldWalker(doc)(path).value, is_reverse)
-            self.heaps.setdefault(path, []).append(value)
-        self.total += 1
-
-    def drop(self):
-        self.total = 0
-        self.heaps = {}
-
-    def sort(self):
-        pre_sect_stack = []
-
-        for path, revr in self.spec:
-            is_reverse = bool(1 - revr)
-            value_stack = []
-
-            for indx, value in enumerate(self.heaps[path]):
-                # read previous section
-                pre_sect = pre_sect_stack[indx] if pre_sect_stack else 0
-                # inverse if in reverse mode
-                pre_sect = (self.total - pre_sect) if is_reverse else pre_sect
-                indx = (self.total - indx) if is_reverse else indx
-
-                value_stack.append((pre_sect, value, indx))
-
-            # sort docs
-            value_stack.sort(reverse=is_reverse)
-
-            ordereddoc = []
-            sect_stack = []
-            sect_id = -1
-            last_doc = None
-            for _, value, indx in value_stack:
-                # restore if in reverse mode
-                indx = (self.total - indx) if is_reverse else indx
-                ordereddoc.append(self.heaps[path][indx])
-
-                # define section
-                # maintain the sorting result in next level sorting
-                if not value == last_doc:
-                    sect_id += 1
-                sect_stack.append(sect_id)
-                last_doc = value
-
-            # save result for next level sorting
-            _documents = ordereddoc
-            pre_sect_stack = sect_stack
-
-        documents = _documents
-
-        return documents  # should return index ?
-
-
 def ordering(documents, specifier):
     """
     """
-    _documents = documents
-    total = len(_documents)
+    total = len(documents)
     pre_sect_stack = []
 
     for path, revr in specifier:
         is_reverse = bool(1 - revr)
         value_stack = []
 
-        for indx, doc in enumerate(_documents):
+        for indx, doc in enumerate(documents):
             # get field value
             value = Weighted(FieldWalker(doc)(path).value, is_reverse)
             # read previous section
@@ -276,7 +215,7 @@ def ordering(documents, specifier):
         for _, value, indx in value_stack:
             # restore if in reverse mode
             indx = (total - indx) if is_reverse else indx
-            ordereddoc.append(_documents[indx])
+            ordereddoc.append(documents[indx])
 
             # define section
             # maintain the sorting result in next level sorting
@@ -286,9 +225,7 @@ def ordering(documents, specifier):
             last_doc = value
 
         # save result for next level sorting
-        _documents = ordereddoc
+        documents = ordereddoc
         pre_sect_stack = sect_stack
-
-    documents = _documents
 
     return documents

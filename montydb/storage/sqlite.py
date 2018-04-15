@@ -4,7 +4,7 @@ import shutil
 import sqlite3
 import contextlib
 
-import bson
+from bson import ObjectId, BSON
 from bson.py3compat import _unicode
 
 from ..base import WriteConcern
@@ -14,6 +14,7 @@ from .base import (
     AbstractCollection,
     AbstractCursor,
 )
+from ..engine.queries import QueryFilter
 
 
 """
@@ -60,6 +61,10 @@ INSERT_RECORD = """
     INSERT INTO [{}](k, v) VALUES (?, ?)
 """
 
+SELECT_ALL_RECORD = """
+    SELECT v FROM [{}]
+"""
+
 
 class SQLiteKVEngine(object):
 
@@ -88,7 +93,7 @@ class SQLiteKVEngine(object):
         return ";".join(["PRAGMA {0}={1}".format(k, v)
                          for k, v in pragma_dict.items()])
 
-    def _read(self, sql, param):
+    def _read(self, sql, param=()):
         """Ignore table's existence and get a cursor.
         """
         try:
@@ -109,12 +114,40 @@ class SQLiteKVEngine(object):
     def write_one(self, db_file, params, wconcern=None):
         with self._connect(db_file, wconcern) as conn:
             with conn:
-                conn.execute(INSERT_RECORD.format(SQLITE_RECORD_TABLE), params)
+                sql = INSERT_RECORD.format(SQLITE_RECORD_TABLE)
+                conn.execute(sql, params)
+
+    def write_many(self, db_file, seq_params, wconcern=None):
+        with self._connect(db_file, wconcern) as conn:
+            with conn:
+                sql = INSERT_RECORD.format(SQLITE_RECORD_TABLE)
+                conn.executemany(sql, seq_params)
+
+    def read_one(self, db_file):
+        with self._connect(db_file) as conn:
+            with conn:
+                sql = SELECT_ALL_RECORD.format(SQLITE_RECORD_TABLE)
+                return self._read(sql).fetchone()
+
+    def read_all(self, db_file):
+        with self._connect(db_file) as conn:
+            with conn:
+                sql = SELECT_ALL_RECORD.format(SQLITE_RECORD_TABLE)
+                return self._read(sql).fetchall()
+
+    def read_many(self, db_file, arraysize=1000):
+        with self._connect(db_file) as conn:
+            with conn:
+                sql = SELECT_ALL_RECORD.format(SQLITE_RECORD_TABLE)
+                cursor = self._read(sql)
+                for result in iter(lambda: cursor.fetchmany(arraysize), []):
+                    yield result
 
 
 class SQLiteWriteConcern(WriteConcern):
     """
     """
+
     def __init__(self,
                  wtimeout=None,
                  synchronous=None,
@@ -123,9 +156,9 @@ class SQLiteWriteConcern(WriteConcern):
         super(SQLiteWriteConcern, self).__init__(wtimeout)
 
         if synchronous is not None:
-            self.__document["synchronous"] = synchronous
+            self._document["synchronous"] = synchronous
         if automatic_index is not None:
-            self.__document["automatic_index"] = automatic_index
+            self._document["automatic_index"] = automatic_index
 
     def __repr__(self):
         return ("SQLiteWriteConcern({})".format(
@@ -194,7 +227,7 @@ class SQLiteDatabase(AbstractDatabase):
         return os.path.join(self._db_path, col_name) + SQLITE_DB_EXT
 
     @property
-    def _conn(self, col_name):
+    def _conn(self):
         return self._storage._conn
 
     def database_exists(self):
@@ -240,7 +273,9 @@ class SQLiteCollection(AbstractCollection):
         return make_table
 
     def _encode_doc(self, doc):
-        return sqlite3.Binary(bson.BSON.encode(doc))
+        # Preserve BSON types
+        encoded = BSON.encode(doc, False, self.coptions)
+        return sqlite3.Binary(encoded)
 
     @property
     def _conn(self):
@@ -252,7 +287,7 @@ class SQLiteCollection(AbstractCollection):
         bypass_doc_val not used
         """
         if "_id" not in doc:
-            doc["_id"] = bson.ObjectId()
+            doc["_id"] = ObjectId()
 
         self._conn.write_one(
             self._col_path,
@@ -269,7 +304,7 @@ class SQLiteCollection(AbstractCollection):
         """
         for doc in docs:
             if "_id" not in doc:
-                doc["_id"] = bson.ObjectId()
+                doc["_id"] = ObjectId()
 
         self._conn.write_many(
             self._col_path,
@@ -291,11 +326,29 @@ SQLiteDatabase.col_cls = SQLiteCollection
 
 class SQLiteCursor(AbstractCursor):
 
-    def _decode_doc(self, doc):
-        return bson.BSON(doc)
+    def __init__(self, collection):
+        super(SQLiteCursor, self).__init__(collection)
 
-    def query(self):
-        pass
+    @property
+    def _conn(self):
+        return self._collection._conn
+
+    @property
+    def _col_path(self):
+        return self._collection._col_path
+
+    def _decode_doc(self, doc):
+        # Decode BSON types
+        return BSON(doc[0]).decode(self._collection.coptions)
+
+    def query(self, spec, projection, skip, limit):
+        """
+        projection, skip, limit not work yet
+        """
+        doc_filter = QueryFilter(spec)
+        docs = self._conn.read_all(self._col_path)
+        docs = [self._decode_doc(doc) for doc in docs]
+        return [doc for doc in docs if doc_filter(doc)]
 
 
 SQLiteCollection.cursor_cls = SQLiteCursor
