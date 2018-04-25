@@ -14,7 +14,6 @@ from .base import (
     AbstractCollection,
     AbstractCursor,
 )
-from ..engine.queries import QueryFilter
 
 
 """
@@ -63,6 +62,10 @@ INSERT_RECORD = """
 
 SELECT_ALL_RECORD = """
     SELECT v FROM [{}]
+"""
+
+SELECT_LIMIT_RECORD = """
+    SELECT v FROM [{0}] LIMIT {1}
 """
 
 
@@ -135,13 +138,19 @@ class SQLiteKVEngine(object):
                 sql = SELECT_ALL_RECORD.format(SQLITE_RECORD_TABLE)
                 return self._read(sql).fetchall()
 
-    def read_many(self, db_file, arraysize=1000):
+    def batch_read_all(self, db_file, arraysize=1000):
         with self._connect(db_file) as conn:
             with conn:
                 sql = SELECT_ALL_RECORD.format(SQLITE_RECORD_TABLE)
                 cursor = self._read(sql)
                 for result in iter(lambda: cursor.fetchmany(arraysize), []):
                     yield result
+
+    def limit_read_all(self, db_file, limit):
+        with self._connect(db_file) as conn:
+            with conn:
+                sql = SELECT_LIMIT_RECORD.format(SQLITE_RECORD_TABLE, limit)
+                return self._read(sql).fetchall()
 
 
 class SQLiteWriteConcern(WriteConcern):
@@ -341,14 +350,13 @@ class SQLiteCursor(AbstractCursor):
         # Decode BSON types
         return BSON(doc[0]).decode(self._collection.coptions)
 
-    def query(self, spec, projection, skip, limit):
-        """
-        projection, skip, limit not work yet
-        """
-        doc_filter = QueryFilter(spec)
-        docs = self._conn.read_all(self._col_path)
-        docs = [self._decode_doc(doc) for doc in docs]
-        return [doc for doc in docs if doc_filter(doc)]
+    def query(self, max_scan):
+        if not max_scan:
+            docs = self._conn.read_all(self._col_path)
+        else:
+            docs = self._conn.limit_read_all(self._col_path, max_scan)
+
+        return [self._decode_doc(doc) for doc in docs]
 
 
 SQLiteCollection.cursor_cls = SQLiteCursor

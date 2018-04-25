@@ -21,10 +21,15 @@
 
 import collections
 
-from bson.py3compat import integer_types
+from bson.py3compat import integer_types, string_type, abc, iteritems
 from bson.codec_options import CodecOptions
 from bson.raw_bson import RawBSONDocument
+from bson.son import SON
 from bson.codec_options import _parse_codec_options
+
+
+ASCENDING = 1
+DESCENDING = -1
 
 
 def validate_is_document_type(option, value):
@@ -34,6 +39,84 @@ def validate_is_document_type(option, value):
                         "bson.raw_bson.RawBSONDocument, or "
                         "a type that inherits from "
                         "collections.MutableMapping" % (option,))
+
+
+def validate_boolean(option, value):
+    """Validates that 'value' is True or False."""
+    if isinstance(value, bool):
+        return value
+    raise TypeError("%s must be True or False" % (option,))
+
+
+def validate_is_mapping(option, value):
+    """Validate the type of method arguments that expect a document."""
+    if not isinstance(value, abc.Mapping):
+        raise TypeError("%s must be an instance of dict, bson.son.SON, or "
+                        "other type that inherits from "
+                        "collections.Mapping" % (option,))
+
+
+def _fields_list_to_dict(fields, option_name):
+    """Takes a sequence of field names and returns a matching dictionary.
+    ["a", "b"] becomes {"a": 1, "b": 1}
+    and
+    ["a.b.c", "d", "a.c"] becomes {"a.b.c": 1, "d": 1, "a.c": 1}
+    """
+    if isinstance(fields, abc.Mapping):
+        return fields
+
+    if isinstance(fields, (abc.Sequence, abc.Set)):
+        if not all(isinstance(field, string_type) for field in fields):
+            raise TypeError("%s must be a list of key names, each an "
+                            "instance of %s" % (option_name,
+                                                string_type.__name__))
+        return dict.fromkeys(fields, 1)
+
+    raise TypeError("%s must be a mapping or "
+                    "list of key names" % (option_name,))
+
+
+def _index_list(key_or_list, direction=None):
+    """Helper to generate a list of (key, direction) pairs.
+
+    Takes such a list, or a single key, or a single key and direction.
+    """
+    if direction is not None:
+        return [(key_or_list, direction)]
+    else:
+        if isinstance(key_or_list, string_type):
+            return [(key_or_list, ASCENDING)]
+        elif not isinstance(key_or_list, (list, tuple)):
+            raise TypeError("if no direction is specified, "
+                            "key_or_list must be an instance of list")
+        return key_or_list
+
+
+def _index_document(index_list):
+    """Helper to generate an index specifying document.
+
+    Takes a list of (key, direction) pairs.
+    """
+    if isinstance(index_list, abc.Mapping):
+        raise TypeError("passing a dict to sort/create_index/hint is not "
+                        "allowed - use a list of tuples instead. did you "
+                        "mean %r?" % list(iteritems(index_list)))
+    elif not isinstance(index_list, (list, tuple)):
+        raise TypeError("must use a list of (key, direction) pairs, "
+                        "not: " + repr(index_list))
+    if not len(index_list):
+        raise ValueError("key_or_list must not be the empty list")
+
+    index = SON()
+    for (key, value) in index_list:
+        if not isinstance(key, string_type):
+            raise TypeError("first item in each key pair must be a string")
+        if not isinstance(value, (string_type, int, abc.Mapping)):
+            raise TypeError("second item in each key pair must be 1, -1, "
+                            "'2d', 'geoHaystack', or another valid MongoDB "
+                            "index specifier.")
+        index[key] = value
+    return index
 
 
 class WriteConcern(object):

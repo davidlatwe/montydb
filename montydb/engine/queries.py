@@ -1,6 +1,6 @@
 
 import re
-from bson.py3compat import integer_types, string_type, abc
+from bson.py3compat import integer_types, string_type
 from bson.son import SON
 
 from ..errors import OperationFailure
@@ -18,30 +18,51 @@ from .helpers import (
 )
 
 
-class FieldContext(FieldWalker):
-    """Document traversal context manager
-
-    A helper for document field-level operators working inside a field-themed
-    `LogicBox` object.
-
-    Before each field-themed `LogicBox` processing any operators within, it
-    will first *call* this helper instance and send a document field path to
-    find and cache document field's value for operators' later use, after all
-    operators been processed, the context will reset.
-
-    Args:
-        doc (dict): Document passed from `QueryFilter` instance.
-
+def ordering(documents, order):
     """
+    """
+    total = len(documents)
+    pre_sect_stack = []
 
-    def __init__(self, doc):
-        super(FieldContext, self).__init__(doc)
+    for path, revr in order.items():
+        is_reverse = bool(1 - revr)
+        value_stack = []
 
-    def __enter__(self):
-        return self
+        for indx, doc in enumerate(documents):
+            # get field value
+            value = Weighted(FieldWalker(doc)(path).value, is_reverse)
+            # read previous section
+            pre_sect = pre_sect_stack[indx] if pre_sect_stack else 0
+            # inverse if in reverse mode
+            pre_sect = (total - pre_sect) if is_reverse else pre_sect
+            indx = (total - indx) if is_reverse else indx
 
-    def __exit__(self, *args):
-        self.reset()
+            value_stack.append((pre_sect, value, indx))
+
+        # sort docs
+        value_stack.sort(reverse=is_reverse)
+
+        ordereddoc = []
+        sect_stack = []
+        sect_id = -1
+        last_doc = None
+        for _, value, indx in value_stack:
+            # restore if in reverse mode
+            indx = (total - indx) if is_reverse else indx
+            ordereddoc.append(documents[indx])
+
+            # define section
+            # maintain the sorting result in next level sorting
+            if not value == last_doc:
+                sect_id += 1
+            sect_stack.append(sect_id)
+            last_doc = value
+
+        # save result for next level sorting
+        documents = ordereddoc
+        pre_sect_stack = sect_stack
+
+    return documents
 
 
 class LogicBox(list):
@@ -58,8 +79,9 @@ class LogicBox(list):
 
     """
 
-    def __init__(self, theme):
+    def __init__(self, theme, implicity=False):
         self.theme = theme
+        self.implicity = implicity
         self._logic = {
 
             "$and": self.__call_and,
@@ -77,61 +99,68 @@ class LogicBox(list):
 
     def __repr__(self):
         """Display `theme` and `LogicBox` or operators content within"""
-        content = ["Theme({})".format(self.theme)]
+        content = []
+        name = "[{}]"
+        if not self.implicity:
+            content = ["LogicBox({})".format(self.theme)]
+            name = "{}"
+
         for i in self[:]:
             if callable(i):
                 if hasattr(i, "_keep"):
+                    # query ops
                     content.append("{}({})".format(i.__name__, i._keep()))
                 else:
+                    # LogicBox
                     content.append(i.__name__)
             else:
                 content.append(i)
 
-        return "{}{} ".format("LogicBox", content).replace("'", "")
+        return name.format(content)[1:-1].replace("'", "")
 
-    def __call__(self, field_context):
+    def __call__(self, field_walker):
         """Recursively calling `LogicBox` or operators content within
 
-        A short-circuit logic sub-structure, passing `FieldContext` instance.
+        A short-circuit logic sub-structure, passing `FieldWalker` instance.
 
         Args:
-            field_context (FieldContext): Recived from `QueryFilter` instance.
+            field_walker (FieldWalker): Recived from `QueryFilter` instance.
 
         """
         try:
-            return self._logic[self.theme](field_context)
+            return self._logic[self.theme](field_walker)
         except KeyError:
-            return self.__call_field(field_context)
+            return self.__call_field(field_walker)
 
-    def __gen(self, field_context):
-        return (cond(field_context) for cond in self[:])
+    def __gen(self, field_walker):
+        return (cond(field_walker) for cond in self[:])
 
-    def __call_field(self, field_context):
+    def __call_field(self, field_walker):
         """Entering document field context before process"""
-        with field_context(self.theme):
-            return all(self.__gen(field_context))
+        with field_walker(self.theme):
+            return all(self.__gen(field_walker))
 
-    def __call_elemMatch(self, field_context):
+    def __call_elemMatch(self, field_walker):
         """"""
-        field_value = field_context.value[:-1]
-        if field_context.nested:
+        field_value = field_walker.value[:-1]
+        if field_walker.nested:
             field_value = [fv for fv in field_value if is_array_type(fv)]
         for value in field_value:
-            field_context.value = [value]
-            if all(self.__gen(field_context)):
+            field_walker.value = [value]
+            if all(self.__gen(field_walker)):
                 return True
 
-    def __call_and(self, field_context):
-        return all(self.__gen(field_context))
+    def __call_and(self, field_walker):
+        return all(self.__gen(field_walker))
 
-    def __call_or(self, field_context):
-        return any(self.__gen(field_context))
+    def __call_or(self, field_walker):
+        return any(self.__gen(field_walker))
 
-    def __call_nor(self, field_context):
-        return not any(self.__gen(field_context))
+    def __call_nor(self, field_walker):
+        return not any(self.__gen(field_walker))
 
-    def __call_not(self, field_context):
-        return not all(self.__gen(field_context))
+    def __call_not(self, field_walker):
+        return not all(self.__gen(field_walker))
 
 
 class QueryFilter(object):
@@ -197,7 +226,7 @@ class QueryFilter(object):
         # ready to be called.
 
     def __repr__(self):
-        return "{}{{ {}}}".format("QueryFilter", str(self.conditions))
+        return "QueryFilter({})".format(str(self.conditions))
 
     def __call__(self, doc):
         """Recursively calling `LogicBox` or operators content within
@@ -209,15 +238,15 @@ class QueryFilter(object):
             doc (dict): Document recived from database.
 
         """
-        field_context = FieldContext(doc)
-        return all(cond(field_context) for cond in self.conditions)
+        field_walker = FieldWalker(doc)
+        return all(cond(field_walker) for cond in self.conditions)
 
     def parser(self, spec):
         """Top-level parser"""
 
         # Implementation of implicity $and operation, fundamental query
         # container.
-        logic_box = LogicBox("$and")
+        logic_box = LogicBox("$and", implicity=True)
 
         for path, sub_spec in spec.items():
             if path.startswith("$"):
@@ -310,8 +339,10 @@ class QueryFilter(object):
             for op in sub_spec:
                 if op in self.field_ops:
                     return self.subparser("$elemMatch", sub_spec)
-                if not op.startswith("$") or op in self.pathless_ops:
+                elif not op.startswith("$") or op in self.pathless_ops:
                     return parse_elemMatch(sub_spec)
+                else:
+                    raise OperationFailure("unknown operator: {}".format(op))
 
         return _parse_elemMatch
 
@@ -347,11 +378,11 @@ def _eq_match(field_value, query):
     So before finding equal element in field, have to convert to `SON` first.
 
     """
-    if isinstance(query, abc.Mapping):
+    if is_mapping_type(query):
         if not isinstance(query, SON):
             query = SON(query)
         for val in field_value:
-            if isinstance(val, abc.Mapping) and not isinstance(val, SON):
+            if is_mapping_type(val) and not isinstance(val, SON):
                 val = SON(val)
                 if query == val:
                     return True
@@ -361,16 +392,16 @@ def _eq_match(field_value, query):
 
 def parse_eq(query):
     @keep(query)
-    def _eq(field_context):
-        return _eq_match(field_context.value, query)
+    def _eq(field_walker):
+        return _eq_match(field_walker.value, query)
 
     return _eq
 
 
 def parse_ne(query):
     @keep(query)
-    def _ne(field_context):
-        return not _eq_match(field_context.value, query)
+    def _ne(field_walker):
+        return not _eq_match(field_walker.value, query)
 
     return _ne
 
@@ -391,8 +422,8 @@ def _is_comparable(v1, v2):
 
 def parse_gt(query):
     @keep(query)
-    def _gt(field_context):
-        for value in field_context.value:
+    def _gt(field_walker):
+        for value in field_walker.value:
             if _is_comparable(value, query):
                 if Weighted(value) > Weighted(query):
                     return True
@@ -402,8 +433,8 @@ def parse_gt(query):
 
 def parse_gte(query):
     @keep(query)
-    def _gte(field_context):
-        for value in field_context.value:
+    def _gte(field_walker):
+        for value in field_walker.value:
             if _is_comparable(value, query):
                 if Weighted(value) >= Weighted(query):
                     return True
@@ -413,8 +444,8 @@ def parse_gte(query):
 
 def parse_lt(query):
     @keep(query)
-    def _lt(field_context):
-        for value in field_context.value:
+    def _lt(field_walker):
+        for value in field_walker.value:
             if _is_comparable(value, query):
                 if Weighted(value) < Weighted(query):
                     return True
@@ -424,8 +455,8 @@ def parse_lt(query):
 
 def parse_lte(query):
     @keep(query)
-    def _lte(field_context):
-        for value in field_context.value:
+    def _lte(field_walker):
+        for value in field_walker.value:
             if _is_comparable(value, query):
                 if Weighted(value) <= Weighted(query):
                     return True
@@ -455,8 +486,8 @@ def parse_in(query):
         raise OperationFailure("cannot nest $ under $in")
 
     @keep(query)
-    def _in(field_context):
-        return _in_match(field_context.value, query)
+    def _in(field_walker):
+        return _in_match(field_walker.value, query)
 
     return _in
 
@@ -471,8 +502,8 @@ def parse_nin(query):
         raise OperationFailure("cannot nest $ under $in")
 
     @keep(query)
-    def _nin(field_context):
-        return not _in_match(field_context.value, query)
+    def _nin(field_walker):
+        return not _in_match(field_walker.value, query)
 
     return _nin
 
@@ -488,9 +519,9 @@ def parse_all(query):
         raise OperationFailure("$all needs an array")
 
     @keep(query)
-    def _all(field_context):
+    def _all(field_walker):
         for q in query:
-            if q not in field_context.value:
+            if q not in field_walker.value:
                 return False
         return True
 
@@ -499,10 +530,10 @@ def parse_all(query):
 
 def parse_elemMatch(query):
     @keep(query)
-    def _elemMatch(field_context):
-        doc_filter = QueryFilter(query)
-        for emb_doc in field_context.value[:-1]:
-            if doc_filter(emb_doc):
+    def _elemMatch(field_walker):
+        queryfilter = QueryFilter(query)
+        for emb_doc in field_walker.value[:-1]:
+            if queryfilter(emb_doc):
                 return True
 
     return _elemMatch
@@ -515,8 +546,8 @@ def parse_size(query):
         raise OperationFailure("$size needs a number")
 
     @keep(query)
-    def _size(field_context):
-        return len(field_context.value[:-1]) == query
+    def _size(field_walker):
+        return len(field_walker.value[:-1]) == query
 
     return _size
 
@@ -529,8 +560,8 @@ Field-level Query Operators
 
 def parse_exists(query):
     @keep(query)
-    def _exists(field_context):
-        return field_context.exists == query
+    def _exists(field_walker):
+        return field_walker.exists == query
 
     return _exists
 
@@ -545,7 +576,7 @@ def parse_type(query):  # Not finished
     query = [BSON_TYPE_ALIAS_ID.get(v, v) for v in query]
 
     @keep(query)
-    def _type(field_context):
-        return bson_type_id(field_context.value[:-1]) in query
+    def _type(field_walker):
+        return bson_type_id(field_walker.value[:-1]) in query
 
     return _type

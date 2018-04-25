@@ -11,6 +11,7 @@ Inspired by [TinyDB](https://github.com/msiemens/tinydb) and the extension [Tiny
 * Backed with SQLite *(default storage)*
 * Using Mongo query language
 * Working on both Python 2 and 3
+* Against to MongoDB 3.6
 
 ### Example Code
 ```python
@@ -27,7 +28,7 @@ Inspired by [TinyDB](https://github.com/msiemens/tinydb) and the extension [Tiny
 ## Query
 Able to `find()` with filter and `sort()` result.
 Support embedded document.
-The query results are the same as PyMongo.
+The query results are the same as using Mongo Python driver.
 Currently implemented ops:
 * $eq
 * $ne

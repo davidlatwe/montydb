@@ -1,3 +1,7 @@
+from .base import (
+    ASCENDING,
+    DESCENDING,
+)
 from .client import MontyClient
 from .database import MontyDatabase
 from .collection import MontyCollection
@@ -6,9 +10,6 @@ from .cursor import (
     CursorType
 )
 from .configure import MontyConfigure
-
-ASCENDING = 1
-DESCENDING = -1
 
 
 __all__ = [

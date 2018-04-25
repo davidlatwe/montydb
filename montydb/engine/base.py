@@ -160,72 +160,53 @@ class FieldWalker(object):
                         if emb_field.exists:
                             nest += emb_field.value
                     if nest:
-                        self.nested = True
+                        self.__nested = True
                         _doc = {field: nest}
                     else:
                         _doc = None
             try:
                 _doc = _doc[field]
-                self.exists = True
+                self.__exists = True
             except (KeyError, IndexError, TypeError):
                 _doc = None
                 self.reset()
                 break
 
         if not in_array and isinstance(_doc, (list, tuple)):
-            self.value += _doc
-        self.value.append(_doc)
+            self.__value += _doc
+        self.__value.append(_doc)
 
         return self
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.reset()
+
+    @property
+    def value(self):
+        """
+        """
+        return self.__value
+
+    @value.setter
+    def value(self, val):
+        self.__value = val
+
+    @property
+    def exists(self):
+        """
+        """
+        return self.__exists
+
+    @property
+    def nested(self):
+        """
+        """
+        return self.__nested
+
     def reset(self):
-        self.value = []
-        self.exists = False
-        self.nested = False
-
-
-def ordering(documents, specifier):
-    """
-    """
-    total = len(documents)
-    pre_sect_stack = []
-
-    for path, revr in specifier:
-        is_reverse = bool(1 - revr)
-        value_stack = []
-
-        for indx, doc in enumerate(documents):
-            # get field value
-            value = Weighted(FieldWalker(doc)(path).value, is_reverse)
-            # read previous section
-            pre_sect = pre_sect_stack[indx] if pre_sect_stack else 0
-            # inverse if in reverse mode
-            pre_sect = (total - pre_sect) if is_reverse else pre_sect
-            indx = (total - indx) if is_reverse else indx
-
-            value_stack.append((pre_sect, value, indx))
-
-        # sort docs
-        value_stack.sort(reverse=is_reverse)
-
-        ordereddoc = []
-        sect_stack = []
-        sect_id = -1
-        last_doc = None
-        for _, value, indx in value_stack:
-            # restore if in reverse mode
-            indx = (total - indx) if is_reverse else indx
-            ordereddoc.append(documents[indx])
-
-            # define section
-            # maintain the sorting result in next level sorting
-            if not value == last_doc:
-                sect_id += 1
-            sect_stack.append(sect_id)
-            last_doc = value
-
-        # save result for next level sorting
-        documents = ordereddoc
-        pre_sect_stack = sect_stack
-
-    return documents
+        self.__value = []
+        self.__exists = False
+        self.__nested = False
