@@ -33,7 +33,7 @@ def _is_positional_match(conditions, match_field):
     return False
 
 
-def _pprint_val(val):
+def _perr_doc(val):
     """
     For pretty error msg, same as Mongo
     """
@@ -43,11 +43,11 @@ def _pprint_val(val):
             v_lis.append("{0}: \"{1}\"".format(_k, _v))
         else:
             if is_mapping_type(_v):
-                _v = _pprint_val(_v)
+                _v = _perr_doc(_v)
             if is_array_type(_v):
                 _ = []
                 for v in _v:
-                    _.append(_pprint_val(v))
+                    _.append(_perr_doc(v))
                 _v = "[ " + ", ".join(_) + " ]"
             v_lis.append("{0}: {1}".format(_k, _v))
     return "{ " + ", ".join(v_lis) + " }"
@@ -76,14 +76,14 @@ class Projector(object):
         if not self.proj_with_id:
             del doc["_id"]
 
-        if self.include_flag:
-            self.regular_field += list(self.array_field.keys())
-            self.inclusion(field_walker)
-        else:
-            self.exclusion(field_walker)
-
         for field_path in self.array_field:
             self.array_field[field_path](field_walker)
+
+        if self.include_flag:
+            self.regular_field += list(self.array_field.keys())
+            self.inclusion(field_walker, self.regular_field)
+        else:
+            self.exclusion(field_walker, self.regular_field)
 
     def parser(self, spec, query):
         """
@@ -94,7 +94,7 @@ class Projector(object):
             # Parsing options
             if is_mapping_type(val):
                 if not len(val) == 1:
-                    _v = _pprint_val(val)
+                    _v = _perr_doc(val)
                     raise OperationFailure(">1 field in obj: {}".format(_v))
 
                 # Array field options
@@ -130,8 +130,8 @@ class Projector(object):
 
                     self.array_op_type = self.ARRAY_OP_ELEM_MATCH
 
-                    queryfilter = QueryFilter({key: {sub_k: sub_v}})
-                    self.array_field[key] = self.parse_elemMatch(queryfilter)
+                    qfilter = QueryFilter(sub_v)
+                    self.array_field[key] = self.parse_elemMatch(key, qfilter)
 
                 elif sub_k == "$meta":
                     # Currently Not supported.
@@ -139,7 +139,7 @@ class Projector(object):
                                               "$meta in projection.")
 
                 else:
-                    _v = _pprint_val(val)
+                    _v = _perr_doc(val)
                     raise OperationFailure(
                         "Unsupported projection option: "
                         "{0}: {1}".format(key, _v))
@@ -197,9 +197,23 @@ class Projector(object):
             pass
         return _slice
 
-    def parse_elemMatch(self, queryfilter):
+    def parse_elemMatch(self, field_path, qfilter):
         def _elemMatch(field_walker):
-            pass
+            doc = field_walker.doc
+            has_match = False
+            if field_path in doc and is_array_type(doc[field_path]):
+                # empty_array_error(doc[field_path])
+                for emb_doc in doc[field_path]:
+                    if qfilter(emb_doc):
+                        doc[field_path] = [emb_doc]
+                        has_match = True
+                        break
+            if not has_match:
+                del field_walker.doc[field_path]
+
+            if not self.include_flag:
+                self.inclusion(field_walker, [field_path])
+
         return _elemMatch
 
     def parse_positional(self, field_path):
@@ -237,7 +251,7 @@ class Projector(object):
                 if key in emb_doc:
                     del emb_doc[key]
 
-    def inclusion(self, field_walker, fore_path=""):
+    def inclusion(self, field_walker, include_field, fore_path=""):
         if fore_path:
             key_list = []
             for val in field_walker.value:
@@ -254,12 +268,12 @@ class Projector(object):
         for key in key_list:
             current_path = fore_path + key
 
-            if current_path in self.regular_field:
+            if current_path in include_field:
                 # skip included field
                 continue
 
             drop = True
-            for field_path in self.regular_field:
+            for field_path in include_field:
                 if field_path.startswith(current_path):
                     drop = False
                     break
@@ -274,10 +288,10 @@ class Projector(object):
             else:
                 fore_path = current_path + "."
                 with field_walker(current_path):
-                    self.inclusion(field_walker, fore_path)
+                    self.inclusion(field_walker, include_field, fore_path)
 
-    def exclusion(self, field_walker):
-        for field_path in self.regular_field:
+    def exclusion(self, field_walker, exclude_field):
+        for field_path in exclude_field:
             if "." in field_path:
                 fore_path, key = field_path.rsplit(".", 1)
                 with field_walker(fore_path):
