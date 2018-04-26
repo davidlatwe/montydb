@@ -101,20 +101,23 @@ class Projector(object):
                 sub_k, sub_v = next(iter(val.items()))
                 if sub_k == "$slice":
                     if isinstance(sub_v, int):
-                        # (NOTE) This is A-OK.
-                        pass
+                        if sub_v >= 0:
+                            slicing = slice(sub_v)
+                        else:
+                            slicing = slice(sub_v, None)
                     elif is_array_type(sub_v):
                         if not len(sub_v) == 2:
                             raise OperationFailure("$slice array wrong size")
                         if sub_v[1] <= 0:
                             raise OperationFailure(
                                 "$slice limit must be positive")
+                        slicing = slice(sub_v[0], sub_v[0] + sub_v[1])
                     else:
                         raise OperationFailure(
                             "$slice only supports numbers and [skip, limit] "
                             "arrays")
 
-                    self.array_field[key] = self.parse_slice()
+                    self.array_field[key] = self.parse_slice(key, slicing)
 
                 elif sub_k == "$elemMatch":
                     if not is_mapping_type(sub_v):
@@ -187,14 +190,28 @@ class Projector(object):
 
                 self.array_op_type = self.ARRAY_OP_POSITIONAL
 
-                self.array_field[key[:-2]] = self.parse_positional(key[:-2])
+                fore_path = key.split(".", 1)[0]
+                self.array_field[fore_path] = self.parse_positional(fore_path)
 
         if self.include_flag is None:
             self.include_flag = False
 
-    def parse_slice(self):
+    def parse_slice(self, field_path, slicing):
         def _slice(field_walker):
-            pass
+            if "." in field_path:
+                fore_path, key = field_path.rsplit(".", 1)
+                if field_walker(fore_path).exists:
+                    for emb_doc in field_walker.value:
+                        if key not in emb_doc:
+                            continue
+                        if is_array_type(emb_doc[key]):
+                            emb_doc[key] = emb_doc[key][slicing]
+            else:
+                doc = field_walker.doc
+                if field_path in doc:
+                    if is_array_type(doc[field_path]):
+                        doc[field_path] = doc[field_path][slicing]
+
         return _slice
 
     def parse_elemMatch(self, field_path, qfilter):
@@ -202,7 +219,6 @@ class Projector(object):
             doc = field_walker.doc
             has_match = False
             if field_path in doc and is_array_type(doc[field_path]):
-                # empty_array_error(doc[field_path])
                 for emb_doc in doc[field_path]:
                     if qfilter(emb_doc):
                         doc[field_path] = [emb_doc]
@@ -216,32 +232,22 @@ class Projector(object):
 
         return _elemMatch
 
-    def parse_positional(self, field_path):
+    def parse_positional(self, fore_path):
         def empty_array_error(array):
             if len(array) == 0:
                 raise OperationFailure(
                     "Executor error during find command: BadValue: "
                     "positional operator ({}.$) requires corresponding "
-                    "field in query specifier".format(field_path))
+                    "field in query specifier".format(fore_path))
 
         def _positional(field_walker):
-            if "." in field_path:
-                fore_path, key = field_path.rsplit(".", 1)
-                if field_walker(fore_path).exists:
-                    for emb_doc in field_walker.value:
-                        if is_array_type(emb_doc[key]):
-                            empty_array_error(emb_doc[key])
-                            emb_doc[key] = emb_doc[key][:1]
-                        else:
-                            del emb_doc[key]
-            else:
-                doc = field_walker.doc
-                if field_path in doc:
-                    if is_array_type(doc[field_path]):
-                        empty_array_error(doc[field_path])
-                        doc[field_path] = doc[field_path][:1]
-                    else:
-                        del doc[field_path]
+            doc = field_walker.doc
+            if fore_path in doc:
+                if is_array_type(doc[fore_path]):
+                    empty_array_error(doc[fore_path])
+                    doc[fore_path] = doc[fore_path][:1]
+                else:
+                    del doc[fore_path]
 
         return _positional
 
