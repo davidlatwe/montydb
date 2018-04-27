@@ -2,7 +2,7 @@ import os
 import importlib
 from collections import MutableMapping, OrderedDict
 
-from .storage import SQLITE_CONFIG
+from .storage import SQLITE_CONFIG, MEMORY_CONFIG, MEMORY_REPOSITORY
 from .vendor import yaml
 from .vendor.yaml import SafeLoader, SafeDumper
 try:
@@ -111,34 +111,39 @@ def yaml_config_dump(data, stream=None, Dumper=Dumper, **kwds):
     return yaml.dump(data, stream, AttribDumper, **kwds)
 
 
-DEFAULT_CONFIG = SQLITE_CONFIG
-
-
 class MontyConfigure(object):
     """
+    Args:
+        repository (str): Database root directory path.
+
+        default_config (str, optional): YAML format config string.
+            Defaults to `montydb.storage.SQLITE_CONFIG`.
+            If no `conf.yaml` config file exists in `repository` path,
+            will take this parameter and save as `conf.yaml`.
+            Ignored if `conf.yaml` exists.
     """
 
     CONFIG_FNAME = "conf.yaml"
 
-    def __init__(self, repository=None, default_config=None):
-        if repository is None:
-            repository = os.getcwd()
-        if not os.path.isdir(repository):
-            os.makedirs(repository)
-
-        if default_config is None:
-            default_config = DEFAULT_CONFIG
-
-        self._repository = repository
-        self._config_path = os.path.join(repository, self.CONFIG_FNAME)
-
-        if self.exists():
-            # Ignore param `default_config`
-            with open(self._config_path, "r") as stream:
-                self._config = yaml_config_load(stream, SafeLoader)
+    def __init__(self, repository, default_config=SQLITE_CONFIG):
+        if repository == MEMORY_REPOSITORY:
+            self._repository = repository
+            self._config_path = None
+            self._config = yaml_config_load(MEMORY_CONFIG, SafeLoader)
         else:
-            self._config = yaml_config_load(default_config, SafeLoader)
-            self.save()
+            if not os.path.isdir(repository):
+                os.makedirs(repository)
+
+            self._repository = repository
+            self._config_path = os.path.join(repository, self.CONFIG_FNAME)
+
+            if self.exists():
+                # Ignore param `default_config`
+                with open(self._config_path, "r") as stream:
+                    self._config = yaml_config_load(stream, SafeLoader)
+            else:
+                self._config = yaml_config_load(default_config, SafeLoader)
+                self.save()
 
     def _get_storage_engine(self):
         """
