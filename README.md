@@ -16,7 +16,8 @@ Inspired by [TinyDB](https://github.com/msiemens/tinydb) and the extension [Tiny
 ### Example Code
 ```python
 >>> from montydb import MontyClient
->>> client = MontyClient("/path/to/db/dir")
+>>> address = "/path/to/db/dir"  # Or ":memory:" for InMemory mode
+>>> client = MontyClient(address)
 >>> col = client.db.test
 >>> col.insert_one({"warehouse": "A", "qty": 5})
 <montydb.results.InsertOneResult object at 0x000001B3CE3D0A08>
