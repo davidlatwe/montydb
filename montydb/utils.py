@@ -1,8 +1,29 @@
+from bson.json_util import (
+    loads as _loads,
+    dumps as _dumps,
+    RELAXED_JSON_OPTIONS as _default_json_opts,
+)
 
 
-def monty_import():
-    pass
+__all__ = [
+    "monty_load",
+    "monty_dump",
+]
 
 
-def monty_export():
-    pass
+def monty_load(file_path):
+    deserialized = []
+    with open(file_path, "r") as fp:
+        lines = [line.strip() for line in fp.readlines()]
+        deserialized += _loads("[{}]".format(", ".join(lines)))
+    return deserialized
+
+
+def monty_dump(file_path, documents, json_options=None):
+    if not isinstance(documents, list):
+        raise TypeError("Param `documents` should be a list.")
+
+    opt = json_options if json_options else _default_json_opts
+    serialized = [_dumps(doc, json_options=opt) for doc in documents]
+    with open(file_path, "w") as fp:
+        fp.write("\n".join(serialized))

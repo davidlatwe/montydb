@@ -11,6 +11,8 @@ from .cursor import (
 )
 from .configure import MontyConfigure
 
+from . import utils
+
 
 __all__ = [
 
@@ -24,4 +26,6 @@ __all__ = [
     "ASCENDING",
     "DESCENDING",
     "CursorType",
+
+    "utils",
 ]
