@@ -2,13 +2,14 @@ import os
 import importlib
 from collections import MutableMapping, OrderedDict
 
-from .storage import SQLITE_CONFIG, MEMORY_CONFIG, MEMORY_REPOSITORY
-from .vendor import yaml
-from .vendor.yaml import SafeLoader, SafeDumper
+import yaml
+from yaml import SafeLoader, SafeDumper
 try:
-    from .vendor.yaml import CLoader as Loader, CDumper as Dumper
+    from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
-    from .vendor.yaml import Loader, Dumper
+    from yaml import Loader, Dumper
+
+from .storage import SQLITE_CONFIG, MEMORY_CONFIG, MEMORY_REPOSITORY
 
 
 class AttribDict(MutableMapping):
