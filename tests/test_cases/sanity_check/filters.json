@@ -1,0 +1,133 @@
+{"item.name": {"$eq": "ab"}}
+{"item.name": "ab"}
+{"item.name": {"$eq": null}}
+{"item.name": {"$eq": null, "$exists": 1}}
+{"item.name": {"$exists": 1}}
+{"item.name": "cd", "qty": 10}
+{"qty": {"$eq": 16}}
+{"qty": {"$eq": "apple"}}
+{"qty": {"$eq": false}}
+{"qty": {"$gt": 20}}
+{"qty": {"$gt": "apple"}}
+{"qty": {"$gt": false}}
+{"qty": {"$gt": {"qty": {"$lt": 100}}}}
+{"qty": {"$gte": 100}}
+{"qty": {"$gt": 100}}
+{"qty": {"$gt": {"bad": 20, "num": 105}}}
+{"qty": {"$gte": 20}}
+{"qty": {"$gte": "apple"}}
+{"qty": {"$gte": false}}
+{"qty": {"$lt": 20}}
+{"qty": {"$lt": "apple"}}
+{"qty": {"$lt": false}}
+{"qty": {"$lte": 20}}
+{"qty": {"$lte": "apple"}}
+{"qty": {"$lte": false}}
+{"qty": {"$ne": 20}}
+{"qty": {"$ne": "apple"}}
+{"qty": {"$ne": false}}
+{"qty": {"$exists": 1, "$ne": 20}}
+{"qty": {"$in": [20, 15, 40]}}
+{"qty": {"$in": ["better", "apple"]}}
+{"qty": {"$nin": [20, 15, 40]}}
+{"qty": {"nin": "hi"}}
+{"qty": {"bad": 50}}
+{"qty.bad": 50}
+{"qty": {"bad": 10, "num": 100}}
+{"$or": [{"qty": {"$lt": 20}}, {"item.price": 50}]}
+{"$or": [{"qty": {"$lt": 20}}, {"$or": [{"item.price": 50}, {"item.name": {"$eq": "ab"}}]}]}
+{"$and": [{"qty": {"$ne": 20}}, {"qty": {"$exists": true}}]}
+{"qty": {"$exists": 1, "$ne": 20}}
+{"$and": [{"qty": {"$ne": 20}}, {"qty": {"$exists": true}}], "$or": [{"item.name": {"$ne": "ab"}}, {"item.name": {"$exists": 1}}]}
+{"$and": [{"qty": {"$not": {"$eq": 30}}}, {"qty": {"$exists": true}}]}
+{"$and": [{"$and": [{"qty": {"$eq": 15}}, {"item.name": "ab"}]}, {"qty": {"$exists": true}}]}
+{"": [{"$not": [{"qty": {"$eq": 15}}, {"item.name": "ab"}]}, {"qty": {"$exists": true}}]}
+{"$and": [{"$and": [{"qty": {"$hi": 8, "eq": 15}}, {"item.name": "ab"}]}, {"qty": {"$exists": true}}]}
+{"$and": [{"$and": [{"qty": {"$lt": 16, "j": 8}}, {"item.name": "ab"}]}]}
+{"$and": [{}, {}]}
+{"qty": {"$gt": 10}}
+{"qty": {"$lt": 20}}
+{"qty": {"$lte": 20}}
+{"qty": {"$gte": 10}}
+{"qty": {"$in": [20, 15, 40]}}
+{"qty": {"$ne": 20}}
+{"qty": {"$not": {"$eq": 20}}}
+{"$or": [{"qty": 20}, {"item.name": "cd"}]}
+{"qty": {"$nin": [20, 15, 40]}}
+{"qty": {"$exists": true, "$nin": [20, 15, 40]}}
+{"tags": {"$eq": "B"}}
+{"tags": {"$eq": ["A", "B"]}}
+{"tags": "B"}
+{"tags": {"$ne": "B"}}
+{"tags": ["B"]}
+{"tags": {"$ne": "ssl"}}
+{"tags": {"$in": ["ssl"]}}
+{"tags": {"$in": [["ssl"]]}}
+{"tags": {"$nin": ["ssl"]}}
+{"tags": ["ssl", "security"]}
+{"tags": {"$all": [["ssl", "security"]]}}
+{"tags": {"$all": [["ssl", "security"], "warning"]}}
+{"tags": {"$all": ["ssl"]}}
+{"tags": {"$all": ["ssl", "security"]}}
+{"tags.0": "security"}
+{"tags.0": "ssl"}
+{"tags": "ssl"}
+{"tags.1.0": "B"}
+{"tags.1.0": {"$ne": "B"}}
+{"tags.1": ["B"]}
+{"tags.1": {"$ne": ["B"]}}
+{"qty": {"$nin": [8, {"j": 8, "$ne": 5}]}}
+{"qty": {"$in": [{"$regex": "^p"}]}}
+{"qty": {"$in": [{"$regularExpression": {"pattern": "ap*", "options": "u"}}, {"$regularExpression": {"pattern": "ga*", "options": "u"}}]}}
+{"qty": {"$nin": [{"$regularExpression": {"pattern": "ap*", "options": "u"}}, {"$regularExpression": {"pattern": "ga*", "options": "u"}}]}}
+{"qty": {"$in": [{"$regularExpression": {"pattern": "someother", "options": "u"}}]}}
+{"qty": {"$in": [{"$regularExpression": {"pattern": "\u597d", "options": "u"}}]}}
+{"tags.room.some": 5}
+{"tags.0.room.some": 5}
+{"tags.room.some": {"$gt": 10}}
+{"tags.room.some": {"$ne": 5}}
+{}
+{"status": "D"}
+{"status": {"$in": ["A", "D"]}}
+{"status": "A", "qty": {"$lt": 30}}
+{"$or": [{"status": "A"}, {"qty": {"$lt": 30}}]}
+{"size": {"h": 14, "w": 21, "uom": "cm"}}
+{"status": "A", "$or": [{"qty": {"$lt": 30}}, {"item": {"$regex": "^p"}}]}
+{"size.uom": "in"}
+{"size.h": {"$lt": 15}}
+{"size.h": {"$lt": 15}, "size.uom": "in", "status": "D"}
+{"tags": ["red", "blank"]}
+{"tags": {"$all": ["red", "blank"]}}
+{"tags": "red"}
+{"dim_cm": {"$gt": 25}}
+{"dim_cm": {"$gt": 15, "$lt": 20}}
+{"dim_cm.1": {"$gt": 25}}
+{"tags": {"$size": 3}}
+{"tags": {"$size": [1, 3]}}
+{"tags": {"$size": 1.5}}
+{"instock": {"warehouse": "A", "qty": 5}}
+{"instock": {"qty": 5, "warehouse": "A"}}
+{"instock.qty": {"$lte": 20}}
+{"instock.0.qty": {"$lte": 20}}
+{"instock.qty": {"$gt": 10, "$lte": 20}}
+{"instock.qty": 5, "instock.warehouse": "A"}
+{"instock": {"$elemMatch": {"$gt": 5, "qty": {"$gt": 10, "$lte": 20}}}}
+{"instock": {"$elemMatch": {"qty": {"$gt": 10, "$lte": 20}, "$eq": 5}}}
+{"instock": {"$elemMatch": [{"qty": 5}]}}
+{"instock.qty": {"$elemMatch": {"$and": [{"$eq": 5}]}}}
+{"dim_cm": {"$elemMatch": {"$gt": 22, "$lt": 30}}}
+{"instock": {"$elemMatch": {"qty": 5}}}
+{"instock": {"$elemMatch": {"qty": {"$eq": 5}}}}
+{"instock.qty": {"$elemMatch": {"$eq": 5}}}
+{"instock.qty": {"$elemMatch": {"$and": [{"qty": 5}]}}}
+{"instock": {"$elemMatch": {"qty": {"$gt": 10, "$lte": 20}}}}
+{"instock": {"$elemMatch": {"qty": 5, "warehouse": "A"}}}
+{"instock": {"$elemMatch": {"$or": [{"$and": [{"qty": 5}]}]}}}
+{"instock": {"$elemMatch": {"$and": [{"qty": 5}]}}}
+{"results": {"$elemMatch": {"$gte": 80, "$lt": 85}}}
+{"results": {"$elemMatch": {"product": "xyz", "score": {"$gte": 8}}}}
+{"results": {"$elemMatch": {"product": "xyz"}}}
+{"results.product": "xyz"}
+{"$or": [{"results": 88}, {"instock.qty": 5}]}
+{"$or": [{"results": 88}, {}]}
+{"$and": [{"results": 88}, {}]}

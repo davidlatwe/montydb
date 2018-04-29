@@ -1,0 +1,69 @@
+{"item": {"name": "ab", "price": 123}, "qty": 15, "tags": ["A", "B", "C"]}
+{"item": {"name": "cd", "price": 99}, "qty": 20, "tags": ["B"]}
+{"item": {"name": "ij", "price": 400}, "qty": 25, "tags": ["A", "B"]}
+{"item": {"name": "xy", "price": 100}, "qty": 30, "tags": ["B", "A"]}
+{"item": {"name": "mn", "price": 5}, "qty": 20, "tags": [["A", "B"], "C"]}
+{"item": {"name": ["ab"], "price": 70}, "qty": 15, "tags": ["D", "E", "F"]}
+{"item": {"name": ["ab", "cd"], "price": 75}, "qty": 15, "tags": ["A", ["B"], "C"]}
+{"item": {"name": "mn", "price": 70}, "qty": 20, "tags": "B"}
+{"item": {"name": "mn", "price": 100}, "qty": [10, 40, 50], "tags": "B"}
+{"item": {"name": "mn", "price": 5}, "qty": "greater then int", "tags": "B"}
+{"item": {"name": "mn", "price": 99}, "qty": null, "tags": "B"}
+{"item": {"name": "mn", "price": 400}, "qty": true, "tags": "B"}
+{"item": {"name": "mn", "price": 120}, "qty": ["better", 40, true], "tags": "B"}
+{"item": {"name": "mn", "price": 70}, "qty": ["apple", 16, false], "tags": "B"}
+{"item": {"name": "mn", "price": 50}, "tags": "B"}
+{"item": {"name": null}}
+{"item": {"price": 0}}
+{"qty": {"bad": 60, "num": 100}}
+{"qty": {"bad": 60, "num": 200}}
+{"qty": "great"}
+{"item": {"name": "ab", "price": 123}, "qty": 15, "tags": ["A", "B", "C"]}
+{"item": {"name": "cd", "price": 99}, "qty": 20, "tags": ["B"]}
+{"item": {"name": "cd", "price": 99}, "qty": 10, "tags": ["D"]}
+{"item": {"price": 0}}
+{"item": {"name": "cd", "price": 99}, "qty": 20, "tags": "B"}
+{"item": {"name": "cd", "price": 99}, "qty": 20, "tags": ["A", ["B"], "C"]}
+{"tags": ["security", "ssl"]}
+{"tags": ["ssl", "security"]}
+{"tags": ["ssl", "security", "warning"]}
+{"tags": ["security", "warning"]}
+{"tags": "ssl"}
+{"tags": [["ssl"], "security"]}
+{"tags": [["ssl", "security"], "warning"]}
+{"tags": ["warning", ["ssl", "security"]]}
+{"qty": "something\nsomeotherthing"}
+{"qty": ["something\nsomeotherthing", "hello"]}
+{"qty": "\u4f60\u597d\n\u6211\u5f88\u597d\uff0cHi"}
+{"qty": ["\u4f60\u597d\n\u6211\u5f88\u597d\uff0cHi", "hello"]}
+{"results": [{"product": "abc", "score": 10}, {"product": "xyz", "score": 5}]}
+{"results": [{"product": "abc", "score": 8}, {"product": "xyz", "score": 7}]}
+{"results": [{"product": "abc", "score": 7}, {"product": "xyz", "score": 8}]}
+{"results": []}
+{"results": "Fake"}
+{"tags": [{"room": [{"some": 5, "other": 8}, {"some": 1, "other": 9}], "paper": [{"pen": 4}, {"pig": 0}]}, {"room": [{"some": 15, "other": 8}, {"some": 1, "other": 19}], "paper": [{"pen": 24}, {"pig": 10}]}]}
+{"item": "journal", "qty": 25, "size": {"h": 14, "w": 21, "uom": "cm"}, "status": "A"}
+{"item": "notebook", "qty": 50, "size": {"h": 8.5, "w": 11, "uom": "in"}, "status": "A"}
+{"item": "paper", "qty": 100, "size": {"h": 8.5, "w": 11, "uom": "in"}, "status": "D"}
+{"item": "planner", "qty": 75, "size": {"h": 22.85, "w": 30, "uom": "cm"}, "status": "D"}
+{"item": "postcard", "qty": 45, "size": {"h": 10, "w": 15.25, "uom": "cm"}, "status": "A"}
+{"item": "journal", "qty": 25, "tags": ["blank", "red"], "dim_cm": [14, 21]}
+{"item": "notebook", "qty": 50, "tags": ["red", "blank"], "dim_cm": [14, 21]}
+{"item": "paper", "qty": 100, "tags": ["red", "blank", "plain"], "dim_cm": [14, 21]}
+{"item": "planner", "qty": 75, "tags": ["blank", "red"], "dim_cm": [22.85, 30]}
+{"item": "postcard", "qty": 45, "tags": ["blue"], "dim_cm": [10, 15.25]}
+{"item": "journal", "instock": [{"warehouse": "A", "qty": 5}, {"warehouse": "C", "qty": [15]}]}
+{"item": "notebook", "instock": [{"warehouse": "C", "qty": 5}]}
+{"item": "paper", "instock": [{"warehouse": "A", "qty": 60}, {"warehouse": "B", "qty": 15}]}
+{"item": "planner", "instock": [{"warehouse": "A", "qty": 40}, {"warehouse": "B", "qty": 5}]}
+{"item": "postcard", "instock": [{"warehouse": "B", "qty": 15}, {"warehouse": "C", "qty": 35}]}
+{"results": [82, 85, 88]}
+{"results": [75, 88, 89, 88]}
+{"zipcode": "63109", "area": "A", "students": [{"name": "john", "school": 102, "age": 10}, {"name": "jess", "school": 102, "age": 11}, {"name": "jeff", "school": 108, "age": 1}]}
+{"zipcode": "63110", "area": "A", "students": [{"name": "ajax", "school": 100, "age": 7}, {"name": "achilles", "school": 100, "age": 8}]}
+{"zipcode": "63109", "area": "B", "students": [{"name": "ajax", "school": 100, "age": 7}, {"name": "achilles", "school": 100, "age": 8}]}
+{"zipcode": "63109", "area": "B", "students": [{"name": "barney", "school": 102, "age": 7}, {"name": "ruth", "school": 102, "age": 16}]}
+{"zipcode": "63109", "area": "B", "students": [{"name": "john", "score": [80, 72, 66]}, {"name": "jess", "score": [100, 90, 86]}, {"name": "jeff", "score": [65, 77, 79]}]}
+{"zipcode": "63110", "area": "A", "students": [{"name": "ajax", "score": 99}, {"name": "achilles", "score": [90, 100, 88]}]}
+{"zipcode": "63109", "area": "B", "students": [{"name": "ajax", "score": [71, 80, 99]}, {"name": "achilles", "score": [100, 85, 67]}]}
+{"zipcode": "63109", "area": "B", "students": [{"name": "barney", "score": [89, 91, 93]}, {"name": "ruth", "score": [100, 66, 76]}]}
