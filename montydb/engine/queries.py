@@ -1,6 +1,8 @@
 
 import re
+import sys
 from bson.py3compat import integer_types, string_type
+from bson import Regex
 from bson.son import SON
 
 from ..errors import OperationFailure
@@ -378,12 +380,15 @@ def _eq_match(field_value, query):
     So before finding equal element in field, have to convert to `SON` first.
 
     """
+    PY36 = sys.version_info[0] == 3 and sys.version_info[1] >= 6
+
     if is_mapping_type(query):
-        if not isinstance(query, SON):
+        if PY36 and not isinstance(query, SON):
             query = SON(query)
         for val in field_value:
-            if is_mapping_type(val) and not isinstance(val, SON):
-                val = SON(val)
+            if is_mapping_type(val):
+                if PY36 and not isinstance(val, SON):
+                    val = SON(val)
                 if query == val:
                     return True
     else:
@@ -467,7 +472,13 @@ def parse_lte(query):
 def _in_match(field_value, query):
     """Helper function for $in and $nin
     """
-    q_regex = [q for q in query if isinstance(q, re._pattern_type)]
+    def _regex():
+        for q in query:
+            if isinstance(q, re._pattern_type):
+                yield q
+            if isinstance(q, Regex):
+                yield q.try_compile()
+    q_regex = _regex()
 
     def search(value):
         if value in query:
