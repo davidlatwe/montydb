@@ -39,26 +39,30 @@ def test_filtering(test_cases,
                 monty_err_cls = str(e.__class__)
 
             msg = """
-            Faild case: {}
             Mongo and Monty Error not match.
             Mongo: {}: {}
             Monty: {}: {}
-            """.format(case_addr,
-                       mongo_err_cls,
+            Faild case: {}
+            Filter: {}
+            """.format(mongo_err_cls,
                        mongo_err,
                        monty_err_cls,
-                       monty_err)
+                       monty_err,
+                       case_addr,
+                       filter_)
             assert monty_err == mongo_err, msg
 
             msg = """
-            Faild case: {}
             Mongo and Monty Cursor data count not match.
-            """.format(case_addr)
+            Faild case: {}
+            Filter: {}
+            """.format(case_addr, filter_)
             assert len(mongo_res) == len(monty_res), msg
 
             for i, res in enumerate(mongo_res):
                 msg = """
-                Faild case: {}
                 Mongo and Monty documents order or content not match.
-                """.format(case_addr)
+                Faild case: {}
+                Filter: {}
+                """.format(case_addr, filter_)
                 assert res == monty_res[i], msg

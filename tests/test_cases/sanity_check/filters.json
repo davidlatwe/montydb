@@ -93,6 +93,7 @@
 {"$or": [{"status": "A"}, {"qty": {"$lt": 30}}]}
 {"size": {"h": 14, "w": 21, "uom": "cm"}}
 {"status": "A", "$or": [{"qty": {"$lt": 30}}, {"item": {"$regex": "^p"}}]}
+{"status": "A", "qty": {"$regex": "^p"}}
 {"size.uom": "in"}
 {"size.h": {"$lt": 15}}
 {"size.h": {"$lt": 15}, "size.uom": "in", "status": "D"}
