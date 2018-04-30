@@ -103,21 +103,23 @@ def test_cases():
     return cases
 
 
+def _insert_test_cases(collection, test_cases_):
+    for name, case in test_cases_.items():
+        for i, doc in enumerate(case["documents"]):
+            doc["_id"] = name + " - " + str(i + 1)
+        collection.insert_many(case["documents"])
+    return collection
+
+
 @pytest.fixture
 def monty_collection_stuffed(monty_database, test_cases):
     col = monty_database["test_col"]
-    for name, case in test_cases.items():
-        for i, doc in enumerate(case["documents"]):
-            doc["_id"] = name + " - " + str(i + 1)
-        col.insert_many(case["documents"])
+    _insert_test_cases(col, test_cases)
     return col
 
 
 @pytest.fixture
 def mongo_collection_stuffed(mongo_database, test_cases):
     col = mongo_database["test_col"]
-    for name, case in test_cases.items():
-        for i, doc in enumerate(case["documents"]):
-            doc["_id"] = name + " - " + str(i + 1)
-        col.insert_many(case["documents"])
+    _insert_test_cases(col, test_cases)
     return col
