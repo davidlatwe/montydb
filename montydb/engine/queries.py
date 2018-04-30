@@ -219,6 +219,7 @@ class QueryFilter(object):
             # Evaluation
             "$jsonSchema": None,
             "$mod": None,
+            "$regex": parse_regex,
 
         }
 
@@ -285,6 +286,9 @@ class QueryFilter(object):
         #   1) return no document and without any error, or
         #   2) raise an "OperationFailure: unknown operator" error.
         #
+        if isinstance(sub_spec, Regex):
+            sub_spec = {"$regex": sub_spec}
+
         if _is_expression_obj(sub_spec):
             for op, value in sub_spec.items():
                 try:
@@ -591,3 +595,24 @@ def parse_type(query):  # Not finished
         return bson_type_id(field_walker.value[:-1]) in query
 
     return _type
+
+
+"""
+Field-level Query Operators
+- Evaluation
+"""
+
+
+def parse_regex(query):
+    if isinstance(query, Regex):
+        q = query.try_compile()
+    else:
+        q = re.compile(query)
+
+    @keep(query)
+    def _regex(field_walker):
+        for value in field_walker.value:
+            if isinstance(value, (string_type, bytes)) and q.search(value):
+                return True
+
+    return _regex
