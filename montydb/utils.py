@@ -11,12 +11,12 @@ __all__ = [
 ]
 
 
-def monty_load(file_path):
-    deserialized = []
+def monty_load(file_path, json_options=None):
+    opt = json_options if json_options else _default_json_opts
     with open(file_path, "r") as fp:
         lines = [line.strip() for line in fp.readlines()]
-        deserialized += _loads("[{}]".format(", ".join(lines)))
-    return deserialized
+        serialized = "[{}]".format(", ".join(lines))
+    return _loads(serialized, json_options=opt)
 
 
 def monty_dump(file_path, documents, json_options=None):
