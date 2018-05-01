@@ -142,13 +142,13 @@ class FieldWalker(object):
         """For `LogicBox` calling on `with` statement and cache field value"""
         _doc = self.doc
         for field in path.split("."):
-            in_array = False
+            at_array_index = False
 
             if isinstance(_doc, (list, tuple)):
                 if field.isdigit():
                     # Currently inside an array type value
                     # with given index path.
-                    in_array = True
+                    at_array_index = True
                     field = int(field)
                 else:
                     # Possible quering from an array of documents.
@@ -172,7 +172,7 @@ class FieldWalker(object):
                 self.reset()
                 break
 
-        if not in_array and isinstance(_doc, (list, tuple)):
+        if not at_array_index and isinstance(_doc, (list, tuple)):
             self.__value += _doc
         self.__value.append(_doc)
 
