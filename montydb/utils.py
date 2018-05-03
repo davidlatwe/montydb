@@ -14,7 +14,9 @@ __all__ = [
 def monty_load(file_path, json_options=None):
     opt = json_options if json_options else _default_json_opts
     with open(file_path, "r") as fp:
-        lines = [line.strip() for line in fp.readlines()]
+        lines = []
+        for line in (ln.strip() for ln in fp.readlines()):
+            lines += [line] if not line.startswith("//") else []
         serialized = "[{}]".format(", ".join(lines))
     return _loads(serialized, json_options=opt)
 
