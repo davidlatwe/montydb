@@ -1,5 +1,5 @@
 
-from bson import ObjectId, SON
+from bson import ObjectId, SON, BSON
 
 from .base import (
     AbstractStorage,
@@ -81,11 +81,14 @@ class MemoryCollection(AbstractCollection):
             self._database.collection_create(self._name)
         return self._database._db[self._name]
 
+    def _encode_doc(self, doc):
+        return BSON.encode(doc, False, self.coptions)
+
     def insert_one(self, doc, bypass_doc_val):
         if "_id" not in doc:
             doc["_id"] = ObjectId()
 
-        self._col[str(doc["_id"])] = doc
+        self._col[str(doc["_id"])] = self._encode_doc(doc)
 
         return doc["_id"]
 
@@ -94,7 +97,7 @@ class MemoryCollection(AbstractCollection):
             if "_id" not in doc:
                 doc["_id"] = ObjectId()
 
-            self._col[str(doc["_id"])] = doc
+            self._col[str(doc["_id"])] = self._encode_doc(doc)
 
         return [doc["_id"] for doc in docs]
 
@@ -116,11 +119,15 @@ class MemoryCursor(AbstractCursor):
     def _col(self):
         return self._collection._col
 
+    def _decode_doc(self, doc):
+        return BSON(doc).decode(self._collection.coptions)
+
     def query(self, max_scan):
+        docs = [self._decode_doc(doc) for doc in self._col.values()]
         if not max_scan:
-            return self._col.values()
+            return docs
         else:
-            return self._col.values()[:max_scan]
+            return docs[:max_scan]
 
 
 MemoryCollection.cursor_cls = MemoryCursor
