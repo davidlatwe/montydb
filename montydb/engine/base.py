@@ -140,6 +140,19 @@ class FieldWalker(object):
 
     """
 
+    __slots__ = [
+        "doc",
+        "__value",
+        "__exists",
+        "__embedded_in_array",
+        "__index_posed",
+        "__been_in_array",
+        "__array_field_missing",
+        "__array_field_short",
+        "__array_elem_short",
+        "__array_no_docs",
+    ]
+
     def __init__(self, doc):
         self.doc = doc
         self.reset()
@@ -313,6 +326,11 @@ class FieldWalker(object):
 
 
 class FieldValues(object):
+
+    __slots__ = [
+        "__elements",
+        "__arrays",
+    ]
 
     def __init__(self, elements=None, arrays=None):
         self.__elements = elements or []
