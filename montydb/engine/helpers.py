@@ -6,6 +6,8 @@ from bson.py3compat import abc, PY3
 
 FS_ENCODE = sys.getfilesystemencoding()
 
+PY36 = sys.version_info[0] == 3 and sys.version_info[1] >= 6
+
 
 def is_mapping_type(obj):
     return isinstance(obj, abc.Mapping)

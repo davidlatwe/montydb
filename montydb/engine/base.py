@@ -1,7 +1,5 @@
 
 
-from bson.py3compat import abc, string_type
-
 from datetime import datetime
 from bson.timestamp import Timestamp
 from bson.objectid import ObjectId
@@ -11,6 +9,10 @@ from bson.int64 import Int64
 from bson.decimal128 import Decimal128
 from bson.binary import Binary
 from bson.regex import Regex
+
+from bson.py3compat import string_type
+
+from .helpers import is_array_type, is_mapping_type
 
 
 BSON_TYPE_ALIAS_ID = {
@@ -88,7 +90,7 @@ def gravity(value, reverse):
     try:
         wgt = TYPE_WEIGHT[type(value)]
     except KeyError:
-        if isinstance(value, abc.Mapping):
+        if is_mapping_type(value):
             wgt = 4
         elif isinstance(value, string_type):
             wgt = 3
@@ -142,41 +144,82 @@ class FieldWalker(object):
         """For `LogicBox` calling on `with` statement and cache field value"""
         _doc = self.doc
         for field in path.split("."):
-            at_array_index = False
+            in_array = False
+            array_index_pos = False
+            array_has_doc = False
 
-            if isinstance(_doc, (list, tuple)):
+            if is_array_type(_doc):
+                in_array = True
+
+                if len(_doc) == 0:
+                    self.__exists = False
+                    break
+
+                if any(is_mapping_type(ele) for ele in _doc):
+                    array_has_doc = True
+
                 if field.isdigit():
                     # Currently inside an array type value
                     # with given index path.
-                    at_array_index = True
-                    field = int(field)
+                    array_index_pos = True
                 else:
                     # Possible quering from an array of documents.
-                    nest = []
-                    for emb_doc in _doc:
-                        if not isinstance(emb_doc, abc.Mapping):
-                            continue
-                        emb_field = FieldWalker(emb_doc)(field)
-                        if emb_field.exists:
-                            nest += emb_field.value
-                    if nest:
-                        self.__nested = True
-                        _doc = {field: nest}
-                    else:
-                        _doc = None
+                    _doc = self.__from_array(_doc, field)
+
+            self.__index_posed = array_index_pos
+
+            if array_index_pos and array_has_doc:
+                index_as_field_doc = self.__from_array(_doc, field)
+                if index_as_field_doc is not None:
+                    if len(_doc) > int(field):
+                        index_as_field_doc[field] += [_doc[int(field)]]
+
+                    _doc = index_as_field_doc
+                    array_index_pos = False
+
             try:
-                _doc = _doc[field]
+                _doc = _doc[int(field) if array_index_pos else field]
                 self.__exists = True
-            except (KeyError, IndexError, TypeError):
+            except (KeyError, IndexError, TypeError) as e:
+                ecls = e.__class__
+
+                self.__array_elem_short = ecls is IndexError
+
+                if ecls is TypeError and in_array:
+                    self.__array_no_docs = True
+
                 _doc = None
-                self.reset()
+                self.reset(partial=True)
+
                 break
 
-        if not at_array_index and isinstance(_doc, (list, tuple)):
+        # Collect values
+        if not array_index_pos and is_array_type(_doc):
             self.__value += _doc
         self.__value.append(_doc)
 
         return self
+
+    def __from_array(self, _doc, field):
+        """
+        """
+        nest = []
+        is_array = []
+        for emb_doc in _doc:
+            if not is_mapping_type(emb_doc):
+                continue
+            emb_field = FieldWalker(emb_doc)(field)
+            if emb_field.exists:
+                nest += emb_field.value
+                is_array.append(is_array_type(emb_field.value[-1]))
+            else:
+                self.__array_field_missing = True
+
+        if nest:
+            self.__nested = True
+            return {field: nest}
+        else:
+            return None
 
     def __enter__(self):
         return self
@@ -206,7 +249,37 @@ class FieldWalker(object):
         """
         return self.__nested
 
-    def reset(self):
+    @property
+    def index_posed(self):
+        """
+        """
+        return self.__index_posed
+
+    @property
+    def array_field_missing(self):
+        """
+        """
+        return self.__array_field_missing
+
+    @property
+    def array_elem_short(self):
+        """
+        """
+        return self.__array_elem_short
+
+    @property
+    def array_no_docs(self):
+        """
+        """
+        return self.__array_no_docs
+
+    def reset(self, partial=None):
         self.__value = []
         self.__exists = False
         self.__nested = False
+        self.__index_posed = False
+
+        if not partial:
+            self.__array_field_missing = False
+            self.__array_elem_short = False
+            self.__array_no_docs = False

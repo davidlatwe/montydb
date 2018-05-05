@@ -1,6 +1,5 @@
 
 import re
-import sys
 from bson.py3compat import integer_types, string_type
 from bson import Regex
 from bson.son import SON
@@ -14,6 +13,7 @@ from .base import (
 )
 
 from .helpers import (
+    PY36,
     is_mapping_type,
     is_array_type,
     keep,
@@ -364,7 +364,7 @@ Field-level Query Operators
 """
 
 
-def _eq_match(field_value, query):
+def _eq_match(field_walker, query):
     """
     Document key order matters
 
@@ -384,25 +384,37 @@ def _eq_match(field_value, query):
     So before finding equal element in field, have to convert to `SON` first.
 
     """
-    PY36 = sys.version_info[0] == 3 and sys.version_info[1] >= 6
-
     if is_mapping_type(query):
         if PY36 and not isinstance(query, SON):
             query = SON(query)
-        for val in field_value:
+        for val in field_walker.value:
             if is_mapping_type(val):
                 if PY36 and not isinstance(val, SON):
                     val = SON(val)
                 if query == val:
                     return True
     else:
-        return query in field_value
+        if query is None:
+            if field_walker.array_field_missing:
+                return True
+            if field_walker.array_elem_short:
+                return False
+            if field_walker.array_no_docs:
+                return False
+
+        if query in field_walker.value:
+            if isinstance(query, bool):
+                for v in field_walker.value:
+                    if isinstance(v, bool) and query == v:
+                        return True
+                return False
+            return True
 
 
 def parse_eq(query):
     @keep(query)
     def _eq(field_walker):
-        return _eq_match(field_walker.value, query)
+        return _eq_match(field_walker, query)
 
     return _eq
 
@@ -410,7 +422,7 @@ def parse_eq(query):
 def parse_ne(query):
     @keep(query)
     def _ne(field_walker):
-        return not _eq_match(field_walker.value, query)
+        return not _eq_match(field_walker, query)
 
     return _ne
 
@@ -560,9 +572,25 @@ def parse_size(query):
     if not isinstance(query, int):
         raise OperationFailure("$size needs a number")
 
+    def size_scan(field_value, query):
+        for val in field_value:
+            if is_array_type(val) and len(val) == query:
+                return True
+        return False
+
     @keep(query)
     def _size(field_walker):
-        return len(field_walker.value[:-1]) == query
+        if field_walker.index_posed:
+            field_value = field_walker.value[:-1]
+            return size_scan(field_value, query)
+        else:
+            field_value = field_walker.value[-1]
+            if field_walker.nested:
+                return size_scan(field_value, query)
+            else:
+                if is_array_type(field_value) and len(field_value) == query:
+                    return True
+                return False
 
     return _size
 
