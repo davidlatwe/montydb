@@ -144,11 +144,11 @@ class LogicBox(list):
 
     def __call_elemMatch(self, field_walker):
         """"""
-        field_value = field_walker.value[:-1]
-        if field_walker.nested:
+        field_value = field_walker.value.elements
+        if field_walker.embedded_in_array:
             field_value = [fv for fv in field_value if is_array_type(fv)]
         for value in field_value:
-            field_walker.value = [value]
+            field_walker.value.elements = [value]
             if all(self.__gen(field_walker)):
                 return True
 
@@ -397,17 +397,23 @@ def _eq_match(field_walker, query):
         if query is None:
             if field_walker.array_field_missing:
                 return True
-            if field_walker.array_elem_short:
-                return False
-            if field_walker.array_no_docs:
+            if field_walker.array_status_normal:
                 return False
 
         if query in field_walker.value:
+            # Handling bool type query
             if isinstance(query, bool):
                 for v in field_walker.value:
                     if isinstance(v, bool) and query == v:
                         return True
                 return False
+            # Not to match with bool type when querying 1 or 0
+            if query in [0, 1]:
+                for v in field_walker.value:
+                    if not isinstance(v, bool) and query == v:
+                        return True
+                return False
+
             return True
 
 
@@ -559,7 +565,7 @@ def parse_elemMatch(query):
     @keep(query)
     def _elemMatch(field_walker):
         queryfilter = QueryFilter(query)
-        for emb_doc in field_walker.value[:-1]:
+        for emb_doc in field_walker.value.elements:
             if queryfilter(emb_doc):
                 return True
 
@@ -580,17 +586,14 @@ def parse_size(query):
 
     @keep(query)
     def _size(field_walker):
-        if field_walker.index_posed:
-            field_value = field_walker.value[:-1]
+        if field_walker.index_posed or field_walker.embedded_in_array:
+            field_value = field_walker.value.arrays
             return size_scan(field_value, query)
         else:
-            field_value = field_walker.value[-1]
-            if field_walker.nested:
-                return size_scan(field_value, query)
-            else:
-                if is_array_type(field_value) and len(field_value) == query:
-                    return True
-                return False
+            field_value = field_walker.value.elements
+            if is_array_type(field_value) and len(field_value) == query:
+                return True
+            return False
 
     return _size
 
@@ -620,7 +623,7 @@ def parse_type(query):  # Not finished
 
     @keep(query)
     def _type(field_walker):
-        return bson_type_id(field_walker.value[:-1]) in query
+        return bson_type_id(field_walker.value.elements) in query
 
     return _type
 
