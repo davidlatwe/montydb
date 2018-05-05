@@ -18,10 +18,7 @@
 {"qty": {"bad": 60, "num": 100}}
 {"qty": {"bad": 60, "num": 200}}
 {"qty": "great"}
-{"item": {"name": "ab", "price": 123}, "qty": 15, "tags": ["A", "B", "C"]}
-{"item": {"name": "cd", "price": 99}, "qty": 20, "tags": ["B"]}
 {"item": {"name": "cd", "price": 99}, "qty": 10, "tags": ["D"]}
-{"item": {"price": 0}}
 {"item": {"name": "cd", "price": 99}, "qty": 20, "tags": "B"}
 {"item": {"name": "cd", "price": 99}, "qty": 20, "tags": ["A", ["B"], "C"]}
 {"tags": ["security", "ssl"]}
@@ -82,7 +79,7 @@
 {"item": [["a"]]}
 {"item": [[["x"], true]]}
 {"item": [[["y"]]]}
-{"item": [6, ["0",[2, "z"]]]}
+{"item": [6, ["0", [2, "z"]]]}
 {"item": []}
 {"item": [[]]}
 {"item": "xyz"}
@@ -112,12 +109,7 @@
 {"item": 1000}
 {"item": 100.5}
 {"item": 50000.5}
-{"item": false}
-{"item": [null, 1, [5, 9, false]]}
-{"item": [null, 1, [5, 9, false]]}
 {"item": {"category": "cake", "atype": "chiffon"}, "amount": 11}
-{"item": {"category": null, "atype": "chiffon"}, "amount": 10}
-{"item": {"catego": "brownies", "atypes": "blondie"}, "amount": 10}
 {"item": {"catego": ["xbrownies", "xabc"], "atypes": "blondie"}, "amount": 10}
 {"item": {"category": ["brownies", "abc"], "atype": "chiffon"}, "amount": 10}
 {"item": {"catego": [0], "atypes": "blondie"}, "amount": 10}
@@ -131,55 +123,41 @@
 {"item": {"category": false}, "amount": 10}
 {"iter": 0}
 {"itex": [555]}
-{"item": []}
 {"item": [false]}
 {"item": [[null]]}
 {"item": null}
-{"item": [null]}
-{"item": [1]}
 {"item": [[3]]}
 {"item": [[[1]]]}
 {"item": [{"b": 5}]}
-{"item": [{"a": 0}, ["f",[["j"]]]]}
-{"item": [{"a": 0}, ["m"], ["m",[[ "i"]]], [[["f"]]], [[[0]]]]}
+{"item": [{"a": 0}, ["f", [["j"]]]]}
+{"item": [{"a": 0}, ["m"], ["m", [["i"]]], [[["f"]]], [[[0]]]]}
 {"item": [{"a": 0}, [[[5]]]]}
 {"item": [true]}
 {"itea": true}
 {}
 {"item": {}}
-{"item": [0]}
-{"item": [5,"g",["z"]]}
-{"item": [8,"g",["a"]]}
-{"item": [5,"g",["x", true, ["ss"]]]}
-{"item": [5,"g",["a"]]}
-{"item": [5,"m",[5, true, ["dd"]], [5, ["kk"]]]}
-{"item": [5,"m",[5, ["jj"]], [5, ["jj"]]]}
+{"item": [5, "g", ["z"]]}
+{"item": [8, "g", ["a"]]}
+{"item": [5, "g", ["x", true, ["ss"]]]}
+{"item": [5, "g", ["a"]]}
+{"item": [5, "m", [5, true, ["dd"]], [5, ["kk"]]]}
+{"item": [5, "m", [5, ["jj"]], [5, ["jj"]]]}
 {"item": [6]}
 {"item": ["m"]}
 {"item": ["c"]}
-{"item": [null, 1, [5, 9, false]]}
-{"item": [null]}
-{"item": [1]}
-{"item": [1, {"not_name": null}]}
-{"item": [1, true]}
 {"item": [1, []]}
 {"item": [1, {}]}
 {"item": [1, {"name": "not_null"}]}
 {"item": [1, null, {"name": "not_null"}]}
 {"item": [[], {"name": "not_null"}]}
-{"item": [{}, {"name": "not_null"}]}
 {"item": [{"name": true}, {"name": "not_null"}]}
 {"item": [{"name": true}, {"name": [null]}]}
 {"item": [{"name": [null]}, {"name": true}]}
 {"item": [{"name": [null]}, {"name": [null]}]}
 {"item": [{"name": [{}]}, {"name": "not_null"}]}
 {"item": [{"name": "not_null"}, {"name": [{}]}]}
-{"item": []}
 {"item": [{"0": null}]}
-{"item": [[null]]}
 {"not_item": [[null]]}
-{"item": null}
-{"item": {"name": null}}
 {"item": {"not_name": null}}
 {"item": {"not_name": "not null"}}
 {"item": [{"not_name": null}]}
@@ -189,7 +167,6 @@
 {"item": [{"name": null}]}
 {"item": [{"name": [[]]}]}
 {"item": [{"name": [{"subname": [{"name": null}]}]}]}
-{"item": [{"name": [{"subname": [{"name": null}]}]}]}
 {"item": [false, {"0": true}]}
 {"item": [false, {"0": false}]}
 {"item": [true, {"0": false}]}
@@ -197,7 +174,6 @@
 {"item": [false, {"0": true}, {"0": 88}]}
 {"item": [0, {"0": 0}, {"1": true}]}
 {"item": [true, {"0": 0, "1": true}]}
-{"item": [false, {"0": false}, {"1": true}]}
 {"item": [false, {"1": true}, {"0": false}]}
 {"item": [true, {"1": "not_null"}, {"0": false}]}
 {"item": [{"0": "not_null"}]}
@@ -222,10 +198,29 @@
 {"item": [true, {"bool": false}]}
 {"item": [false, true]}
 {"item": [true, true]}
-{"item": []}
 {"item": [[1, 2, 3], {"0": [4, 5, 6]}]}
 {"item": [[1, 2, 3, 4], {"0": [4, 5, 6]}]}
 {"item": [[1, 2, 3, 4], {"0": [4, 5, 6, 7]}]}
 {"item": ["david", {"0": ["david", "john", "ted"]}]}
 {"item": [{"name": "david"}, {"0": {"name": ["david", "john", "ted"]}}]}
 {"item": [{"name": "david"}, {"0": {"name": ["mark", "tom"]}}]}
+{"item": [null, 1, [5, 9, false]]}
+{"item": [null]}
+{"item": [1, {"not_name": null}]}
+{"item": [{}, {"name": "not_null"}]}
+{"item": [true, true, true, 1, {"1": true}, {"3": true}, {"3": true}, {"3": false}]}
+{"item": [true, true, 1, 1]}
+{"item": [{"qty": 5}, {"qty": 8}, {"qtys": 9}]}
+{"item": [{"name": []}, {"name": [null]}]}
+{"item": [{"name": [null]}, {"name": [true]}]}
+{"item": [{"name": [true]}, {"name": true}]}
+{"item": [{"name": [null]}, null]}
+{"item": [{"name": [{}]}]}
+{"item": [1, 2, 3]}
+{"item": [{}]}
+{"item": {"qts": 5}}
+{"item": {"qty": null}}
+{"item": {"qty": 6}}
+{"item": [5, {"0": 8}]}
+{"item": [5, {"0": 8}, {"0": 9}]}
+{"item": [5, {"0": [0, 8]}, {"0": 9}]}

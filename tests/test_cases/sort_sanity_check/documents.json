@@ -13,7 +13,7 @@
 {"item": [["a"]]}
 {"item": [[["x"], true]]}
 {"item": [[["y"]]]}
-{"item": [6, ["0",[2, "z"]]]}
+{"item": [6, ["0", [2, "z"]]]}
 {"item": []}
 {"item": [[]]}
 {"item": "xyz"}
@@ -43,12 +43,8 @@
 {"item": 1000}
 {"item": 100.5}
 {"item": 50000.5}
-{"item": false}
-{"item": [null, 1, [5, 9, false]]}
 {"item": [null, 1, [5, 9, false]]}
 {"item": {"category": "cake", "atype": "chiffon"}, "amount": 11}
-{"item": {"category": null, "atype": "chiffon"}, "amount": 10}
-{"item": {"catego": "brownies", "atypes": "blondie"}, "amount": 10}
 {"item": {"catego": ["xbrownies", "xabc"], "atypes": "blondie"}, "amount": 10}
 {"item": {"category": ["brownies", "abc"], "atype": "chiffon"}, "amount": 10}
 {"item": {"catego": [0], "atypes": "blondie"}, "amount": 10}
@@ -62,7 +58,6 @@
 {"item": {"category": false}, "amount": 10}
 {"iter": 0}
 {"itex": [555]}
-{"item": []}
 {"item": [false]}
 {"item": [[null]]}
 {"item": null}
@@ -71,20 +66,18 @@
 {"item": [[3]]}
 {"item": [[[1]]]}
 {"item": [{"b": 5}]}
-{"item": [{"a": 0}, ["f",[["j"]]]]}
-{"item": [{"a": 0}, ["m"], ["m",[[ "i"]]], [[["f"]]], [[[0]]]]}
+{"item": [{"a": 0}, ["f", [["j"]]]]}
+{"item": [{"a": 0}, ["m"], ["m", [["i"]]], [[["f"]]], [[[0]]]]}
 {"item": [{"a": 0}, [[[5]]]]}
-{"item": [true]}
 {"itea": true}
 {}
 {"item": {}}
-{"item": [0]}
-{"item": [5,"g",["z"]]}
-{"item": [8,"g",["a"]]}
-{"item": [5,"g",["x", true, ["ss"]]]}
-{"item": [5,"g",["a"]]}
-{"item": [5,"m",[5, true, ["dd"]], [5, ["kk"]]]}
-{"item": [5,"m",[5, ["jj"]], [5, ["jj"]]]}
+{"item": [5, "g", ["z"]]}
+{"item": [8, "g", ["a"]]}
+{"item": [5, "g", ["x", true, ["ss"]]]}
+{"item": [5, "g", ["a"]]}
+{"item": [5, "m", [5, true, ["dd"]], [5, ["kk"]]]}
+{"item": [5, "m", [5, ["jj"]], [5, ["jj"]]]}
 {"item": [6]}
 {"item": ["m"]}
 {"item": ["c"]}
