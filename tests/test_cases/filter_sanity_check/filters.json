@@ -1,7 +1,5 @@
 {"item.name": {"$eq": "ab"}}
 {"item.name": "ab"}
-{"item.name": {"$eq": null}}
-{"item.name": {"$eq": null, "$exists": 1}}
 {"item.name": {"$exists": 1}}
 {"item.name": "cd", "qty": 10}
 {"qty": {"$eq": 16}}
@@ -132,3 +130,18 @@
 {"$or": [{"results": 88}, {"instock.qty": 5}]}
 {"$or": [{"results": 88}, {}]}
 {"$and": [{"results": 88}, {}]}
+{"item.0": "not_null"}
+{"item.0": true}
+{"item.bool": true}
+{"item.1": true}
+{"item.0": false}
+{"item": {"$size": 2}}
+{"item.0": {"$size": 3}}
+{"item.0.name": "david"}
+{"item.name": "david"}
+{"item.0.name": {"$size": 3}}
+{"item.0": {"$size": 3}}
+{"item": null}
+{"item.sub": null}
+{"item.name": {"$eq": null}}
+{"item.name": {"$eq": null, "$exists": 1}}

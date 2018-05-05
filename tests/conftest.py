@@ -2,6 +2,7 @@ import pytest
 import tempfile
 import os
 import shutil
+from bson.py3compat import string_type
 
 import pymongo
 import montydb
@@ -23,7 +24,7 @@ def storage(request):
     return request.config.getoption("--storage")
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def tmp_monty_repo():
     return os.path.join(tempfile.gettempdir(), "monty")
 
@@ -82,16 +83,17 @@ def _ls_test_cases():
 
 @pytest.fixture(scope="session")
 def test_cases():
-    case = {
-        "documents": [],
-        "filters": [],
-        "projections": [],
-        "sorts": [],
-    }
-
-    cases = {}
+    cases = dict()
 
     for cdir in _ls_test_cases():
+
+        case = {
+            "documents": [],
+            "filters": [],
+            "projections": [],
+            "sorts": [],
+        }
+
         for key in case:
             fpath = os.path.join(cdir, os.extsep.join([key, "json"]))
             if os.path.isfile(fpath):
@@ -103,23 +105,35 @@ def test_cases():
     return cases
 
 
-def _insert_test_cases(collection, test_cases_):
-    for name, case in test_cases_.items():
+def _insert_test_cases(collection, cases, case_name):
+    def _insert(name_):
+        case = cases[name_]
         for i, doc in enumerate(case["documents"]):
-            doc["_id"] = name + " - " + str(i + 1)
+            doc["_id"] = name_ + " - " + str(i + 1)
         collection.insert_many(case["documents"])
-    return collection
+
+    if isinstance(case_name, string_type):
+        _insert(case_name)
+    elif isinstance(case_name, (list, tuple)):
+        for name in case_name:
+            _insert(name)
 
 
 @pytest.fixture
-def monty_collection_stuffed(monty_database, test_cases):
-    col = monty_database["test_col"]
-    _insert_test_cases(col, test_cases)
-    return col
+def monty_collection(monty_database, test_cases):
+    def _case_inject(case_name=None):
+        col = monty_database["test_col"]
+        if case_name:
+            _insert_test_cases(col, test_cases, case_name)
+        return col
+    return _case_inject
 
 
 @pytest.fixture
-def mongo_collection_stuffed(mongo_database, test_cases):
-    col = mongo_database["test_col"]
-    _insert_test_cases(col, test_cases)
-    return col
+def mongo_collection(mongo_database, test_cases):
+    def _case_inject(case_name=None):
+        col = mongo_database["test_col"]
+        if case_name:
+            _insert_test_cases(col, test_cases, case_name)
+        return col
+    return _case_inject

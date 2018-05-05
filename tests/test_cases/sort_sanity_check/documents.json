@@ -1,0 +1,90 @@
+{"item": {"categorys": "cookies", "atype": "chocolate chip"}, "amount": 50}
+{"item": {"category": "cake", "atype": "lemon"}, "amount": 30}
+{"item": {"category": "cake", "atype": "carrot"}, "amount": 20}
+{"item": [100.6, 10.5, 1000.1567]}
+{"item": {"categors": "cookies", "atyp": "chocolate chip"}}
+{"item": {"category": "cake", "atype": "chiffon"}, "amount": 10, "_id": 3}
+{"item": [25, "abcd", 282.334], "_id": 21}
+{"item": [0.5, "x", 282.3], "_id": 22}
+{"item": [123, "a", 290.3, [1, 2]]}
+{"item": [500, "c", 300.3, [2, "zx", "zzz", {"m": 0}]]}
+{"item": [[4, "x", "zzz", {"m": 50}]]}
+{"item": [[55]]}
+{"item": [["a"]]}
+{"item": [[["x"], true]]}
+{"item": [[["y"]]]}
+{"item": [6, ["0",[2, "z"]]]}
+{"item": []}
+{"item": [[]]}
+{"item": "xyz"}
+{"item": "abc"}
+{"item": [1, "xyz", [2, "m"]]}
+{"item": [1, "abc", [2, "m"]]}
+{"item": [100, 0.12, -5]}
+{"item": [[{"abc": 20}]]}
+{"item": [{"x": 20}]}
+{"item": [{"a": 20}]}
+{"item": {"a": 50, "b": "y"}}
+{"item": {"a": 50, "s": "x"}}
+{"item": {"category": "cake", "atype": "chiffon"}, "amount": "hi"}
+{"item": {"category": "cake", "atype": "chiffon"}, "amount": true}
+{"item": {"category": null, "atype": "chiffon"}, "amount": 10}
+{"xtex": {"category": null, "atype": "chiffon"}, "amount": 17}
+{"xtex": {"category": null, "atype": "chiffon"}, "amount": 16}
+{"item": {"catego": "brownies", "atypes": "blondie"}, "amount": 10}
+{"item": ["catego", "xxx"], "amoun": 5}
+{"item": "category", "amoun": 10}
+{"item": ["category"], "amoun": 10}
+{"item": "catego", "amoun": 10}
+{"item": true}
+{"item": false}
+{"item": 20}
+{"item": 0.05}
+{"item": 1000}
+{"item": 100.5}
+{"item": 50000.5}
+{"item": false}
+{"item": [null, 1, [5, 9, false]]}
+{"item": [null, 1, [5, 9, false]]}
+{"item": {"category": "cake", "atype": "chiffon"}, "amount": 11}
+{"item": {"category": null, "atype": "chiffon"}, "amount": 10}
+{"item": {"catego": "brownies", "atypes": "blondie"}, "amount": 10}
+{"item": {"catego": ["xbrownies", "xabc"], "atypes": "blondie"}, "amount": 10}
+{"item": {"category": ["brownies", "abc"], "atype": "chiffon"}, "amount": 10}
+{"item": {"catego": [0], "atypes": "blondie"}, "amount": 10}
+{"item": {"category": {"abc": 100}}, "amount": 10}
+{"item": {"category": {"abc": 10}}, "amount": 10}
+{"item": {"category": {"abc": 50}}, "amount": 10}
+{"item": {"catego": {"abc": 100}}, "amount": 10}
+{"item": {"catego": {"abc": 10}}, "amount": 10}
+{"item": {"catego": {"abc": 50}}, "amount": 10}
+{"item": {"catego": true}, "amount": 10}
+{"item": {"category": false}, "amount": 10}
+{"iter": 0}
+{"itex": [555]}
+{"item": []}
+{"item": [false]}
+{"item": [[null]]}
+{"item": null}
+{"item": [null]}
+{"item": [1]}
+{"item": [[3]]}
+{"item": [[[1]]]}
+{"item": [{"b": 5}]}
+{"item": [{"a": 0}, ["f",[["j"]]]]}
+{"item": [{"a": 0}, ["m"], ["m",[[ "i"]]], [[["f"]]], [[[0]]]]}
+{"item": [{"a": 0}, [[[5]]]]}
+{"item": [true]}
+{"itea": true}
+{}
+{"item": {}}
+{"item": [0]}
+{"item": [5,"g",["z"]]}
+{"item": [8,"g",["a"]]}
+{"item": [5,"g",["x", true, ["ss"]]]}
+{"item": [5,"g",["a"]]}
+{"item": [5,"m",[5, true, ["dd"]], [5, ["kk"]]]}
+{"item": [5,"m",[5, ["jj"]], [5, ["jj"]]]}
+{"item": [6]}
+{"item": ["m"]}
+{"item": ["c"]}
