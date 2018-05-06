@@ -224,3 +224,8 @@
 {"item": [5, {"0": 8}]}
 {"item": [5, {"0": 8}, {"0": 9}]}
 {"item": [5, {"0": [0, 8]}, {"0": 9}]}
+{"sku": "abc123", "description": "Single line description."}
+{"sku": "Abc123", "description": "Single line description."}
+{"sku": "abc789", "description": "First line\nSecond line"}
+{"sku": "xyz456", "description": "Many spaces before     line"}
+{"sku": "xyz789", "description": "Multiple\nline description"}

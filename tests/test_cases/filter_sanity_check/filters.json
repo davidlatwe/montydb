@@ -155,3 +155,17 @@
 {"item.0": [1, 2, 3, 4]}
 {"item.0": 8}
 {"item.0.1": 8}
+{"sku": {"$regex": "789$"}}
+{"sku": {"$regex": "^ABC", "$options": "i"}}
+{"description": {"$regex": "^S", "$options": "m"}}
+{"description": {"$regex": "S"}}
+{"description": {"$regex": "m.*line", "$options": "si"}}
+{"sku": {"$regex": "abc #category code\n123 #item number\n", "$options": "x"}}
+{"sku": {"$regex": "abc #category code\n123 #item number", "$options": "x"}}
+{"sku": {"$regex": {"$regularExpression": {"pattern": "\nabc #category code\n123 #item number\n", "options": "ux"}}}}
+{"sku": {"$regex": {"$regularExpression": {"pattern": "\nabc #category code\n123 #item number\n", "options": "ux"}}, "$options": "i"}}
+{"sku": {"$regex": {"$regularExpression": {"pattern": "\nabc #category code\n123 #item number\n", "options": "ux"}}, "$options": "ix"}}
+{"sku": {"$regex": {"$regularExpression": {"pattern": "\nabc #category code\n123 #item number\n", "options": "x"}}}}
+{"sku": {"$regex": {"$regularExpression": {"pattern": "\nabc #category code\n123 #item number\n", "options": "x"}}, "$options": "i"}}
+{"sku": {"$regex": {"$regularExpression": {"pattern": "\nabc #category code\n123 #item number\n", "options": "x"}}, "$options": "ix"}}
+{"sku": {"$in": [{"$regularExpression": {"pattern": "\nabc #category code\n123 #item number\n", "options": "x"}}]}}
