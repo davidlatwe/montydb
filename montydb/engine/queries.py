@@ -223,7 +223,7 @@ class QueryFilter(object):
 
             # Evaluation
             "$jsonSchema": None,
-            "$mod": None,
+            "$mod": parse_mod,
             "$regex": parse_regex,
 
         }
@@ -746,3 +746,31 @@ def parse_regex(query):
                 return True
 
     return _regex
+
+
+def parse_mod(query):
+    if not is_array_type(query):
+        raise OperationFailure("malformed mod, needs to be an array")
+    if len(query) < 2:
+        raise OperationFailure("malformed mod, not enough elements")
+    if len(query) > 2:
+        raise OperationFailure("malformed mod, too many elements")
+
+    divisor = query[0]
+    remainder = query[1]
+
+    if not isinstance(divisor, (int, float)):
+        raise OperationFailure("malformed mod, divisor not a number")
+    if not isinstance(remainder, (int, float)):
+        remainder = 0
+
+    @keep(query)
+    def _mod(field_walker):
+        for value in field_walker.value.elements:
+            if not isinstance(value, (int, float)):
+                continue
+
+            if value % divisor == remainder:
+                return True
+
+    return _mod
