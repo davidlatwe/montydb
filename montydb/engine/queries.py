@@ -14,9 +14,12 @@ from .base import (
 )
 
 from .helpers import (
+    PY3,
     PY36,
+    RE_PATTERN_TYPE,
     is_mapping_type,
     is_array_type,
+    is_pattern_type,
     keep,
 )
 
@@ -380,11 +383,12 @@ def _modify_regex_optins(sub_spec):
     Besides string type value, field $regex accept `bson.Regex` and
     `re._pattern_type` in pymongo, in those cases, if $options exists,
     $options flags will override the flags inside `bson.Regex` or
-    `re._pattern_type` object.
+    `re._pattern_type` object, but if Python version lower than 3,
+    $options will NOT override.
     """
     new_sub_spec = None
     _re = None
-    if isinstance(sub_spec["$regex"], (re._pattern_type, Regex)):
+    if isinstance(sub_spec["$regex"], (RE_PATTERN_TYPE, Regex)):
         # Can't deepcopy this, put to somewhere else and retrieve it later
         _re = sub_spec["$regex"]
         sub_spec["$regex"] = None
@@ -408,9 +412,10 @@ def _modify_regex_optins(sub_spec):
     if "$options" in new_sub_spec:
         # Remove $options, Monty can't digest it
         del new_sub_spec["$options"]
-    elif _re:
+
+    if _re and ("$options" not in sub_spec or not PY3):
         # Restore `re._pattern_type` or `Regex` object's flags if $options
-        # not exists
+        # not exists or Python version lower than 3
         new_sub_spec["$regex"]["flags"] = _FALG(_re.flags)
 
     return new_sub_spec
@@ -554,7 +559,7 @@ def _in_match(field_value, query):
     """
     def _regex():
         for q in query:
-            if isinstance(q, re._pattern_type):
+            if is_pattern_type(q):
                 yield q
             if isinstance(q, Regex):
                 yield q.try_compile()
