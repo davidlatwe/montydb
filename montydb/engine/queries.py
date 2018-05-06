@@ -11,6 +11,7 @@ from .base import (
     FieldWalker,
     Weighted,
     BSON_TYPE_ALIAS_ID,
+    obj_to_bson_type_id,
 )
 
 from .helpers import (
@@ -213,7 +214,7 @@ class QueryFilter(object):
 
             # Element
             "$exists": parse_exists,
-            "$type": None,
+            "$type": parse_type,
 
             # Array
             "$all": parse_all,
@@ -675,18 +676,43 @@ def parse_exists(query):
     return _exists
 
 
-def bson_type_id(value):
-    pass
+_BSON_TYPE_ID = tuple(BSON_TYPE_ALIAS_ID.values())
 
 
-def parse_type(query):  # Not finished
+def parse_type(query):
+    def bson_type_id(values):
+        return set([obj_to_bson_type_id(v) for v in values])
+
+    def str_type_to_int(query):
+        if len(query) == 0:
+            raise OperationFailure("$type must match at least one type")
+
+        int_types = []
+        for q in query:
+            if isinstance(q, string_type):
+                try:
+                    int_types.append(BSON_TYPE_ALIAS_ID[q])
+                except KeyError:
+                    raise OperationFailure(
+                        "Unknown type name alias: {}".format(q))
+            elif isinstance(q, int):
+                if q not in _BSON_TYPE_ID:
+                    raise OperationFailure(
+                        "Invalid numerical type code: {}".format(q))
+                int_types.append(q)
+            else:
+                raise OperationFailure(
+                    "type must be represented as a number or a string")
+        return int_types
+
     if not is_array_type(query):
-        query = tuple(query)
-    query = [BSON_TYPE_ALIAS_ID.get(v, v) for v in query]
+        query = set(str_type_to_int([query]))
+    query = set(str_type_to_int(query))
 
     @keep(query)
     def _type(field_walker):
-        return bson_type_id(field_walker.value.elements) in query
+        bids = bson_type_id(field_walker.value.elements)
+        return bids.intersection(query)
 
     return _type
 

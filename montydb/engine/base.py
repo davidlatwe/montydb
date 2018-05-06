@@ -9,10 +9,11 @@ from bson.int64 import Int64
 from bson.decimal128 import Decimal128
 from bson.binary import Binary
 from bson.regex import Regex
+from bson.code import Code
 
 from bson.py3compat import string_type
 
-from .helpers import is_array_type, is_mapping_type
+from .helpers import is_array_type, is_mapping_type, RE_PATTERN_TYPE
 
 
 BSON_TYPE_ALIAS_ID = {
@@ -39,6 +40,47 @@ BSON_TYPE_ALIAS_ID = {
     "minKey": -1,
     "maxKey": 127
 }
+
+
+def obj_to_bson_type_id(obj):
+    if isinstance(obj, float):
+        return BSON_TYPE_ALIAS_ID["double"]
+    if isinstance(obj, string_type):
+        return BSON_TYPE_ALIAS_ID["string"]
+    if is_mapping_type(obj):
+        return BSON_TYPE_ALIAS_ID["object"]
+    if is_array_type(obj):
+        return BSON_TYPE_ALIAS_ID["array"]
+    if isinstance(obj, Binary):
+        return BSON_TYPE_ALIAS_ID["binData"]
+    if isinstance(obj, ObjectId):
+        return BSON_TYPE_ALIAS_ID["objectId"]
+    if isinstance(obj, bool):
+        return BSON_TYPE_ALIAS_ID["bool"]
+    if isinstance(obj, datetime):
+        return BSON_TYPE_ALIAS_ID["date"]
+    if obj is None:
+        return BSON_TYPE_ALIAS_ID["null"]
+    if isinstance(obj, (RE_PATTERN_TYPE, Regex)):
+        return BSON_TYPE_ALIAS_ID["regex"]
+    if isinstance(obj, Code) and obj.scope is None:
+        return BSON_TYPE_ALIAS_ID["javascript"]
+    if isinstance(obj, Code):
+        return BSON_TYPE_ALIAS_ID["javascriptWithScope"]
+    if isinstance(obj, int):
+        return BSON_TYPE_ALIAS_ID["int"]
+    if isinstance(obj, Timestamp):
+        return BSON_TYPE_ALIAS_ID["timestamp"]
+    if isinstance(obj, Int64):
+        return BSON_TYPE_ALIAS_ID["long"]
+    if isinstance(obj, Decimal128):
+        return BSON_TYPE_ALIAS_ID["decimal"]
+    if isinstance(obj, MinKey):
+        return BSON_TYPE_ALIAS_ID["minKey"]
+    if isinstance(obj, MaxKey):
+        return BSON_TYPE_ALIAS_ID["maxKey"]
+
+    raise Exception("Unknown data type, this should not happend.")
 
 
 class Weighted(tuple):
@@ -83,6 +125,8 @@ def gravity(value, reverse):
         datetime: 9,
         Timestamp: 10,
         Regex: 11,
+        # Code without scope: 12
+        # Code with scope: 13
         MaxKey: 127
     }
 
@@ -94,6 +138,11 @@ def gravity(value, reverse):
             wgt = 4
         elif isinstance(value, string_type):
             wgt = 3
+        elif isinstance(value, Code):
+            if value.scope is None:
+                wgt = 12
+            else:
+                wgt = 13
         else:
             wgt = 1
             value = None
