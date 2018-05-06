@@ -1,7 +1,8 @@
 
 import re
+from copy import deepcopy
 from bson.py3compat import integer_types, string_type
-from bson import Regex
+from bson.regex import Regex, str_flags_to_int
 from bson.son import SON
 
 from ..errors import OperationFailure
@@ -290,6 +291,13 @@ class QueryFilter(object):
             sub_spec = {"$regex": sub_spec}
 
         if _is_expression_obj(sub_spec):
+            # Modify `sub_spec` for $regex and $options
+            # before parse to `logic_box`
+            if "$regex" in sub_spec:
+                sub_spec = _modify_regex_optins(sub_spec)
+            elif "$options" in sub_spec:
+                raise OperationFailure("$options needs a $regex")
+
             for op, value in sub_spec.items():
                 try:
                     logic_box.append(self.field_ops[op](value))
@@ -356,6 +364,56 @@ class QueryFilter(object):
 def _is_expression_obj(sub_spec):
     return (is_mapping_type(sub_spec) and
             next(iter(sub_spec)).startswith("$"))
+
+
+# Only for preserving `int` type flags to bypass
+# internal "flags must be string" type check
+class _FALG(object):
+    def __init__(self, int_flags):
+        self.retrieve = int_flags
+    __slots__ = ["retrieve"]
+
+
+def _modify_regex_optins(sub_spec):
+    """Merging $regex and $options values in query document
+
+    Besides string type value, field $regex accept `bson.Regex` and
+    `re._pattern_type` in pymongo, in those cases, if $options exists,
+    $options flags will override the flags inside `bson.Regex` or
+    `re._pattern_type` object.
+    """
+    new_sub_spec = None
+    _re = None
+    if isinstance(sub_spec["$regex"], (re._pattern_type, Regex)):
+        # Can't deepcopy this, put to somewhere else and retrieve it later
+        _re = sub_spec["$regex"]
+        sub_spec["$regex"] = None
+
+    new_sub_spec = deepcopy(sub_spec)
+    new_sub_spec["$regex"] = {
+        "pattern": _re.pattern if _re else sub_spec["$regex"],
+        "flags": sub_spec.get("$options", "")
+    }
+
+    if "#" in new_sub_spec["$regex"]["pattern"].rsplit("\n")[-1]:
+        # (NOTE) davidlatwe:
+        #   if pound(#) char exists in $regex string value and not ends with
+        #   newline(\n), Mongo raise error. (but the message seems incomplete)
+        raise OperationFailure("Regular expression is invalid: missing )")
+
+    if _re:
+        # Put `re._pattern_type` or `Regex` object back.
+        sub_spec["$regex"] = _re
+
+    if "$options" in new_sub_spec:
+        # Remove $options, Monty can't digest it
+        del new_sub_spec["$options"]
+    elif _re:
+        # Restore `re._pattern_type` or `Regex` object's flags if $options
+        # not exists
+        new_sub_spec["$regex"]["flags"] = _FALG(_re.flags)
+
+    return new_sub_spec
 
 
 """
@@ -638,7 +696,17 @@ def parse_regex(query):
     if isinstance(query, Regex):
         q = query.try_compile()
     else:
-        q = re.compile(query)
+        if not isinstance(query["pattern"], string_type):
+            raise OperationFailure("$regex has to be a string")
+        if not isinstance(query["flags"], (string_type, _FALG)):
+            raise OperationFailure("$options has to be a string")
+
+        if isinstance(query["flags"], _FALG):
+            flags = query["flags"].retrieve
+        else:
+            flags = str_flags_to_int(query["flags"])
+
+        q = re.compile(query["pattern"], flags)
 
     @keep(query)
     def _regex(field_walker):
