@@ -9,9 +9,8 @@ Inspired by [TinyDB](https://github.com/msiemens/tinydb) and the extension [Tiny
 ### MontyDB is
 * A serverless version of MongoDB *(trying to be)*
 * Backed with SQLite *(default storage)*
-* Using Mongo query language
+* Using Mongo query language, against to MongoDB 3.6
 * Working on both Python 2 and 3
-* Against to MongoDB 3.6
 
 ### Example Code
 ```python
@@ -26,20 +25,14 @@ Inspired by [TinyDB](https://github.com/msiemens/tinydb) and the extension [Tiny
 {'_id': ObjectId('5ad34e537e8dd45d9c61a456'), 'warehouse': 'A', 'qty': 5}
 ```
 
-## Query
+## Query and Projection Ops
 Able to `find()` with filter and `sort()` result.
-Support embedded document.
 The query results are the same as using Mongo Python driver.
 Currently implemented ops:
-* $eq
-* $ne
-* $gt
-* $gte
-* $lt
-* $lte
-* $in
-* $nin
-* $all
-* $elemMatch
-* $size
-* $exists
+
+* Query
+    - $and, $nor, $or, $not
+    - $eq, $ne, $gt, $gte, $lt, $lte, $in, $nin, $all, $elemMatch, $size, $exists, $type, $mod, $regex
+
+* Projection
+    - $, $elemMatch, $slice
