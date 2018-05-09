@@ -229,3 +229,36 @@
 {"sku": "abc789", "description": "First line\nSecond line"}
 {"sku": "xyz456", "description": "Many spaces before     line"}
 {"sku": "xyz789", "description": "Multiple\nline description"}
+{"max_key": {"$maxKey": 1}}
+{"value": 101, "type": "Int64"}
+{"value": 101, "type": "Int32"}
+{"value": 101, "type": "double"}
+{"value": {"$numberDecimal": "101"}, "type": "decimal128"}
+{"value": 101, "type": "PyInt"}
+{"value": 101, "type": "PyFloat"}
+{"value": 101, "type": "bsonInt64"}
+{"value": {"$code": "", "$scope": {}}, "type": "code"}
+{"value": {}, "type": "regex"}
+{"value": "", "type": "str"}
+{"value": {"$code": ""}, "type": "JS_no_scope"}
+{"x": {"$minKey": 1}}
+{"y": {"$maxKey": 1}}
+{"address": "2030 Martian Way", "zipCode": "90698345"}
+{"address": "156 Lunar Place", "zipCode": 43339374}
+{"address": "2324 Pluto Place", "zipCode": 3921412.0}
+{"address": "55 Saturn Ring", "zipCode": 88602117}
+{"x": [{"y": 5}, {"y": []}, {"y": "haha"}]}
+{"x": [{"y": 5.3}, {"y": []}, {"y": "haha"}]}
+{"x": [{"y": 5}, {"y": [{}, true]}, {"z": "haha"}]}
+{"x": [{"y": "SS"}, {"y": [4, true]}, {"z": "haha"}]}
+{"x": [{"y": null}, {"y": [4, true]}, {"z": "haha"}]}
+{"x": [["s", null, true], {"y": [4, true]}, {"z": "haha"}]}
+{"item": "abc123", "qty": 0}
+{"item": "xyz123", "qty": 5}
+{"item": "ijk123", "qty": 12}
+{"item": "bbb", "qty": [12, 5]}
+{"item": "ccc", "qty": [7, 5]}
+{"root": [{"item": "ccc", "qty": [7, 5]}, {"item": "bbb", "qty": [12, 5]}]}
+{"root": [{"item": "ccc", "qty": [9, 5]}, {"item": "bbb", "qty": [1, 5]}]}
+{"root": [[7, 5], [12, 5]]}
+{"root": [{"item": "ccc", "qty": [5, 12]}, {"item": "bbb", "qty": 12}]}

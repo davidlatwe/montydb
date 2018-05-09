@@ -58,19 +58,19 @@ def test_filter_sanity_check(test_cases,
         assert monty_err == mongo_err, msg
 
         if not len(mongo_res) == len(monty_res):
-            report = "\nMONGO\n"
+            report = "\nMONGO (montydb should found these)\n"
             for res in mongo_res:
                 flag = ""
                 if res not in [_r for _r in monty_res]:
-                    flag = "    x  "
-                report += "{}{}\n".format(flag, res)
+                    flag = "    +  "
+                    report += "{}{}\n".format(flag, res)
 
-            report += "\n\nMONTY\n"
+            report += "\n\nMONTY (montydb should NOT found these)\n"
             for res in monty_res:
                 flag = ""
                 if res not in [_r for _r in mongo_res]:
-                    flag = "    +  "
-                report += "{}{}\n".format(flag, res)
+                    flag = "    x  "
+                    report += "{}{}\n".format(flag, res)
 
             msg = """
             Mongo and Monty Cursor data count not match.

@@ -149,13 +149,14 @@ class LogicBox(list):
 
     def __call_elemMatch(self, field_walker):
         """"""
-        field_value = field_walker.value.elements
-        if field_walker.embedded_in_array:
-            field_value = [fv for fv in field_value if is_array_type(fv)]
-        for value in field_value:
-            field_walker.value.elements = [value]
-            if all(self.__gen(field_walker)):
-                return True
+        print(True)
+        field_value_array = field_walker.value.arrays
+        for value in field_value_array:
+            for v in value:
+                field_walker.value.elements = [v]
+                field_walker.value.arrays = []
+                if all(self.__gen(field_walker)):
+                    return True
 
     def __call_and(self, field_walker):
         return all(self.__gen(field_walker))
@@ -222,7 +223,7 @@ class QueryFilter(object):
             "$size": parse_size,
 
             # Evaluation
-            "$jsonSchema": None,
+            "$jsonSchema": parse_jsonSchema,
             "$mod": parse_mod,
             "$regex": parse_regex,
 
@@ -612,15 +613,39 @@ Field-level Query Operators
 
 
 def parse_all(query):
+
+    field_op_ls = set(QueryFilter({}).field_ops.keys())
+    field_op_ls.remove("$eq")
+    field_op_ls.remove("$not")
+
     if not is_array_type(query):
         raise OperationFailure("$all needs an array")
 
+    if is_mapping_type(query[0]) and next(iter(query[0])) == "$elemMatch":
+        go_match = True
+        for q in query:
+            if not (is_mapping_type(q) and next(iter(q)) == "$elemMatch"):
+                raise OperationFailure("$all/$elemMatch has to be consistent")
+    else:
+        go_match = False
+        for q in query:
+            if is_mapping_type(q) and next(iter(q)) in field_op_ls:
+                raise OperationFailure("no $ expressions in $all")
+
     @keep(query)
     def _all(field_walker):
-        for q in query:
-            if q not in field_walker.value:
-                return False
-        return True
+        if go_match:
+            for q in query:
+                queryfilter = QueryFilter(q["$elemMatch"])
+                for value in field_walker.value.arrays:
+                    if not any(queryfilter(v) for v in value):
+                        return False
+            return True
+        else:
+            for q in query:
+                if q not in field_walker.value:
+                    return False
+            return True
 
     return _all
 
@@ -629,9 +654,10 @@ def parse_elemMatch(query):
     @keep(query)
     def _elemMatch(field_walker):
         queryfilter = QueryFilter(query)
-        for emb_doc in field_walker.value.elements:
-            if queryfilter(emb_doc):
-                return True
+        for value in field_walker.value.arrays:
+            for v in value:
+                if queryfilter(v):
+                    return True
 
     return _elemMatch
 
@@ -642,22 +668,11 @@ def parse_size(query):
     if not isinstance(query, int):
         raise OperationFailure("$size needs a number")
 
-    def size_scan(field_value, query):
-        for val in field_value:
-            if is_array_type(val) and len(val) == query:
-                return True
-        return False
-
     @keep(query)
     def _size(field_walker):
-        if field_walker.index_posed or field_walker.embedded_in_array:
-            field_value = field_walker.value.arrays
-            return size_scan(field_value, query)
-        else:
-            field_value = field_walker.value.elements
-            if is_array_type(field_value) and len(field_value) == query:
+        for value in field_walker.value.arrays:
+            if len(value) == query:
                 return True
-            return False
 
     return _size
 
@@ -711,8 +726,9 @@ def parse_type(query):
 
     @keep(query)
     def _type(field_walker):
-        bids = bson_type_id(field_walker.value.elements)
-        return bids.intersection(query)
+        if field_walker.exists:
+            bids = bson_type_id(field_walker.value.elements)
+            return bids.intersection(query)
 
     return _type
 
@@ -764,13 +780,35 @@ def parse_mod(query):
     if not isinstance(remainder, (int, float)):
         remainder = 0
 
-    @keep(query)
-    def _mod(field_walker):
-        for value in field_walker.value.elements:
+    def mod_scan(field_value, query):
+        for value in field_value:
+            if isinstance(value, bool):
+                continue
             if not isinstance(value, (int, float)):
                 continue
+            if int(value % divisor) == remainder:
+                return True
+        return False
 
-            if value % divisor == remainder:
+    @keep(query)
+    def _mod(field_walker):
+        if field_walker.embedded_in_array and not field_walker.index_posed:
+            field_value = field_walker.value.arrays
+            for value in field_value:
+                if is_array_type(value):
+                    if mod_scan(value, query):
+                        return True
+        else:
+            field_value = field_walker.value.elements
+            if mod_scan(field_value, query):
                 return True
 
     return _mod
+
+
+def parse_jsonSchema(query):
+    @keep(query)
+    def _jsonSchema(field_walker):
+        pass
+
+    return _jsonSchema

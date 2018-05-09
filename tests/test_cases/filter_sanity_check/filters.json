@@ -155,13 +155,13 @@
 {"item.0": [1, 2, 3, 4]}
 {"item.0": 8}
 {"item.0.1": 8}
-{"sku": {"$regex": "789$"}}
-{"sku": {"$regex": "^ABC", "$options": "i"}}
-{"description": {"$regex": "^S", "$options": "m"}}
-{"description": {"$regex": "S"}}
-{"description": {"$regex": "m.*line", "$options": "si"}}
-{"sku": {"$regex": "abc #category code\n123 #item number\n", "$options": "x"}}
-{"sku": {"$regex": "abc #category code\n123 #item number", "$options": "x"}}
+{"sku": {"$regularExpression": {"pattern": "789$", "options": ""}}}
+{"sku": {"$regularExpression": {"pattern": "^ABC", "options": "i"}}}
+{"description": {"$regularExpression": {"pattern": "^S", "options": "m"}}}
+{"description": {"$regularExpression": {"pattern": "S", "options": ""}}}
+{"description": {"$regularExpression": {"pattern": "m.*line", "options": "is"}}}
+{"sku": {"$regularExpression": {"pattern": "abc #category code\n123 #item number\n", "options": "x"}}}
+{"sku": {"$regularExpression": {"pattern": "abc #category code\n123 #item number", "options": "x"}}}
 {"sku": {"$regex": {"$regularExpression": {"pattern": "\nabc #category code\n123 #item number\n", "options": "ux"}}}}
 {"sku": {"$regex": {"$regularExpression": {"pattern": "\nabc #category code\n123 #item number\n", "options": "ux"}}, "$options": "i"}}
 {"sku": {"$regex": {"$regularExpression": {"pattern": "\nabc #category code\n123 #item number\n", "options": "ux"}}, "$options": "ix"}}
@@ -169,3 +169,36 @@
 {"sku": {"$regex": {"$regularExpression": {"pattern": "\nabc #category code\n123 #item number\n", "options": "x"}}, "$options": "i"}}
 {"sku": {"$regex": {"$regularExpression": {"pattern": "\nabc #category code\n123 #item number\n", "options": "x"}}, "$options": "ix"}}
 {"sku": {"$in": [{"$regularExpression": {"pattern": "\nabc #category code\n123 #item number\n", "options": "x"}}]}}
+{"zipCode": {"$type": "double"}}
+{"x": {"$type": "minKey"}}
+{"y": {"$type": "maxKey"}}
+{"x.y": {"$type": "int"}}
+{"x.y": {"$type": "unknown_type"}}
+{"x.y": {"$type": 88}}
+{"x.y": {"$type": [77, 88]}}
+{"x.y": {"$type": null}}
+{"x.y": {"$type": [1, null]}}
+{"x.y": {"$type": [1, [5]]}}
+{"x.y": {"$type": []}}
+{"x.y": {"$type": [[]]}}
+{"x.y": {"$type": ["object"]}}
+{"x.0.y": {"$type": ["null"]}}
+{"x.0.z": {"$type": ["null"]}}
+{"x.0.1": {"$type": ["null"]}}
+{"x.0": {"$type": ["string"]}}
+{"x.0": {"$elemMatch": {"$type": ["string"]}}}
+{"qty": {"$mod": [4, 0]}}
+{"qty": {"$mod": [4]}}
+{"qty": {"$mod": []}}
+{"qty": {"$mod": [4, 9, 8]}}
+{"qty": {"$mod": {}}}
+{"qty": {"$mod": [4, null]}}
+{"qty": {"$mod": [4, [1]]}}
+{"qty": {"$mod": [[], 0]}}
+{"item": {"$mod": [4, 0]}}
+{"root.qty": {"$mod": [4, 0]}}
+{"root.qty.0": {"$mod": [4, 0]}}
+{"root.1.0": {"$eq": 12}}
+{"root.0.qty": {"$eq": 7}}
+{"root.qty.0": {"$eq": 12}}
+{"item.1.1": null}

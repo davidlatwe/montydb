@@ -108,6 +108,9 @@ class MontyCursor(object):
 
         self._query_flags = cursor_type
 
+        self._doc_count = 0
+        self._doc_count_with_skip_limit = 0
+
     def __getitem__(self, index):
         """Get a single document or a slice of documents from this cursor.
         """
@@ -271,6 +274,8 @@ class MontyCursor(object):
         # Filtering
         documents = [doc for doc in documents if queryfilter(doc)]
 
+        self._doc_count = len(documents)
+
         # Sorting
         if self._ordering:
             documents = ordering(documents, self._ordering)
@@ -281,6 +286,8 @@ class MontyCursor(object):
         elif self._limit:
             end = self._skip + abs(self._limit)
             documents = documents[self._skip:end]
+
+        self._doc_count_with_skip_limit = len(documents)
 
         # Projection
         if projector:
@@ -358,7 +365,14 @@ class MontyCursor(object):
         raise NotImplementedError
 
     def count(self, with_limit_and_skip=False):
-        raise NotImplementedError
+        if not isinstance(with_limit_and_skip, bool):
+            raise TypeError("with_limit_and_skip must be True or False")
+        if self._id is None:
+            # (NOTE) this might need improve
+            self.__query()
+        if with_limit_and_skip:
+            return self._doc_count_with_skip_limit
+        return self._doc_count
 
     def distinct(self, key):
         raise NotImplementedError

@@ -229,6 +229,10 @@ class FieldWalker(object):
                     # Currently inside an array type value
                     # with given index path.
                     array_index_pos = True
+
+                    if self.__index_posed and self.__embedded_in_array:
+                        if not any(is_array_type(ele) for ele in _doc):
+                            array_index_pos = False
                 else:
                     # Possible quering from an array of documents.
                     _doc = self.__from_array(_doc, field)
@@ -236,18 +240,28 @@ class FieldWalker(object):
             # Is the path ends with index position ?
             self.__index_posed = array_index_pos
 
-            # If the `_doc` is an array and containing documents, those
-            # documents possible has digit key, for example:
+            # If the `_doc` is an array (or `FieldValues` type) and containing
+            # documents, those documents possible has digit key, for example:
             # [{"1": <value>}, ...]
             if array_index_pos and array_has_doc:
-                # Treat index opsition path as a field of document
-                _if_doc = self.__from_array(_doc, field)
-                # Append index opsition result to the document field result
-                if _if_doc is not None:
+                # Treat index position path as a field of document
+                _idpos_as_field_doc = self.__from_array(_doc, field)
+                # Append index position result to the document field result
+                if _idpos_as_field_doc is not None:
                     if len(_doc) > int(field):
-                        _if_doc[field].append(_doc[int(field)])
-                    _doc = _if_doc
+                        if isinstance(_doc, FieldValues):
+                            _doc.positional(int(field))
+                            _idpos_as_field_doc[field] += _doc
+                        else:
+                            _idpos_as_field_doc[field].append(_doc[int(field)])
+                    _doc = _idpos_as_field_doc
                     array_index_pos = False
+
+            if array_index_pos and self.__embedded_in_array:
+                # the `_doc` in here must be `FieldValues` type
+                _doc.positional(int(field))
+                _doc = {field: _doc}
+                array_index_pos = False
 
             try:
                 # Try getting value with key(field).
@@ -398,6 +412,9 @@ class FieldValues(object):
     def __len__(self):
         return len(self.__merged)
 
+    def __eq__(self, other):
+        return self.__merged == other
+
     def __bool__(self):
         return bool(self.__elements or self.__arrays)
 
@@ -425,6 +442,11 @@ class FieldValues(object):
                 self.__arrays.append(val)
             else:
                 self.__elements.append(val)
+
+    def positional(self, index):
+        self.__elements = [val[index] for val in self.__arrays
+                           if len(val) > index]
+        self.__arrays = []
 
     @property
     def elements(self):
