@@ -504,3 +504,95 @@ def test_qop_lte_28(monty_find, mongo_find):
     # Can't have RegEx as arg to predicate
     with pytest.raises(OperationFailure):
         next(monty_c)
+
+
+def test_qop_lte_29(monty_find, mongo_find):
+    docs = [
+        {"a": Decimal128("1.1")},
+        {"a": Decimal128("NaN")},
+        {"a": Decimal128("-NaN")},
+        {"a": Decimal128("sNaN")},
+        {"a": Decimal128("-sNaN")},
+        {"a": Decimal128("Infinity")},
+        {"a": 0},
+        {"a": -10.0},
+        {"a": 10.0},
+    ]
+    spec = {"a": {"$lte": Decimal128("NaN")}}
+
+    monty_c = monty_find(docs, spec)
+    mongo_c = mongo_find(docs, spec)
+
+    assert mongo_c.count() == 4
+    assert monty_c.count() == mongo_c.count()
+    for i in range(4):
+        assert next(mongo_c) == next(monty_c)
+
+
+def test_qop_lte_30(monty_find, mongo_find):
+    docs = [
+        {"a": Decimal128("1.1")},
+        {"a": Decimal128("NaN")},
+        {"a": Decimal128("-NaN")},
+        {"a": Decimal128("sNaN")},
+        {"a": Decimal128("-sNaN")},
+        {"a": Decimal128("Infinity")},
+        {"a": 0},
+        {"a": -10.0},
+        {"a": 10.0},
+    ]
+    spec = {"a": {"$lte": Decimal128("-NaN")}}
+
+    monty_c = monty_find(docs, spec)
+    mongo_c = mongo_find(docs, spec)
+
+    assert mongo_c.count() == 4
+    assert monty_c.count() == mongo_c.count()
+    for i in range(4):
+        assert next(mongo_c) == next(monty_c)
+
+
+def test_qop_lte_31(monty_find, mongo_find):
+    docs = [
+        {"a": Decimal128("1.1")},
+        {"a": Decimal128("NaN")},
+        {"a": Decimal128("-NaN")},
+        {"a": Decimal128("sNaN")},
+        {"a": Decimal128("-sNaN")},
+        {"a": Decimal128("Infinity")},
+        {"a": 0},
+        {"a": -10.0},
+        {"a": 10.0},
+    ]
+    spec = {"a": {"$lte": Decimal128("Infinity")}}
+
+    monty_c = monty_find(docs, spec)
+    mongo_c = mongo_find(docs, spec)
+
+    assert mongo_c.count() == 5
+    assert monty_c.count() == mongo_c.count()
+    for i in range(5):
+        assert next(mongo_c) == next(monty_c)
+
+
+def test_qop_lte_32(monty_find, mongo_find):
+    docs = [
+        {"a": Decimal128("1.1")},
+        {"a": Decimal128("NaN")},
+        {"a": Decimal128("-NaN")},
+        {"a": Decimal128("sNaN")},
+        {"a": Decimal128("-sNaN")},
+        {"a": Decimal128("Infinity")},
+        {"a": 0},
+        {"a": -10.0},
+        {"a": 10.0},
+    ]
+    spec = {"a": {"$lte": 0}}
+
+    monty_c = monty_find(docs, spec)
+    mongo_c = mongo_find(docs, spec)
+
+    assert mongo_c.count() == 2
+    assert monty_c.count() == mongo_c.count()
+    for i in range(2):
+        assert next(mongo_c) == next(monty_c)
