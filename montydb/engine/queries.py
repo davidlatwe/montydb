@@ -18,6 +18,9 @@ from .base import (
     Weighted,
     BSON_TYPE_ALIAS_ID,
     obj_to_bson_type_id,
+    _decimal128_NaN,
+    _decimal128_INF,
+    _decimal128_NaN_ls,
 )
 
 from .helpers import (
@@ -573,6 +576,8 @@ def parse_gt(query):
     def _gt(field_walker):
         for value in field_walker.value:
             if _is_comparable(value, query):
+                if query in _decimal128_NaN_ls:
+                    return False
                 if Weighted(value) > Weighted(query):
                     return True
             elif isinstance(query, (MinKey, MaxKey)):
@@ -586,8 +591,14 @@ def parse_gte(query):
     def _gte(field_walker):
         for value in field_walker.value:
             if _is_comparable(value, query):
+                if query in _decimal128_NaN_ls:
+                    return True if value in _decimal128_NaN_ls else False
+                if query == _decimal128_INF and not value == _decimal128_INF:
+                    return False
                 if Weighted(value) >= Weighted(query):
                     return True
+            elif isinstance(query, (MinKey, MaxKey)):
+                return True
 
     return _gte
 
@@ -597,10 +608,17 @@ def parse_lt(query):
     def _lt(field_walker):
         for value in field_walker.value:
             if _is_comparable(value, query):
+                if value in _decimal128_NaN_ls:
+                    return False
                 if Weighted(value) < Weighted(query):
                     return True
+            elif isinstance(query, (MinKey, MaxKey)):
+                return True
 
     return _lt
+
+
+_dec_NaN_INF_ls = tuple(list(_decimal128_NaN_ls) + [_decimal128_INF])
 
 
 def parse_lte(query):
@@ -608,8 +626,16 @@ def parse_lte(query):
     def _lte(field_walker):
         for value in field_walker.value:
             if _is_comparable(value, query):
+                if query in _decimal128_NaN_ls:
+                    return True if value in _decimal128_NaN_ls else False
+                if query == _decimal128_INF and value in _decimal128_NaN_ls:
+                    return False
+                if query not in _dec_NaN_INF_ls and value in _dec_NaN_INF_ls:
+                    return False
                 if Weighted(value) <= Weighted(query):
                     return True
+            elif isinstance(query, (MinKey, MaxKey)):
+                return True
 
     return _lte
 
