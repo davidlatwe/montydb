@@ -487,7 +487,7 @@ class FieldWalker(object):
         In this case, the field was not missing because it's possible that
         field did not meant to be there (because no embedded document) or
         array out of index if the path is index position, and since the field
-        was not missing, the document won't pop.
+        was not missing, the document won't pop when querying `None`.
         """
         return self.__array_elem_short or self.__array_no_docs
 
