@@ -5,8 +5,8 @@ import pymongo
 import montydb
 
 
-MongoOperationFailure = pymongo.errors.OperationFailure
-MontyOperationFailure = montydb.errors.OperationFailure
+MongoOpFail = pymongo.errors.OperationFailure
+MontyOpFail = montydb.errors.OperationFailure
 
 
 def test_filter_sanity_check(test_cases,
@@ -23,25 +23,25 @@ def test_filter_sanity_check(test_cases,
 
         mongo_res = []
         mongo_err = ""
-        mongo_err_cls = ""
+        mongo_err_cls = None
         mongo_cursor = mongo_collection.find(filter_)
         try:
             for res in mongo_cursor:
                 mongo_res.append(res)
         except Exception as e:
             mongo_err = e.message if hasattr(e, 'message') else str(e)
-            mongo_err_cls = str(e.__class__)
+            mongo_err_cls = e.__class__
 
         monty_res = []
         monty_err = ""
-        monty_err_cls = ""
+        monty_err_cls = None
         monty_cursor = monty_collection.find(filter_)
         try:
             for res in monty_cursor:
                 monty_res.append(res)
         except Exception as e:
             monty_err = e.message if hasattr(e, 'message') else str(e)
-            monty_err_cls = str(e.__class__)
+            monty_err_cls = e.__class__
 
         msg = """
         Mongo and Monty Error not match.
@@ -55,7 +55,12 @@ def test_filter_sanity_check(test_cases,
                    monty_err,
                    case_addr,
                    filter_)
-        assert monty_err == mongo_err, msg
+        if mongo_err_cls == MongoOpFail and monty_err_cls == MontyOpFail:
+            pass
+        elif mongo_err_cls is None and monty_err_cls is None:
+            pass
+        else:
+            assert False, msg
 
         if not len(mongo_res) == len(monty_res):
             report = "\nMONGO (montydb should found these)\n"
