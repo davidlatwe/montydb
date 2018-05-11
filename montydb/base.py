@@ -21,6 +21,7 @@
 
 import collections
 
+from bson import BSON
 from bson.py3compat import integer_types, string_type, abc, iteritems
 from bson.codec_options import CodecOptions
 from bson.raw_bson import RawBSONDocument
@@ -30,6 +31,22 @@ from bson.codec_options import _parse_codec_options
 
 ASCENDING = 1
 DESCENDING = -1
+
+
+def _bson_touch(doc, codec_op):
+    """
+    BSON will convert bytes string `b""` to unicode in PY2 since it's also
+    `str` type, while in PY3 keep it as `bytes`. This might cause trouble
+    dealing `Binary` type querying.
+    Inorder to help this kind of scenario, make MontyDB to behave more like
+    MongoDB, the command doucment like cursor filter should be encoded to
+    BSON and decode back before parsing it, just like PyMongo encoded to
+    BSON before sending to server.
+    """
+    if isinstance(doc, abc.Mapping):
+        return BSON(BSON.encode(doc, codec_options=codec_op)).decode(codec_op)
+    else:
+        return doc  # should be None type.
 
 
 def validate_is_document_type(option, value):

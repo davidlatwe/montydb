@@ -83,11 +83,95 @@ def obj_to_bson_type_id(obj):
     raise Exception("Unknown data type, this should not happend.")
 
 
+_decimal128_NaN = Decimal128('NaN')
+_decimal128_INF = Decimal128('Infinity')
+_decimal128_NaN_ls = (_decimal128_NaN,
+                      Decimal128('-NaN'),
+                      Decimal128('sNaN'),
+                      Decimal128('-sNaN'))
+
+
+class _cmp_decimal(object):
+
+    __slots__ = ["_dec"]
+
+    def __init__(self, dec):
+        self._dec = dec
+
+    def _is_numeric(self, other):
+        return isinstance(other, (int, Int64, float, Decimal128, _cmp_decimal))
+
+    def _to_decimal(self, other):
+        if isinstance(other, _cmp_decimal):
+            other = other._dec
+        if not isinstance(other, Decimal128):
+            other = Decimal128(str(other))
+        return other
+
+    def __eq__(self, other):
+        if self._is_numeric(other):
+            other = self._to_decimal(other)
+            return self._dec.bid == other.bid
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __gt__(self, other):
+        if self._is_numeric(other):
+            other = self._to_decimal(other)
+            if other == _decimal128_INF or self._dec == _decimal128_NaN:
+                return False
+            if other == _decimal128_NaN or self._dec == _decimal128_INF:
+                return True
+            return self._dec.bid > other.bid
+        else:
+            raise TypeError("'>' not supported between instances of "
+                            "'Decimal128' and {}".format(type(other)))
+
+    def __ge__(self, other):
+        if self._is_numeric(other):
+            if self._dec == _decimal128_INF:
+                return True
+            if not self.__lt__(other):
+                return True
+            else:
+                return False
+        else:
+            raise TypeError("'>=' not supported between instances of "
+                            "'Decimal128' and {}".format(type(other)))
+
+    def __lt__(self, other):
+        if self._is_numeric(other):
+            other = self._to_decimal(other)
+            if other == _decimal128_INF or self._dec == _decimal128_NaN:
+                return True
+            if other == _decimal128_NaN or self._dec == _decimal128_INF:
+                return False
+            return self._dec.bid < other.bid
+        else:
+            raise TypeError("'<' not supported between instances of "
+                            "'Decimal128' and {}".format(type(other)))
+
+    def __le__(self, other):
+        if self._is_numeric(other):
+            if self._dec == _decimal128_INF:
+                return True
+            if not self.__gt__(other):
+                return True
+            else:
+                return False
+        else:
+            raise TypeError("'<=' not supported between instances of "
+                            "'Decimal128' and {}".format(type(other)))
+
+
 class Weighted(tuple):
     """
     """
 
-    def __new__(cls, value, reverse=1):
+    def __new__(cls, value, reverse=None):
         return super(Weighted, cls).__new__(cls,
                                             gravity(value, reverse))
 
@@ -120,11 +204,12 @@ def gravity(value, reverse):
         list: 5,
         tuple: 5,
         Binary: 6,
+        bytes: 6,
         ObjectId: 7,
         bool: 8,
         datetime: 9,
         Timestamp: 10,
-        Regex: 11,
+        # Regex: 11
         # Code without scope: 12
         # Code with scope: 13
         MaxKey: 127
@@ -136,13 +221,12 @@ def gravity(value, reverse):
     except KeyError:
         if is_mapping_type(value):
             wgt = 4
+        elif isinstance(value, Code):  # also an instance of string_type
+            wgt = 12 if value.scope is None else 13
         elif isinstance(value, string_type):
             wgt = 3
-        elif isinstance(value, Code):
-            if value.scope is None:
-                wgt = 12
-            else:
-                wgt = 13
+        elif isinstance(value, (RE_PATTERN_TYPE, Regex)):
+            wgt = 11
         else:
             wgt = 1
             value = None
@@ -155,7 +239,7 @@ def gravity(value, reverse):
         if not len(value):
             # [] less then None
             wgt = 0
-            weighted = [(wgt, [])]
+            weighted = (wgt, ())
         else:
             weighted = (wgt, tuple(_list_parser(value)))
 
@@ -163,6 +247,16 @@ def gravity(value, reverse):
             # list will firstly compare with other doc by it's smallest
             # or largest member
             weighted = max(weighted[1]) if reverse else min(weighted[1])
+
+    elif wgt == 2 and isinstance(value, Decimal128):
+        if value in _decimal128_NaN_ls:
+            # MongoDB does not sort them
+            value = Decimal128('NaN')
+        weighted = (wgt, _cmp_decimal(value))
+
+    elif wgt == 13:
+        weighted = (wgt, str(value), tuple(_dict_parser(value.scope)))
+
     else:
         weighted = (wgt, value)
 

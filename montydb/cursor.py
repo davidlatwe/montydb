@@ -14,6 +14,7 @@ from .base import (
     _fields_list_to_dict,
     _index_list,
     _index_document,
+    _bson_touch,
 )
 
 
@@ -92,8 +93,8 @@ class MontyCursor(object):
         self._collection = collection
         self._codec_options = collection.codec_options
 
-        self._spec = spec
-        self._projection = projection
+        self._spec = _bson_touch(spec, self._codec_options)
+        self._projection = _bson_touch(projection, self._codec_options)
         self._skip = skip
         self._limit = limit
         self._ordering = sort and _index_document(sort) or None

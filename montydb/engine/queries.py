@@ -4,6 +4,12 @@ from copy import deepcopy
 from bson.py3compat import integer_types, string_type
 from bson.regex import Regex, str_flags_to_int
 from bson.son import SON
+from bson.min_key import MinKey
+from bson.max_key import MaxKey
+from bson.int64 import Int64
+from bson.decimal128 import Decimal128
+from bson.binary import Binary
+from bson.code import Code
 
 from ..errors import OperationFailure
 
@@ -149,7 +155,6 @@ class LogicBox(list):
 
     def __call_elemMatch(self, field_walker):
         """"""
-        print(True)
         field_value_array = field_walker.value.arrays
         for value in field_value_array:
             for v in value:
@@ -304,6 +309,16 @@ class QueryFilter(object):
                 raise OperationFailure("$options needs a $regex")
 
             for op, value in sub_spec.items():
+                # Regex can't do $ne directly
+                if op == "$ne" and isinstance(value, (RE_PATTERN_TYPE, Regex)):
+                    raise OperationFailure("Can't have RegEx as arg to $ne.")
+                # is predictable ?
+                if op in ("$gt", "$gte", "$lt", "$lte"):
+                    if isinstance(value, (RE_PATTERN_TYPE, Regex)):
+                        raise OperationFailure(
+                            "Can't have RegEx as arg to predicate over "
+                            "field {!r}.".format(path))
+
                 try:
                     logic_box.append(self.field_ops[op](value))
                 except KeyError:
@@ -499,16 +514,41 @@ def parse_ne(query):
 
 
 def _is_comparable(v1, v2):
+    # Same type
     if type(v1) is type(v2):
-        return True
+        if isinstance(v1, Code):
+            # Code object with scope is different from code without scope
+            if v1.scope is None and v2.scope is None:
+                return True
+            elif not (v1.scope is None or v2.scope is None):
+                return True
+            else:
+                return False
+        else:
+            return True
+
+    # Type Bracketing
+    # String
     if isinstance(v1, string_type) and isinstance(v2, string_type):
+        if isinstance(v1, Code) or isinstance(v2, Code):
+            # Code also an instance of string_type
+            return False
+        if isinstance(v1, Binary) or isinstance(v2, Binary):
+            # Binary also an instance of string_type in PY2
+            return False
         return True
+    # Binary
+    if isinstance(v1, (bytes, Binary)) and isinstance(v2, (bytes, Binary)):
+        return True
+    # Object
     if is_mapping_type(v1) and is_mapping_type(v2):
         return True
+    # Numberic
     if not any([isinstance(v1, bool), isinstance(v2, bool)]):
-        number_type = (integer_types, float)
+        number_type = (integer_types, float, Int64, Decimal128)
         if isinstance(v1, number_type) and isinstance(v2, number_type):
             return True
+
     return False
 
 
@@ -517,8 +557,12 @@ def parse_gt(query):
     def _gt(field_walker):
         for value in field_walker.value:
             if _is_comparable(value, query):
+                print(Weighted(value))
+                print(Weighted(query))
                 if Weighted(value) > Weighted(query):
                     return True
+            elif isinstance(query, (MinKey, MaxKey)):
+                return True
 
     return _gt
 
@@ -559,13 +603,16 @@ def parse_lte(query):
 def _in_match(field_value, query):
     """Helper function for $in and $nin
     """
-    def _regex():
-        for q in query:
-            if is_pattern_type(q):
-                yield q
-            if isinstance(q, Regex):
-                yield q.try_compile()
-    q_regex = _regex()
+    q_regex = []
+    for q in query:
+        if is_pattern_type(q):
+            q_regex.append(q)
+        if isinstance(q, Regex):
+            try:
+                q_regex.append(q.try_compile())
+            except re.error as e:
+                raise OperationFailure("Regular expression is invalid:"
+                                       " {}".format(e))
 
     def search(value):
         if value in query:
@@ -595,9 +642,7 @@ def parse_nin(query):
         raise OperationFailure("$nin needs an array")
 
     if any(_is_expression_obj(q) for q in query):
-        #  (NOTE): MongoDB(3.6) raise "cannot nest $ under *$in*",
-        #          this should be *$nin*, but leave it as is for now.
-        raise OperationFailure("cannot nest $ under $in")
+        raise OperationFailure("cannot nest $ under $nin")
 
     @keep(query)
     def _nin(field_walker):
@@ -686,7 +731,7 @@ Field-level Query Operators
 def parse_exists(query):
     @keep(query)
     def _exists(field_walker):
-        return field_walker.exists == query
+        return field_walker.exists == bool(query)
 
     return _exists
 

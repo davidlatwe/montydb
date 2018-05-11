@@ -50,7 +50,7 @@ def monty_client(storage, tmp_monty_repo):
         purge_all_db(client)
         return client
     else:
-        return None
+        pytest.fail("Unknown storage engine: {!r}".format(storage), False)
 
 
 @pytest.fixture
