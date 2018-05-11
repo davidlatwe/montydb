@@ -24,6 +24,25 @@ def is_pattern_type(obj):
     return isinstance(obj, RE_PATTERN_TYPE)
 
 
+def re_int_flag_to_str(int_flags):
+    """Ripped from bson.json_util
+    """
+    flags = ""
+    if int_flags & re.IGNORECASE:
+        flags += "i"
+    if int_flags & re.LOCALE:
+        flags += "l"
+    if int_flags & re.MULTILINE:
+        flags += "m"
+    if int_flags & re.DOTALL:
+        flags += "s"
+    if int_flags & re.UNICODE:
+        flags += "u"
+    if int_flags & re.VERBOSE:
+        flags += "x"
+    return flags
+
+
 def decode_(s):
     if PY3:
         return s

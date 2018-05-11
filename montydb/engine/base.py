@@ -13,7 +13,12 @@ from bson.code import Code
 
 from bson.py3compat import string_type
 
-from .helpers import is_array_type, is_mapping_type, RE_PATTERN_TYPE
+from .helpers import (
+    is_array_type,
+    is_mapping_type,
+    RE_PATTERN_TYPE,
+    re_int_flag_to_str,
+)
 
 
 BSON_TYPE_ALIAS_ID = {
@@ -236,6 +241,7 @@ def gravity(value, reverse):
         weighted = (wgt, tuple(_dict_parser(value)))
 
     elif wgt == 5:
+        # weighting list
         if not len(value):
             # [] less then None
             wgt = 0
@@ -243,16 +249,21 @@ def gravity(value, reverse):
         else:
             weighted = (wgt, tuple(_list_parser(value)))
 
-        if reverse is not None:
+        val_ = weighted[1]  # retrieve weighted list value
+        # if is sorting
+        if reverse is not None and len(val_):
             # list will firstly compare with other doc by it's smallest
             # or largest member
-            weighted = max(weighted[1]) if reverse else min(weighted[1])
+            weighted = max(val_) if reverse else min(val_)
 
     elif wgt == 2 and isinstance(value, Decimal128):
         if value in _decimal128_NaN_ls:
             # MongoDB does not sort them
             value = Decimal128('NaN')
         weighted = (wgt, _cmp_decimal(value))
+
+    elif wgt == 11:
+        weighted = (wgt, value.pattern, re_int_flag_to_str(value.flags))
 
     elif wgt == 13:
         weighted = (wgt, str(value), tuple(_dict_parser(value.scope)))

@@ -43,7 +43,7 @@ def ordering(documents, order):
 
         for indx, doc in enumerate(documents):
             # get field value
-            value = Weighted(FieldWalker(doc)(path).value, is_reverse)
+            value = Weighted(FieldWalker(doc)(path).value.elements, is_reverse)
             # read previous section
             pre_sect = pre_sect_stack[indx] if pre_sect_stack else 0
             # inverse if in reverse mode
