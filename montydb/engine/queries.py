@@ -557,8 +557,6 @@ def parse_gt(query):
     def _gt(field_walker):
         for value in field_walker.value:
             if _is_comparable(value, query):
-                print(Weighted(value))
-                print(Weighted(query))
                 if Weighted(value) > Weighted(query):
                     return True
             elif isinstance(query, (MinKey, MaxKey)):
