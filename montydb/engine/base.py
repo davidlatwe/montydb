@@ -200,7 +200,7 @@ def gravity(value):
     # to get rid of lots `if` stetments.
     TYPE_WEIGHT = {
         MinKey: -1,
-        # less then None: 0, this scenario handles in
+        # less than None: 0, this scenario handles in
         # ordering phase, not during weighting
         type(None): 1,
         int: 2,

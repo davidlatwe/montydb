@@ -57,7 +57,7 @@ def ordering(documents, order):
                 value = Weighted(None)
 
             else:
-                # [] less then None
+                # [] less than None
                 value = (0, ())
 
             # read previous section
