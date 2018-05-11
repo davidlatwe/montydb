@@ -43,7 +43,23 @@ def ordering(documents, order):
 
         for indx, doc in enumerate(documents):
             # get field value
-            value = Weighted(FieldWalker(doc)(path).value.elements, is_reverse)
+            field_walker = FieldWalker(doc)(path)
+            elements = field_walker.value.elements
+            if elements:
+                value = tuple([Weighted(val) for val in elements])
+
+                if len(value):
+                    # list will firstly compare with other doc by it's smallest
+                    # or largest member
+                    value = max(value) if is_reverse else min(value)
+
+            elif not field_walker.exists:
+                value = Weighted(None)
+
+            else:
+                # [] less then None
+                value = (0, ())
+
             # read previous section
             pre_sect = pre_sect_stack[indx] if pre_sect_stack else 0
             # inverse if in reverse mode

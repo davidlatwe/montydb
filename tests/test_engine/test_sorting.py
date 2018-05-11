@@ -214,3 +214,163 @@ def test_sort_13(monty_sort, mongo_sort):
 
     for i in range(len(docs)):
         assert next(mongo_c)["_id"] == next(monty_c)["_id"]
+
+
+def test_sort_14(monty_sort, mongo_sort):
+    docs = [
+        {"a": "x", "b": 0},
+        {"a": "x", "b": 1},
+        {"a": "y", "b": 0},
+        {"a": "y", "b": 1},
+        {"a": "z", "b": 0},
+        {"a": "z", "b": 1},
+    ]
+    sort = [("a", -1), ("b", 1)]
+
+    monty_c = monty_sort(docs, sort)
+    mongo_c = mongo_sort(docs, sort)
+
+    for i in range(len(docs)):
+        assert next(mongo_c)["_id"] == next(monty_c)["_id"]
+
+
+def test_sort_15(monty_sort, mongo_sort):
+    docs = [
+        {"a": {"x": 10}, "b": 0},
+        {"a": {"x": 11}, "b": 1},
+        {"a": {"x": 10}, "b": 0},
+        {"a": {"x": 11}, "b": 1},
+        {"a": {"x": 10}, "b": 0},
+        {"a": {"x": 11}, "b": 1},
+    ]
+    sort = [("a.x", -1), ("b", 1)]
+
+    monty_c = monty_sort(docs, sort)
+    mongo_c = mongo_sort(docs, sort)
+
+    for i in range(len(docs)):
+        assert next(mongo_c)["_id"] == next(monty_c)["_id"]
+
+
+def test_sort_16(monty_sort, mongo_sort):
+    docs = [
+        {"a": {"x": [6, 10]}, "b": 0},
+        {"a": {"x": [5, 11]}, "b": 1},
+        {"a": {"x": [6, 10]}, "b": 0},
+        {"a": {"x": [5, 11]}, "b": 1},
+        {"a": {"x": [6, 10]}, "b": 0},
+        {"a": {"x": [5, 11]}, "b": 1},
+    ]
+    sort = [("a.x.1", -1), ("b", 1)]
+
+    monty_c = monty_sort(docs, sort)
+    mongo_c = mongo_sort(docs, sort)
+
+    for i in range(len(docs)):
+        assert next(mongo_c)["_id"] == next(monty_c)["_id"]
+
+
+def test_sort_17(monty_sort, mongo_sort):
+    docs = [
+        {"a": [{"b": 1}, {"b": 2}]},
+        {"a": [{"b": 0}, {"b": 4}]},
+        {"a": [{"b": 5}, {"b": 8}]},
+        {"a": [{"b": 0}, {"b": 6}]},
+    ]
+    sort = [("a.b", -1)]
+
+    monty_c = monty_sort(docs, sort)
+    mongo_c = mongo_sort(docs, sort)
+
+    for i in range(len(docs)):
+        assert next(mongo_c)["_id"] == next(monty_c)["_id"]
+
+
+def test_sort_18(monty_sort, mongo_sort):
+    docs = [
+        {"a": ["x", True]},
+        {"a": None},
+        {"a": []},
+        {"a": [5, []]},
+        {"a": {"s": 7}},
+        {"a": {"s": [9]}},
+        {"a": {"s": 10}},
+        {"a": 6},
+        {"a": 4},
+        {"a": [5, None]},
+        {"a": [5, [1]]},
+        {"a": [Decimal128("4.5"), Binary(b"0")]},
+        {"a": [{"s": 5}, False]},
+        {"a": [{"s": 9}]},
+        {"a": [True, "y"]},
+        {"a": []},
+    ]
+    sort = [("a", -1)]
+
+    monty_c = monty_sort(docs, sort)
+    mongo_c = mongo_sort(docs, sort)
+
+    for i in range(len(docs)):
+        assert next(mongo_c)["_id"] == next(monty_c)["_id"]
+
+
+def test_sort_19(monty_sort, mongo_sort):
+    docs = [
+        {"a": ["x", True]},
+        {"a": None},
+        {"a": []},
+        {"a": [5, []]},
+        {"a": {"s": 7}},
+        {"a": {"s": [9]}},
+        {"a": {"s": 10}},
+        {"a": 6},
+        {"a": 4},
+        {"a": [5, None]},
+        {"a": [5, [1]]},
+        {"a": [Decimal128("4.5"), Binary(b"0")]},
+        {"a": [{"s": 5}, False]},
+        {"a": [{"s": 9}]},
+        {"a": [True, "y"]},
+        {"a": []},
+        {"a": [Regex("^a", "ix")]},
+        {"a": Regex("^b")},
+        {"a": Code("x", {"m": 0})},
+        {"a": Code("y")},
+        {"a": Code("y", {})},
+        {"a": Code("y", {"m": 0})},
+        {"a": MinKey()},
+        {"a": MaxKey()},
+        {"a": Timestamp(0, 1)},
+        {"a": Timestamp(1, 1)},
+        {"a": ObjectId(b"000000000000")},
+        {"a": ObjectId(b"000000000001")},
+        {"a": datetime(1900, 1, 1)},
+        {"a": datetime(1900, 1, 2)},
+    ]
+    sort = [("a", 1)]
+
+    monty_c = monty_sort(docs, sort)
+    mongo_c = mongo_sort(docs, sort)
+
+    for i in range(len(docs)):
+        assert next(mongo_c)["_id"] == next(monty_c)["_id"]
+
+
+def test_sort_20(monty_sort, mongo_sort):
+    docs = [
+        {"a": []},
+        {"a": [{"b": 1}]},
+        {"a": [[]]},
+        {"a": [None]},
+        {"a": None},  # won't be exists
+        {"a": "b"},  # won't be exists
+        {"a": ["b"]},
+        {"a": [5]},
+    ]
+    sort = [("a.0", -1)]
+
+    monty_c = monty_sort(docs, sort)
+    mongo_c = mongo_sort(docs, sort)
+
+    for i in range(len(docs)):
+        assert next(mongo_c)["_id"] == next(monty_c)["_id"]

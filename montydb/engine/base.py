@@ -1,6 +1,7 @@
 
 
 from datetime import datetime
+
 from bson.timestamp import Timestamp
 from bson.objectid import ObjectId
 from bson.min_key import MinKey
@@ -110,8 +111,11 @@ class _cmp_decimal(object):
         if isinstance(other, _cmp_decimal):
             other = other._dec
         if not isinstance(other, Decimal128):
-            other = Decimal128(str(other))
+            other = Decimal128(str(float(other)))
         return other
+
+    def __repr__(self):
+        return "Decimal128({!r})".format(str(self._dec))
 
     def __eq__(self, other):
         if self._is_numeric(other):
@@ -176,29 +180,28 @@ class Weighted(tuple):
     """
     """
 
-    def __new__(cls, value, reverse=None):
-        return super(Weighted, cls).__new__(cls,
-                                            gravity(value, reverse))
+    def __new__(cls, value):
+        return super(Weighted, cls).__new__(cls, gravity(value))
 
 
-def gravity(value, reverse):
+def gravity(value):
     """
     """
 
     def _dict_parser(dict_doc):
         for key, value in dict_doc.items():
-            wgt, value = gravity(value, None)
+            wgt, value = gravity(value)
             yield (wgt, key, value)
 
     def _list_parser(list_doc):
-        return (gravity(member, None) for member in list_doc)
+        return (gravity(member) for member in list_doc)
 
     # a short cut for getting weight number,
     # to get rid of lots `if` stetments.
-    # may not covering all types
     TYPE_WEIGHT = {
         MinKey: -1,
-        # less then None: 0,
+        # less then None: 0, this scenario handles in
+        # ordering phase, not during weighting
         type(None): 1,
         int: 2,
         float: 2,
@@ -233,28 +236,14 @@ def gravity(value, reverse):
         elif isinstance(value, (RE_PATTERN_TYPE, Regex)):
             wgt = 11
         else:
-            wgt = 1
-            value = None
+            raise TypeError("Not weightable type: {!r}".format(type(value)))
 
     # gain weight
     if wgt == 4:
         weighted = (wgt, tuple(_dict_parser(value)))
 
     elif wgt == 5:
-        # weighting list
-        if not len(value):
-            # [] less then None
-            wgt = 0
-            weighted = (wgt, ())
-        else:
-            weighted = (wgt, tuple(_list_parser(value)))
-
-        val_ = weighted[1]  # retrieve weighted list value
-        # if is sorting
-        if reverse is not None and len(val_):
-            # list will firstly compare with other doc by it's smallest
-            # or largest member
-            weighted = max(val_) if reverse else min(val_)
+        weighted = (wgt, tuple(_list_parser(value)))
 
     elif wgt == 2 and isinstance(value, Decimal128):
         if value in _decimal128_NaN_ls:
