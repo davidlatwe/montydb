@@ -373,11 +373,21 @@ class QueryFilter(object):
         """
         def _parse_not(sub_spec):
             # $not logic only available in field-level
-            for op in sub_spec:
-                if op not in self.field_ops:
-                    raise OperationFailure("unknown operator: {}".format(op))
+            if isinstance(sub_spec, (RE_PATTERN_TYPE, Regex)):
+                return self.subparser("$not", {"$regex": sub_spec})
 
-            return self.subparser("$not", sub_spec)
+            elif is_mapping_type(sub_spec):
+                for op in sub_spec:
+                    if op not in self.field_ops:
+                        raise OperationFailure("unknown operator: "
+                                               "{}".format(op))
+                    if op == "$regex":
+                        raise OperationFailure("$not cannot have a regex")
+
+                return self.subparser("$not", sub_spec)
+
+            else:
+                raise OperationFailure("$not needs a regex or a document")
 
         return _parse_not
 
