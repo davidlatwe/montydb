@@ -12,7 +12,7 @@ from bson.binary import Binary
 from bson.regex import Regex
 from bson.code import Code
 
-from bson.py3compat import string_type
+from bson.py3compat import string_type, integer_types
 
 from .helpers import (
     is_array_type,
@@ -49,44 +49,51 @@ BSON_TYPE_ALIAS_ID = {
 
 
 def obj_to_bson_type_id(obj):
-    if isinstance(obj, float):
-        return BSON_TYPE_ALIAS_ID["double"]
-    if isinstance(obj, string_type):
-        return BSON_TYPE_ALIAS_ID["string"]
-    if is_mapping_type(obj):
-        return BSON_TYPE_ALIAS_ID["object"]
-    if is_array_type(obj):
-        return BSON_TYPE_ALIAS_ID["array"]
-    if isinstance(obj, Binary):
-        return BSON_TYPE_ALIAS_ID["binData"]
-    if isinstance(obj, ObjectId):
-        return BSON_TYPE_ALIAS_ID["objectId"]
-    if isinstance(obj, bool):
-        return BSON_TYPE_ALIAS_ID["bool"]
-    if isinstance(obj, datetime):
-        return BSON_TYPE_ALIAS_ID["date"]
-    if obj is None:
-        return BSON_TYPE_ALIAS_ID["null"]
-    if isinstance(obj, (RE_PATTERN_TYPE, Regex)):
-        return BSON_TYPE_ALIAS_ID["regex"]
-    if isinstance(obj, Code) and obj.scope is None:
-        return BSON_TYPE_ALIAS_ID["javascript"]
-    if isinstance(obj, Code):
-        return BSON_TYPE_ALIAS_ID["javascriptWithScope"]
-    if isinstance(obj, int):
-        return BSON_TYPE_ALIAS_ID["int"]
-    if isinstance(obj, Timestamp):
-        return BSON_TYPE_ALIAS_ID["timestamp"]
-    if isinstance(obj, Int64):
-        return BSON_TYPE_ALIAS_ID["long"]
-    if isinstance(obj, Decimal128):
-        return BSON_TYPE_ALIAS_ID["decimal"]
-    if isinstance(obj, MinKey):
-        return BSON_TYPE_ALIAS_ID["minKey"]
-    if isinstance(obj, MaxKey):
-        return BSON_TYPE_ALIAS_ID["maxKey"]
 
-    raise Exception("Unknown data type, this should not happend.")
+    BSON_TYPE_ID = {
+        float: 1,
+        string_type: 2,
+        dict: 3,
+        list: 4,
+        tuple: 4,
+        Binary: 5,
+        bytes: 5,
+        # undefined (Deprecated)
+        ObjectId: 7,
+        bool: 8,
+        datetime: 9,
+        type(None): 10,
+        # regex: 11,
+        # dbPointer (Deprecated)
+        # javascript: 13,
+        # symbol (Deprecated)
+        # javascriptWithScope: 15,
+        int: 16,
+        Timestamp: 17,
+        Int64: 18,
+        Decimal128: 19,
+        MinKey: -1,
+        MaxKey: 127
+    }
+
+    try:
+        type_id = BSON_TYPE_ID[type(obj)]
+    except KeyError:
+        if is_mapping_type(obj):
+            type_id = 3
+        elif isinstance(obj, Code):  # also an instance of string_type
+            type_id = 13 if obj.scope is None else 15
+        elif isinstance(obj, string_type):
+            type_id = 2
+        elif isinstance(obj, (RE_PATTERN_TYPE, Regex)):
+            type_id = 11
+        else:
+            type_id = None
+    finally:
+        if type_id is None:
+            raise TypeError("Unknown data type: {!r}".format(type(obj)))
+
+        return type_id
 
 
 _decimal128_NaN = Decimal128('NaN')
@@ -108,7 +115,8 @@ class _cmp_decimal(object):
             raise TypeError("Only accept an instance of 'Decimal128'.")
 
     def _is_numeric(self, other):
-        return isinstance(other, (int, Int64, float, Decimal128, _cmp_decimal))
+        number_type = (integer_types, float, Int64, Decimal128, _cmp_decimal)
+        return isinstance(other, number_type)
 
     def _to_decimal128(self, other):
         if isinstance(other, _cmp_decimal):

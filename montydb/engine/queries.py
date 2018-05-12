@@ -778,7 +778,7 @@ _BSON_TYPE_ID = tuple(BSON_TYPE_ALIAS_ID.values())
 
 
 def parse_type(query):
-    def bson_type_id(values):
+    def get_bson_type_id_set(values):
         return set([obj_to_bson_type_id(v) for v in values])
 
     def str_type_to_int(query):
@@ -810,7 +810,7 @@ def parse_type(query):
     @keep(query)
     def _type(field_walker):
         if field_walker.exists:
-            bids = bson_type_id(field_walker.value.elements)
+            bids = get_bson_type_id_set(field_walker.value)
             return bids.intersection(query)
 
     return _type
