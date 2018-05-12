@@ -858,33 +858,33 @@ def parse_mod(query):
     divisor = query[0]
     remainder = query[1]
 
-    if not isinstance(divisor, (int, float)):
+    num_types = (integer_types, float, Decimal128)
+
+    if not isinstance(divisor, num_types):
         raise OperationFailure("malformed mod, divisor not a number")
-    if not isinstance(remainder, (int, float)):
+    if not isinstance(remainder, num_types):
         remainder = 0
+
+    if isinstance(divisor, Decimal128):
+        divisor = divisor.to_decimal()
+    if isinstance(remainder, Decimal128):
+        remainder = remainder.to_decimal()
 
     def mod_scan(field_value, query):
         for value in field_value:
-            if isinstance(value, bool):
+            if isinstance(value, bool) or not isinstance(value, num_types):
                 continue
-            if not isinstance(value, (int, float)):
-                continue
-            if int(value % divisor) == remainder:
+            if isinstance(value, Decimal128):
+                value = value.to_decimal()
+            if int(value % divisor) == int(remainder):
                 return True
         return False
 
     @keep(query)
     def _mod(field_walker):
-        if field_walker.embedded_in_array and not field_walker.index_posed:
-            field_value = field_walker.value.arrays
-            for value in field_value:
-                if is_array_type(value):
-                    if mod_scan(value, query):
-                        return True
-        else:
-            field_value = field_walker.value.elements
-            if mod_scan(field_value, query):
-                return True
+        field_value = field_walker.value
+        if mod_scan(field_value, query):
+            return True
 
     return _mod
 
