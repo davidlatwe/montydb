@@ -52,12 +52,12 @@ def obj_to_bson_type_id(obj):
 
     BSON_TYPE_ID = {
         float: 1,
-        string_type: 2,
+        # string: 2,
         dict: 3,
         list: 4,
         tuple: 4,
         Binary: 5,
-        bytes: 5,
+        # bytes: 5,
         # undefined (Deprecated)
         ObjectId: 7,
         bool: 8,
@@ -85,6 +85,8 @@ def obj_to_bson_type_id(obj):
             type_id = 13 if obj.scope is None else 15
         elif isinstance(obj, string_type):
             type_id = 2
+        elif isinstance(obj, bytes):
+            type_id = 5
         elif isinstance(obj, (RE_PATTERN_TYPE, Regex)):
             type_id = 11
         else:
@@ -222,12 +224,12 @@ def gravity(value):
         float: 2,
         Int64: 2,
         Decimal128: 2,
-        string_type: 3,
+        # string: 3,
         dict: 4,
         list: 5,
         tuple: 5,
         Binary: 6,
-        bytes: 6,
+        # bytes: 6,
         ObjectId: 7,
         bool: 8,
         datetime: 9,
@@ -248,6 +250,8 @@ def gravity(value):
             wgt = 12 if value.scope is None else 13
         elif isinstance(value, string_type):
             wgt = 3
+        elif isinstance(value, bytes):
+            wgt = 6
         elif isinstance(value, (RE_PATTERN_TYPE, Regex)):
             wgt = 11
         else:
@@ -269,8 +273,11 @@ def gravity(value):
     elif wgt == 11:
         weighted = (wgt, value.pattern, re_int_flag_to_str(value.flags))
 
-    elif wgt == 13:
-        weighted = (wgt, str(value), tuple(_dict_parser(value.scope)))
+    elif wgt == 13 or wgt == 12:
+        scope = None
+        if value.scope is not None:
+            scope = tuple(_dict_parser(value.scope))
+        weighted = (wgt, str(value), scope)
 
     else:
         weighted = (wgt, value)
