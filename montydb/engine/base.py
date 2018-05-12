@@ -101,17 +101,20 @@ class _cmp_decimal(object):
 
     __slots__ = ["_dec"]
 
-    def __init__(self, dec):
-        self._dec = dec
+    def __init__(self, dec128):
+        if isinstance(dec128, Decimal128):
+            self._dec = dec128
+        else:
+            raise TypeError("Only accept an instance of 'Decimal128'.")
 
     def _is_numeric(self, other):
         return isinstance(other, (int, Int64, float, Decimal128, _cmp_decimal))
 
-    def _to_decimal(self, other):
+    def _to_decimal128(self, other):
         if isinstance(other, _cmp_decimal):
             other = other._dec
         if not isinstance(other, Decimal128):
-            other = Decimal128(str(float(other)))
+            other = Decimal128(str(other))
         return other
 
     def __repr__(self):
@@ -119,8 +122,8 @@ class _cmp_decimal(object):
 
     def __eq__(self, other):
         if self._is_numeric(other):
-            other = self._to_decimal(other)
-            return self._dec.bid == other.bid
+            other = self._to_decimal128(other)
+            return self._dec.to_decimal() == other.to_decimal()
         else:
             return False
 
@@ -129,15 +132,16 @@ class _cmp_decimal(object):
 
     def __gt__(self, other):
         if self._is_numeric(other):
-            other = self._to_decimal(other)
+            other = self._to_decimal128(other)
             if other == _decimal128_INF or self._dec == _decimal128_NaN:
                 return False
             if other == _decimal128_NaN or self._dec == _decimal128_INF:
                 return True
-            return self._dec.bid > other.bid
+            return self._dec.to_decimal() > other.to_decimal()
         else:
             raise TypeError("'>' not supported between instances of "
-                            "'Decimal128' and {}".format(type(other)))
+                            "'Decimal128' and {!r}".format(
+                                type(other).__name__))
 
     def __ge__(self, other):
         if self._is_numeric(other):
@@ -149,19 +153,21 @@ class _cmp_decimal(object):
                 return False
         else:
             raise TypeError("'>=' not supported between instances of "
-                            "'Decimal128' and {}".format(type(other)))
+                            "'Decimal128' and {!r}".format(
+                                type(other).__name__))
 
     def __lt__(self, other):
         if self._is_numeric(other):
-            other = self._to_decimal(other)
+            other = self._to_decimal128(other)
             if other == _decimal128_INF or self._dec == _decimal128_NaN:
                 return True
             if other == _decimal128_NaN or self._dec == _decimal128_INF:
                 return False
-            return self._dec.bid < other.bid
+            return self._dec.to_decimal() < other.to_decimal()
         else:
             raise TypeError("'<' not supported between instances of "
-                            "'Decimal128' and {}".format(type(other)))
+                            "'Decimal128' and {!r}".format(
+                                type(other).__name__))
 
     def __le__(self, other):
         if self._is_numeric(other):
@@ -173,7 +179,8 @@ class _cmp_decimal(object):
                 return False
         else:
             raise TypeError("'<=' not supported between instances of "
-                            "'Decimal128' and {}".format(type(other)))
+                            "'Decimal128' and {!r}".format(
+                                type(other).__name__))
 
 
 class Weighted(tuple):

@@ -18,7 +18,7 @@ from .base import (
     Weighted,
     BSON_TYPE_ALIAS_ID,
     obj_to_bson_type_id,
-    _decimal128_NaN,
+    _cmp_decimal,
     _decimal128_INF,
     _decimal128_NaN_ls,
 )
@@ -463,6 +463,45 @@ Field-level Query Operators
 """
 
 
+def _is_comparable(val, qry):
+    # Same type
+    if type(qry) is type(val):
+        if isinstance(qry, Code):
+            # Code object with scope is different from code without scope
+            if qry.scope is None and val.scope is None:
+                return True
+            elif not (qry.scope is None or val.scope is None):
+                return True
+            else:
+                return False
+        else:
+            return True
+
+    # Type Bracketing
+    # String
+    if isinstance(qry, string_type) and isinstance(val, string_type):
+        if isinstance(qry, Code) or isinstance(val, Code):
+            # Code also an instance of string_type
+            return False
+        if isinstance(qry, Binary) or isinstance(val, Binary):
+            # Binary also an instance of string_type in PY2
+            return False
+        return True
+    # Binary
+    if isinstance(qry, (bytes, Binary)) and isinstance(val, (bytes, Binary)):
+        return True
+    # Object
+    if is_mapping_type(qry) and is_mapping_type(val):
+        return True
+    # Numberic
+    if not any([isinstance(qry, bool), isinstance(val, bool)]):
+        number_type = (integer_types, float, Int64, Decimal128, _cmp_decimal)
+        if isinstance(qry, number_type) and isinstance(val, number_type):
+            return True
+
+    return False
+
+
 def _eq_match(field_walker, query):
     """
     Document key order matters
@@ -499,21 +538,15 @@ def _eq_match(field_walker, query):
             if field_walker.array_status_normal:
                 return False
 
-        if query in field_walker.value:
-            # Handling bool type query
-            if isinstance(query, bool):
-                for v in field_walker.value:
-                    if isinstance(v, bool) and query == v:
-                        return True
-                return False
-            # Not to match with bool type when querying 1 or 0
-            if query in [0, 1]:
-                for v in field_walker.value:
-                    if not isinstance(v, bool) and query == v:
-                        return True
-                return False
+        if isinstance(query, Decimal128):
+            query = _cmp_decimal(query)
 
-            return True
+        for val in field_walker.value:
+            if isinstance(val, Decimal128):
+                val = _cmp_decimal(val)
+
+            if val == query and _is_comparable(val, query):
+                return True
 
 
 def parse_eq(query):
@@ -530,45 +563,6 @@ def parse_ne(query):
         return not _eq_match(field_walker, query)
 
     return _ne
-
-
-def _is_comparable(v1, v2):
-    # Same type
-    if type(v1) is type(v2):
-        if isinstance(v1, Code):
-            # Code object with scope is different from code without scope
-            if v1.scope is None and v2.scope is None:
-                return True
-            elif not (v1.scope is None or v2.scope is None):
-                return True
-            else:
-                return False
-        else:
-            return True
-
-    # Type Bracketing
-    # String
-    if isinstance(v1, string_type) and isinstance(v2, string_type):
-        if isinstance(v1, Code) or isinstance(v2, Code):
-            # Code also an instance of string_type
-            return False
-        if isinstance(v1, Binary) or isinstance(v2, Binary):
-            # Binary also an instance of string_type in PY2
-            return False
-        return True
-    # Binary
-    if isinstance(v1, (bytes, Binary)) and isinstance(v2, (bytes, Binary)):
-        return True
-    # Object
-    if is_mapping_type(v1) and is_mapping_type(v2):
-        return True
-    # Numberic
-    if not any([isinstance(v1, bool), isinstance(v2, bool)]):
-        number_type = (integer_types, float, Int64, Decimal128)
-        if isinstance(v1, number_type) and isinstance(v2, number_type):
-            return True
-
-    return False
 
 
 def parse_gt(query):
@@ -640,27 +634,31 @@ def parse_lte(query):
     return _lte
 
 
-def _in_match(field_value, query):
+def _in_match(field_walker, query):
     """Helper function for $in and $nin
     """
     q_regex = []
+    q_value = []
     for q in query:
         if is_pattern_type(q):
             q_regex.append(q)
-        if isinstance(q, Regex):
+        elif isinstance(q, Regex):
             try:
                 q_regex.append(q.try_compile())
             except re.error as e:
                 raise OperationFailure("Regular expression is invalid:"
                                        " {}".format(e))
+        else:
+            q_value.append(q)
 
-    def search(value):
-        if value in query:
+    for q in q_value:
+        if _eq_match(field_walker, q):
             return True
-        if isinstance(value, string_type) and q_regex:
-            return any(q.search(value) for q in q_regex)
 
-    return any(search(fv) for fv in field_value)
+    for q in q_regex:
+        for value in field_walker.value:
+            if isinstance(value, string_type) and q.search(value):
+                return True
 
 
 def parse_in(query):
@@ -672,7 +670,7 @@ def parse_in(query):
 
     @keep(query)
     def _in(field_walker):
-        return _in_match(field_walker.value, query)
+        return _in_match(field_walker, query)
 
     return _in
 
@@ -686,7 +684,7 @@ def parse_nin(query):
 
     @keep(query)
     def _nin(field_walker):
-        return not _in_match(field_walker.value, query)
+        return not _in_match(field_walker, query)
 
     return _nin
 
