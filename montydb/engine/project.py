@@ -26,11 +26,11 @@ def _is_positional_match(conditions, match_field):
         for con in conditions:
             if _is_positional_match(con, match_field):
                 return True
+        return False
     else:
         if not theme:
             return False
         return match_field == theme.split(".", 1)[0]
-    return False
 
 
 def _perr_doc(val):
@@ -191,7 +191,8 @@ class Projector(object):
                 self.array_op_type = self.ARRAY_OP_POSITIONAL
 
                 fore_path = key.split(".", 1)[0]
-                self.array_field[fore_path] = self.parse_positional(fore_path)
+                self.array_field[fore_path] = self.parse_positional(fore_path,
+                                                                    query)
 
         if self.include_flag is None:
             self.include_flag = False
@@ -232,22 +233,23 @@ class Projector(object):
 
         return _elemMatch
 
-    def parse_positional(self, fore_path):
-        def empty_array_error(array):
-            if len(array) == 0:
-                raise OperationFailure(
-                    "Executor error during find command: BadValue: "
-                    "positional operator ({}.$) requires corresponding "
-                    "field in query specifier".format(fore_path))
-
+    def parse_positional(self, fore_path, qfilter):
         def _positional(field_walker):
-            doc = field_walker.doc
-            if fore_path in doc:
-                if is_array_type(doc[fore_path]):
-                    empty_array_error(doc[fore_path])
-                    doc[fore_path] = doc[fore_path][:1]
-                else:
-                    del doc[fore_path]
+            array_doc = field_walker.doc[fore_path]
+            if is_array_type(array_doc):
+                if len(array_doc) == 0:
+                    raise OperationFailure(
+                        "Executor error during find command: BadValue: "
+                        "positional operator ({}.$) requires corresponding "
+                        "field in query specifier".format(fore_path))
+
+                for con in qfilter.conditions:
+                    for emb_doc in array_doc:
+                        if con(FieldWalker({fore_path: emb_doc})):
+                            field_walker.doc[fore_path] = [emb_doc]
+                            return
+            else:
+                field_walker.doc[fore_path] = {}
 
         return _positional
 

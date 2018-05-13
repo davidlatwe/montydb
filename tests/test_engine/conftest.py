@@ -30,6 +30,25 @@ def mongo_find(mongo_database):
     return _insert_and_find
 
 
+def insert_and_project(db, docs, spec, proj):
+    col = insert(db, docs)
+    return col.find(spec, proj)
+
+
+@pytest.fixture
+def monty_proj(monty_database):
+    def _insert_and_project(docs, spec, proj, db=monty_database):
+        return insert_and_project(db, docs, spec, proj)
+    return _insert_and_project
+
+
+@pytest.fixture
+def mongo_proj(mongo_database):
+    def _insert_and_project(docs, spec, proj, db=mongo_database):
+        return insert_and_project(db, docs, spec, proj)
+    return _insert_and_project
+
+
 def insert_and_sort(db, docs, sort):
     col = insert(db, docs)
     return col.find({}).sort(sort)
