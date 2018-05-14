@@ -13,7 +13,7 @@
 
 ### What MontyDB is ...
 * A serverless version of MongoDB *(trying to be)*
-* Backed with SQLite *(and :memory: storage)*
+* Backed with SQLite *(and `:memory:` storage)*
 * Using Mongo query language, against to `MongoDB 3.6`
 * Working on both Python 2 and 3
 
@@ -35,8 +35,8 @@
 ```
 
 ### Requirements
-`pip install pyyaml`
-`pip install pymongo` (need `bson`)
+* `pip install pyyaml`
+* `pip install pymongo` (for `bson`)
 
 ### Status
 - Most workable functions had tested with *MongoDB 3.6* to ensure the behave.
