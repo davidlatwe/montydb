@@ -6,7 +6,6 @@ python:
   - 3.6
   - 3.5
   - 3.4
-  - 3.3
   - 2.7
   - nightly
 
@@ -21,7 +20,6 @@ matrix:
     - python: 3.7-dev
     - python: 3.5
     - python: 3.4
-    - python: 3.3
     - python: nightly
 
 before_install:
