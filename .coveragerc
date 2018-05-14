@@ -1,0 +1,12 @@
+[run]
+branch = True
+
+[report]
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError.*
+    warnings\.warn.*
+    def __repr__
+    def __str__
+    def main()
+    if __name__ == .__main__.:

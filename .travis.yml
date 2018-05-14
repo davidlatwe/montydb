@@ -1,0 +1,54 @@
+language: python
+python:
+  - pypy3.5
+  - pypy2.7-5.8.0
+  - 3.7-dev
+  - 3.6
+  - 3.5
+  - 3.4
+  - 3.3
+  - 2.7
+  - nightly
+
+env:
+  - MONGODB=3.6.4
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - python: pypy3.5
+    - python: pypy2.7-5.8.0
+    - python: 3.7-dev
+    - python: 3.5
+    - python: 3.4
+    - python: 3.3
+    - python: nightly
+
+before_install:
+  - wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-${MONGODB}.tgz
+  - tar xzf mongodb-linux-x86_64-${MONGODB}.tgz
+  - ${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongod --version
+  - pip install pip -U
+  - pip install pytest
+  - pip install pytest-cov
+  - pip install coveralls
+  - python setup.py install
+
+install:
+  - pip install pyyaml
+  - pip install pymongo
+
+before_script:
+  - mkdir ${PWD}/mongodb-linux-x86_64-${MONGODB}/data
+  - ${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongod --dbpath ${PWD}/mongodb-linux-x86_64-${MONGODB}/data --logpath ${PWD}/mongodb-linux-x86_64-${MONGODB}/mongodb.log --fork
+
+script:
+  - pytest --cov montydb --storage sqlite
+  - pytest --cov montydb --storage memory
+
+after_script:
+  - pkill mongod
+
+after_success: coveralls
+
+sudo: false
