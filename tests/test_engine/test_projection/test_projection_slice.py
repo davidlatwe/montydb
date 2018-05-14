@@ -1,0 +1,81 @@
+
+
+def test_projection_slice_1(monty_proj, mongo_proj):
+    docs = [
+        {"a": [{"b": 1}, {"b": 3}, {"b": 0}, {"b": 8}]}
+    ]
+    spec = {"a.b": {"$gt": 2}}
+    proj = {"a.b": {"$slice": 2}}
+
+    monty_c = monty_proj(docs, spec, proj)
+    mongo_c = mongo_proj(docs, spec, proj)
+
+    assert mongo_c.count() == 1
+    assert monty_c.count() == mongo_c.count()
+    assert next(mongo_c) == next(monty_c)
+
+
+def test_projection_slice_2(monty_proj, mongo_proj):
+    docs = [
+        {"a": [0, 1, 2, 5, 6]},
+        {"a": [8, 1, 5]},
+        {"a": [9, 0, 0, 2, 6]},
+    ]
+    spec = {}
+    proj = {"a": {"$slice": [1, 4]}}
+
+    monty_c = monty_proj(docs, spec, proj)
+    mongo_c = mongo_proj(docs, spec, proj)
+
+    assert mongo_c.count() == 3
+    assert monty_c.count() == mongo_c.count()
+    for i in range(3):
+        assert next(mongo_c) == next(monty_c)
+
+
+def test_projection_slice_3(monty_proj, mongo_proj):
+    docs = [
+        {"a": [0, 1, 2, 5, 6]},
+        {"a": [8, 1, 5]},
+        {"a": [9, 0, 0, 2, 6]},
+    ]
+    spec = {}
+    proj = {"a": {"$slice": -3}}
+
+    monty_c = monty_proj(docs, spec, proj)
+    mongo_c = mongo_proj(docs, spec, proj)
+
+    assert mongo_c.count() == 3
+    assert monty_c.count() == mongo_c.count()
+    for i in range(3):
+        assert next(mongo_c) == next(monty_c)
+
+
+def test_projection_slice_4(monty_proj, mongo_proj):
+    docs = [
+        {"a": [0, 1, 2, 3, 4, 5, 6, 7]}
+    ]
+    spec = {}
+    proj = {"a": {"$slice": [5, 4]}}
+
+    monty_c = monty_proj(docs, spec, proj)
+    mongo_c = mongo_proj(docs, spec, proj)
+
+    assert mongo_c.count() == 1
+    assert monty_c.count() == mongo_c.count()
+    assert next(mongo_c) == next(monty_c)
+
+
+def test_projection_slice_5(monty_proj, mongo_proj):
+    docs = [
+        {"a": [0, 1, 2, 3, 4, 5, 6, 7]}
+    ]
+    spec = {}
+    proj = {"a": {"$slice": [-5, 4]}}
+
+    monty_c = monty_proj(docs, spec, proj)
+    mongo_c = mongo_proj(docs, spec, proj)
+
+    assert mongo_c.count() == 1
+    assert monty_c.count() == mongo_c.count()
+    assert next(mongo_c) == next(monty_c)

@@ -61,13 +61,13 @@ class Projector(object):
     ARRAY_OP_POSITIONAL = 1
     ARRAY_OP_ELEM_MATCH = 2
 
-    def __init__(self, spec, query):
+    def __init__(self, spec, qfilter):
         self.proj_with_id = True
         self.include_flag = None
         self.regular_field = []
         self.array_field = {}
 
-        self.parser(spec, query)
+        self.parser(spec, qfilter)
 
     def __call__(self, doc):
         """
@@ -85,7 +85,7 @@ class Projector(object):
         else:
             self.exclusion(field_walker, self.regular_field)
 
-    def parser(self, spec, query):
+    def parser(self, spec, qfilter):
         """
         """
         self.array_op_type = self.ARRAY_OP_NORMAL
@@ -133,8 +133,7 @@ class Projector(object):
 
                     self.array_op_type = self.ARRAY_OP_ELEM_MATCH
 
-                    qfilter = QueryFilter(sub_v)
-                    self.array_field[key] = self.parse_elemMatch(key, qfilter)
+                    self.array_field[key] = self.parse_elemMatch(key, sub_v)
 
                 elif sub_k == "$meta":
                     # Currently Not supported.
@@ -182,17 +181,17 @@ class Projector(object):
                     raise OperationFailure(
                         "Positional projection '{}' contains the positional "
                         "operator more than once.".format(key))
-                conditions = query.conditions
-                if not _is_positional_match(conditions, key.split(".", 1)[0]):
+                fore_path = key.split(".", 1)[0]
+                conditions = qfilter.conditions
+                if not _is_positional_match(conditions, fore_path):
                     raise OperationFailure(
                         "Positional projection '{}' does not match the query "
                         "document.".format(key))
 
                 self.array_op_type = self.ARRAY_OP_POSITIONAL
 
-                fore_path = key.split(".", 1)[0]
                 self.array_field[fore_path] = self.parse_positional(fore_path,
-                                                                    query)
+                                                                    qfilter)
 
         if self.include_flag is None:
             self.include_flag = False
@@ -215,13 +214,15 @@ class Projector(object):
 
         return _slice
 
-    def parse_elemMatch(self, field_path, qfilter):
+    def parse_elemMatch(self, field_path, sub_v):
+        qfilter_ = QueryFilter(sub_v)
+
         def _elemMatch(field_walker):
             doc = field_walker.doc
             has_match = False
             if field_path in doc and is_array_type(doc[field_path]):
                 for emb_doc in doc[field_path]:
-                    if qfilter(emb_doc):
+                    if qfilter_(emb_doc):
                         doc[field_path] = [emb_doc]
                         has_match = True
                         break
@@ -243,9 +244,20 @@ class Projector(object):
                         "positional operator ({}.$) requires corresponding "
                         "field in query specifier".format(fore_path))
 
+                # (NOTE) If NOT following MongoDB positional projection's
+                #    <Array Field Limitations>, the outcome will not be the
+                #    same as MongoDB's "undefined behavior". Might not need
+                #    to solve this, since this difference came from incorrect
+                #    positional projection.
                 for con in qfilter.conditions:
                     for emb_doc in array_doc:
                         if con(FieldWalker({fore_path: emb_doc})):
+                            # (NOTE) If `FieldWalker` or `QueryFilter` got
+                            #    improved or re-designed, made them able to
+                            #    work tighter with projection so that don't
+                            #    have to re-run query condition here, that,
+                            #    might also able to match the MongoDB's
+                            #    "undefined behavior".
                             field_walker.doc[fore_path] = [emb_doc]
                             return
             else:
