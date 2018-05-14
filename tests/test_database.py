@@ -40,7 +40,10 @@ def test_database_collection_names(monty_database, mongo_database):
 
     monty_col_names = monty_database.collection_names()
     mongo_col_names = mongo_database.collection_names()
-    assert monty_col_names == mongo_col_names
+    # relax collection name order match
+    assert len(mongo_col_names) == len(monty_col_names)
+    for col in monty_col_names:
+        assert col in mongo_col_names
 
 
 def test_database_create_colllection(monty_database):
