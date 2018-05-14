@@ -68,7 +68,9 @@ def test_weighted_9():
 
 def test_weighted_10():
     data = {"a": "doc", "b": 5}
-    assert Weighted(data) == (4, ((3, "a", "doc"), (2, "b", 5)))
+    assert Weighted(data)[0] == 4
+    assert (3, "a", "doc") in Weighted(data)[1]
+    assert (2, "b", 5) in Weighted(data)[1]
 
 
 def test_weighted_11():
