@@ -104,7 +104,7 @@ class MemoryCollection(AbstractCollection):
     def replace_one(self):
         return NotImplemented
 
-    def update_one(self):
+    def update(self):
         return NotImplemented
 
 

@@ -138,18 +138,43 @@ class MontyCollection(BaseObject):
             pass
 
         return UpdateResult(
-            self.database.client._storage._update_retryable(
+            self.database.client._storage.update(
                 self.database.name,
                 self._name,
                 self.write_concern,
                 self.codec_options,
                 filter,
                 update,
-                upsert
+                upsert,
+                check_keys=False,
+                array_filters=array_filters,
             ))
 
-    def update_many(self, filter, update, upsert=False):
-        pass
+    def update_many(self,
+                    filter,
+                    update,
+                    upsert=False,
+                    bypass_document_validation=False,
+                    array_filters=None, *args, **kwargs):
+        """
+        """
+
+        if bypass_document_validation:
+            pass
+
+        return UpdateResult(
+            self.database.client._storage.update(
+                self.database.name,
+                self._name,
+                self.write_concern,
+                self.codec_options,
+                filter,
+                update,
+                upsert,
+                check_keys=False,
+                multi=True,
+                array_filters=array_filters,
+            ))
 
     def delete_one(self, filter):
         pass

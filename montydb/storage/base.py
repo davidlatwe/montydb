@@ -151,7 +151,7 @@ class AbstractCollection(with_metaclass(ABCMeta, object)):
         return NotImplemented
 
     @abstractmethod
-    def update_one(self):
+    def update(self):
         return NotImplemented
 
 
