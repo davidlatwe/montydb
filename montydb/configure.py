@@ -166,6 +166,9 @@ class MontyConfigure(object):
                                 default_flow_style=False)
 
     def save(self):
+        if self._repository == MEMORY_REPOSITORY:
+            raise RuntimeError("Memory storage has no config to save.")
+
         with open(self._config_path, "w") as stream:
             yaml_config_dump(self._config,
                              stream,
@@ -173,9 +176,20 @@ class MontyConfigure(object):
                              default_flow_style=False)
 
     def exists(self):
+        if self._repository == MEMORY_REPOSITORY:
+            raise RuntimeError("Memory storage does not have existing config.")
+
         return os.path.isfile(self._config_path)
 
     def touched(self):
+        """Return True if repository contains not only config file.
+
+        If return True, means database possibly existed, then should
+        not change some config attribute.
+        """
+        if self._repository == MEMORY_REPOSITORY:
+            raise RuntimeError("Memory storage does not save anything.")
+
         for f in os.listdir(self._repository):
             if not f == self.CONFIG_FNAME:
                 return True
