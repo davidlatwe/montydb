@@ -1,5 +1,7 @@
 [run]
 branch = True
+omit =
+	*/version.py
 
 [report]
 exclude_lines =

@@ -25,7 +25,10 @@ def storage(request):
 
 @pytest.fixture(scope="session")
 def tmp_monty_repo():
-    return os.path.join(tempfile.gettempdir(), "monty")
+    tmp_dir = os.path.join(tempfile.gettempdir(), "monty")
+    if os.path.isdir(tmp_dir):
+        shutil.rmtree(tmp_dir)
+    return tmp_dir
 
 
 def purge_all_db(client):
