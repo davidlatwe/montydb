@@ -18,8 +18,9 @@
 * Support **Python 2.7, 3.4, 3.5, 3.6**
 
 ### Goal
-* To be an alternative option for projects which using MongoDB
-* Improve my personal skill
+* To be an alternative option for projects which using MongoDB.
+* Switch in between without changing document operation code. (If common ops is all you need)
+* Improve my personal skill :p
 
 ### Requirements
 * `pip install pyyaml`
