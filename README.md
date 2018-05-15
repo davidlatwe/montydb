@@ -15,7 +15,7 @@
 * A serverless version of MongoDB *(trying to be)*
 * Backed with SQLite *(and `:memory:` storage)*
 * Using Mongo query language, against to `MongoDB 3.6`
-* Working on both Python 2 and 3
+* Support **Python 2.7, 3.4, 3.5, 3.6**
 
 ### Goal
 * To be an alternative option for projects which using MongoDB
