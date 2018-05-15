@@ -1,3 +1,6 @@
+
+import os
+
 from bson.json_util import (
     loads as _loads,
     dumps as _dumps,
@@ -25,5 +28,7 @@ def monty_dump(file_path, documents, json_options=None):
 
     opt = json_options if json_options else _default_json_opts
     serialized = [_dumps(doc, json_options=opt) for doc in documents]
+    if not os.path.isdir(os.path.dirname(file_path)):
+        os.makedirs(os.path.dirname(file_path))
     with open(file_path, "w") as fp:
         fp.write("\n".join(serialized))
