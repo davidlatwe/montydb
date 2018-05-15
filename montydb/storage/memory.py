@@ -84,7 +84,7 @@ class MemoryCollection(AbstractCollection):
     def _encode_doc(self, doc):
         return BSON.encode(doc, False, self.coptions)
 
-    def insert_one(self, doc, bypass_doc_val):
+    def insert_one(self, doc):
         if "_id" not in doc:
             doc["_id"] = ObjectId()
 
@@ -92,7 +92,7 @@ class MemoryCollection(AbstractCollection):
 
         return doc["_id"]
 
-    def insert_many(self, docs, ordered, bypass_doc_val):
+    def insert_many(self, docs, ordered):
         for doc in docs:
             if "_id" not in doc:
                 doc["_id"] = ObjectId()

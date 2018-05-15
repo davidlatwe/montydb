@@ -291,9 +291,8 @@ class SQLiteCollection(AbstractCollection):
         return self._database._conn
 
     @_ensure_table
-    def insert_one(self, doc, bypass_doc_val):
+    def insert_one(self, doc):
         """
-        bypass_doc_val not used
         """
         if "_id" not in doc:
             doc["_id"] = ObjectId()
@@ -307,9 +306,8 @@ class SQLiteCollection(AbstractCollection):
         return doc["_id"]
 
     @_ensure_table
-    def insert_many(self, docs, ordered, bypass_doc_val):
+    def insert_many(self, docs, ordered):
         """
-        ordered, bypass_doc_val not used
         """
         for doc in docs:
             if "_id" not in doc:

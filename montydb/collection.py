@@ -74,14 +74,16 @@ class MontyCollection(BaseObject):
                    bypass_document_validation=False, *args, **kwargs):
         """
         """
+        if bypass_document_validation:
+            pass
+
         return InsertOneResult(
             self.database.client._storage.insert_one(
                 self.database.name,
                 self._name,
                 self.write_concern,
                 self.codec_options,
-                document,
-                bypass_document_validation
+                document
             ))
 
     def insert_many(self,
@@ -90,6 +92,9 @@ class MontyCollection(BaseObject):
                     bypass_document_validation=False, *args, **kwargs):
         """
         """
+        if bypass_document_validation:
+            pass
+
         return InsertManyResult(
             self.database.client._storage.insert_many(
                 self.database.name,
@@ -97,8 +102,7 @@ class MontyCollection(BaseObject):
                 self.write_concern,
                 self.codec_options,
                 documents,
-                ordered,
-                bypass_document_validation
+                ordered
             ))
 
     def replace_one(self,
@@ -108,6 +112,9 @@ class MontyCollection(BaseObject):
                     bypass_document_validation=False, *args, **kwargs):
         """
         """
+        if bypass_document_validation:
+            pass
+
         return UpdateResult(
             self.database.client._storage._update_retryable(
                 self.database.name,
@@ -116,8 +123,7 @@ class MontyCollection(BaseObject):
                 self.codec_options,
                 filter,
                 replacement,
-                upsert,
-                bypass_document_validation
+                upsert
             ))
 
     def update_one(self,
@@ -128,6 +134,9 @@ class MontyCollection(BaseObject):
                    array_filters=None, *args, **kwargs):
         """
         """
+        if bypass_document_validation:
+            pass
+
         return UpdateResult(
             self.database.client._storage._update_retryable(
                 self.database.name,
@@ -136,8 +145,7 @@ class MontyCollection(BaseObject):
                 self.codec_options,
                 filter,
                 update,
-                upsert,
-                bypass_document_validation
+                upsert
             ))
 
     def update_many(self, filter, update, upsert=False):
