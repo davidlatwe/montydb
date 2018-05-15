@@ -24,7 +24,6 @@ from .base import (
 )
 
 from .helpers import (
-    PY3,
     PY36,
     RE_PATTERN_TYPE,
     is_mapping_type,
@@ -427,22 +426,29 @@ def _modify_regex_optins(sub_spec):
     """Merging $regex and $options values in query document
 
     Besides string type value, field $regex accept `bson.Regex` and
-    `re._pattern_type` in pymongo, in those cases, if $options exists,
-    $options flags will override the flags inside `bson.Regex` or
-    `re._pattern_type` object, but if Python version lower than 3,
-    $options will NOT override.
+    `re._pattern_type` in pymongo. For re.flags and $options, based
+    on the key order of dict, seconded will override the first, if
+    they both exists in the query document.
     """
     new_sub_spec = None
     _re = None
-    if isinstance(sub_spec["$regex"], (RE_PATTERN_TYPE, Regex)):
-        # Can't deepcopy this, put to somewhere else and retrieve it later
-        _re = sub_spec["$regex"]
-        sub_spec["$regex"] = None
+    flags = ""
+
+    for key, val in sub_spec.items():
+        if key == "$options":
+            flags = val
+        if key == "$regex" and isinstance(val, (RE_PATTERN_TYPE, Regex)):
+            flags = _FALG(val.flags)
+            # We will deepcopy `sub_spec` later for merging "$regex" and
+            # "$options" to query parser, but we can't deepcopy regex
+            # object, so move it to somewhere else and retrieve it later.
+            _re = sub_spec["$regex"]
+            sub_spec["$regex"] = None
 
     new_sub_spec = deepcopy(sub_spec)
     new_sub_spec["$regex"] = {
         "pattern": _re.pattern if _re else sub_spec["$regex"],
-        "flags": sub_spec.get("$options", "")
+        "flags": flags
     }
 
     if "#" in new_sub_spec["$regex"]["pattern"].rsplit("\n")[-1]:
@@ -458,11 +464,6 @@ def _modify_regex_optins(sub_spec):
     if "$options" in new_sub_spec:
         # Remove $options, Monty can't digest it
         del new_sub_spec["$options"]
-
-    if _re and ("$options" not in sub_spec or not PY3):
-        # Restore `re._pattern_type` or `Regex` object's flags if $options
-        # not exists or Python version lower than 3
-        new_sub_spec["$regex"]["flags"] = _FALG(_re.flags)
 
     return new_sub_spec
 

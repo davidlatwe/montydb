@@ -2,7 +2,6 @@
 import re
 import pytest
 from bson.regex import Regex
-from bson.py3compat import PY3
 
 from pymongo.errors import OperationFailure as MongoOpFail
 from montydb.errors import OperationFailure as MontyOpFail
@@ -88,7 +87,10 @@ def test_qop_regex_6(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    count = 0 if PY3 else 1  # In PY3, `$options` will override regex flags
+    # If not using `SON` or `OrderedDict`, then depend on the dict key order,
+    # if the first key is `$regex`, `$options` will override `regex.flags`,
+    # vice versa.
+    count = 0 if next(iter(spec["a"])) == "$regex" else 1
     assert mongo_c.count() == count
     assert monty_c.count() == mongo_c.count()
 
