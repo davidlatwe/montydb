@@ -40,8 +40,6 @@
 ```
 
 ### Status
-- Most workable functions had tested with *MongoDB 3.6* to ensure the behave.
-- Implemented basic `client` and `database` interface.
-- On `collection` level, currently only able to perform `insert` and `find`.
-- Basic query and projection ops has implemented.
-- Cursor able to `sort`.
+See [Projects' TODO](https://github.com/davidlatwe/MontyDB/projects/1)
+
+Doc or Wiki coming soon.
