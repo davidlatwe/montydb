@@ -39,13 +39,13 @@ def test_configure_sqlite_get_storage(tmp_monty_repo):
 def test_configure_sqlite_save_config(tmp_monty_repo):
     configure = MontyConfigure(tmp_monty_repo)
     config = configure.config
-    config.storage.pragmas.database.journal_mode = "DELETE"
+    config.pragmas.database.journal_mode = "DELETE"
     configure.save()
 
     cnf_ = None
     with open(configure._config_path, "r") as stream:
         cnf_ = yaml.load(stream)
-    assert cnf_["storage"]["pragmas"]["database"]["journal_mode"] == "DELETE"
+    assert cnf_["pragmas"]["database"]["journal_mode"] == "DELETE"
 
 
 def test_configure_sqlite_config_err(tmp_monty_repo):
@@ -59,7 +59,7 @@ def test_configure_sqlite_config_err(tmp_monty_repo):
         config.storage["custom_config"] = "HELLO"
 
     with pytest.raises(IOError):
-        del config.storage["pragmas"]
+        del config.pragmas["database"]
 
 
 def test_configure_sqlite_exists(tmp_monty_repo):

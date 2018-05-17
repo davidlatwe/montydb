@@ -33,13 +33,13 @@ SQLITE_CONFIG = """
 storage:
   engine: SQLiteStorage
   module: {}
-  pragmas:
-    database:
-      journal_mode: WAL
-    connection:
-      # These will be picked up by wconcern
-      synchronous: 1
-      automatic_index: OFF
+pragmas:
+  database:
+    journal_mode: WAL
+  connection:
+    # These will be picked up by wconcern
+    synchronous: 1
+    automatic_index: OFF
 """.format(__name__)
 
 SQLITE_DB_EXT = ".collection"
@@ -181,7 +181,7 @@ class SQLiteStorage(AbstractStorage):
     def __init__(self, repository, storage_config):
         super(SQLiteStorage, self).__init__(repository, storage_config)
 
-        self._conn = SQLiteKVEngine(self._config.storage.pragmas.database)
+        self._conn = SQLiteKVEngine(self._config.pragmas.database)
 
         # initialization complete
         self.is_opened = True
@@ -195,7 +195,7 @@ class SQLiteStorage(AbstractStorage):
     def wconcern_parser(self, client_kwargs):
         wtimeout = client_kwargs.get("wtimeout")
         # Default from config
-        conn_pragmas = self._config.storage.pragmas.connection
+        conn_pragmas = self._config.pragmas.connection
         synchronous = client_kwargs.get(
             "synchronous",
             conn_pragmas.get("synchronous"))
