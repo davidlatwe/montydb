@@ -2,7 +2,6 @@
 from bson.py3compat import string_type
 
 from ..errors import OperationFailure
-from .base import FieldWalker
 from .queries import QueryFilter
 from .helpers import (
     is_mapping_type,
@@ -30,7 +29,7 @@ def _is_positional_match(conditions, match_field):
     else:
         if not theme:
             return False
-        return match_field == theme.split(".", 1)[0]
+        return match_field.split(".", 1)[0] == theme.split(".", 1)[0]
 
 
 def _perr_doc(val):
@@ -66,21 +65,24 @@ class Projector(object):
         self.include_flag = None
         self.regular_field = []
         self.array_field = {}
+        self.array_slice = {}
 
         self.parser(spec, qfilter)
 
-    def __call__(self, doc):
+    def __call__(self, field_walker):
         """
         """
-        field_walker = FieldWalker(doc)
         if not self.proj_with_id:
-            del doc["_id"]
+            del field_walker.doc["_id"]
 
         for field_path in self.array_field:
             self.array_field[field_path](field_walker)
+        for field_path in self.array_slice:
+            self.array_slice[field_path](field_walker)
 
         if self.include_flag:
             self.regular_field += list(self.array_field.keys())
+            self.regular_field += list(self.array_slice.keys())
             self.inclusion(field_walker, self.regular_field)
         else:
             self.exclusion(field_walker, self.regular_field)
@@ -117,7 +119,7 @@ class Projector(object):
                             "$slice only supports numbers and [skip, limit] "
                             "arrays")
 
-                    self.array_field[key] = self.parse_slice(key, slicing)
+                    self.array_slice[key] = self.parse_slice(key, slicing)
 
                 elif sub_k == "$elemMatch":
                     if not is_mapping_type(sub_v):
@@ -181,23 +183,26 @@ class Projector(object):
                     raise OperationFailure(
                         "Positional projection '{}' contains the positional "
                         "operator more than once.".format(key))
-                fore_path = key.split(".", 1)[0]
+
+                path = key.split(".$", 1)[0]
                 conditions = qfilter.conditions
-                if not _is_positional_match(conditions, fore_path):
+                if not _is_positional_match(conditions, path):
                     raise OperationFailure(
                         "Positional projection '{}' does not match the query "
                         "document.".format(key))
 
                 self.array_op_type = self.ARRAY_OP_POSITIONAL
 
-                self.array_field[fore_path] = self.parse_positional(fore_path,
-                                                                    qfilter)
+                self.array_field[path] = self.parse_positional(path)
 
         if self.include_flag is None:
             self.include_flag = False
 
     def parse_slice(self, field_path, slicing):
         def _slice(field_walker):
+            if "$" in field_path:
+                return
+
             if "." in field_path:
                 fore_path, key = field_path.rsplit(".", 1)
                 if field_walker(fore_path).exists:
@@ -234,34 +239,41 @@ class Projector(object):
 
         return _elemMatch
 
-    def parse_positional(self, fore_path, qfilter):
+    def parse_positional(self, field_path):
         def _positional(field_walker):
-            array_doc = field_walker.doc[fore_path]
-            if is_array_type(array_doc):
-                if len(array_doc) == 0:
-                    raise OperationFailure(
-                        "Executor error during find command: BadValue: "
-                        "positional operator ({}.$) requires corresponding "
-                        "field in query specifier".format(fore_path))
-
-                # (NOTE) If NOT following MongoDB positional projection's
-                #    <Array Field Limitations>, the outcome will not be the
-                #    same as MongoDB's "undefined behavior". Might not need
-                #    to solve this, since this difference came from incorrect
-                #    positional projection.
-                for con in qfilter.conditions:
-                    for emb_doc in array_doc:
-                        if con(FieldWalker({fore_path: emb_doc})):
-                            # (NOTE) If `FieldWalker` or `QueryFilter` got
-                            #    improved or re-designed, made them able to
-                            #    work tighter with projection so that don't
-                            #    have to re-run query condition here, that,
-                            #    might also able to match the MongoDB's
-                            #    "undefined behavior".
-                            field_walker.doc[fore_path] = [emb_doc]
-                            return
+            matched_index = field_walker.matched_index(field_path)
+            value = {}
+            field_walker = field_walker(field_path)
+            elements = field_walker.value.elements
+            match = True
+            paths = field_path.split(".")
+            paths.reverse()
+            doc = field_walker.doc
+            path = ""
+            while paths:
+                path = paths.pop()
+                if is_array_type(doc[path]):
+                    if matched_index is None:
+                        match = False
+                    elif matched_index >= len(doc[path]):
+                        match = False
+                    else:
+                        if len(elements) == 0:
+                            raise OperationFailure(
+                                "Executor error during find command: "
+                                "BadValue: positional operator ({}.$) "
+                                "requires corresponding field in query "
+                                "specifier".format(field_path))
+                        value = [doc[path][matched_index]]
+                    break
+                if not len(paths):
+                    value = {}
+                    break
+                doc = doc[path]
+            if match:
+                doc[path] = value
             else:
-                field_walker.doc[fore_path] = {}
+                del doc[path]
 
         return _positional
 

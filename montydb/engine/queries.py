@@ -33,19 +33,19 @@ from .helpers import (
 )
 
 
-def ordering(documents, order):
+def ordering(field_walkers, order):
     """
     """
-    total = len(documents)
+    total = len(field_walkers)
     pre_sect_stack = []
 
     for path, revr in order.items():
         is_reverse = bool(1 - revr)
         value_stack = []
 
-        for indx, doc in enumerate(documents):
+        for indx, field_walker in enumerate(field_walkers):
             # get field value
-            field_walker = FieldWalker(doc)(path)
+            field_walker = FieldWalker(field_walker.doc)(path)
             elements = field_walker.value.elements
             if elements:
                 value = tuple([Weighted(val) for val in elements])
@@ -80,7 +80,7 @@ def ordering(documents, order):
         for _, value, indx in value_stack:
             # restore if in reverse mode
             indx = (total - indx) if is_reverse else indx
-            ordereddoc.append(documents[indx])
+            ordereddoc.append(field_walkers[indx])
 
             # define section
             # maintain the sorting result in next level sorting
@@ -90,10 +90,10 @@ def ordering(documents, order):
             last_doc = value
 
         # save result for next level sorting
-        documents = ordereddoc
+        field_walkers = ordereddoc
         pre_sect_stack = sect_stack
 
-    return documents
+    return field_walkers
 
 
 class LogicBox(list):
@@ -254,6 +254,7 @@ class QueryFilter(object):
 
         # Start parsing query object
         self.conditions = self.parser(spec)
+        self.__field_walker = None
 
         # ready to be called.
 
@@ -270,8 +271,12 @@ class QueryFilter(object):
             doc (dict): Document recived from database.
 
         """
-        field_walker = FieldWalker(doc)
-        return all(cond(field_walker) for cond in self.conditions)
+        self.__field_walker = FieldWalker(doc)
+        return all(cond(self.__field_walker) for cond in self.conditions)
+
+    @property
+    def field_walker(self):
+        return self.__field_walker
 
     def parser(self, spec):
         """Top-level parser"""

@@ -1,5 +1,5 @@
 
-
+from collections import deque, OrderedDict
 from datetime import datetime
 
 from bson.timestamp import Timestamp
@@ -307,6 +307,7 @@ class FieldWalker(object):
 
     __slots__ = [
         "doc",
+        "matched_indexes",
         "__value",
         "__exists",
         "__embedded_in_array",
@@ -316,10 +317,13 @@ class FieldWalker(object):
         "__array_field_short",
         "__array_elem_short",
         "__array_no_docs",
+        "__elem_iter_map",
+        "__query_path"
     ]
 
     def __init__(self, doc):
         self.doc = doc
+        self.matched_indexes = {}
         self.reset()
 
     def __call__(self, path):
@@ -327,6 +331,7 @@ class FieldWalker(object):
         _doc = self.doc
         self.reset()
 
+        self.__query_path = path
         for field in path.split("."):
 
             array_index_pos = False
@@ -424,12 +429,14 @@ class FieldWalker(object):
         """
         field_values = FieldValues()
         emb_doc_count = 0
-        for emb_doc in _doc:
+        self.__elem_iter_map[field] = OrderedDict()
+        for i, emb_doc in enumerate(_doc):
             if not is_mapping_type(emb_doc):
                 continue
             emb_doc_count += 1
             emb_field = FieldWalker(emb_doc)(field)
             if emb_field.exists:
+                self.__elem_iter_map[field][i] = len(emb_field.value.elements)
                 field_values += emb_field.value
             else:
                 # FLAGS_FOR_NONE_QUERYING:
@@ -457,6 +464,8 @@ class FieldWalker(object):
         self.__exists = False
         self.__embedded_in_array = False
         self.__index_posed = False
+        self.__elem_iter_map = OrderedDict()
+        self.__query_path = ""
 
         if not partial:
             self.__been_in_array = False
@@ -465,11 +474,29 @@ class FieldWalker(object):
             self.__array_elem_short = False
             self.__array_no_docs = False
 
+    def __get_matched_index(self):
+        times = self.__value.iter_times
+        if len(self.__elem_iter_map) == 0:
+            if not len(self.__value.elements) == 0:
+                return times - 1
+        else:
+            while len(self.__elem_iter_map):
+                # (NOTE) OrderedDict popitem from right, SON pop forom left.
+                for ind, len_ in self.__elem_iter_map.popitem()[1].items():
+                    if times > len_:
+                        times -= len_
+                    else:
+                        times = ind + 1
+                        break
+            return times - 1
+
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
-        self.reset()
+        root = self.__query_path.split(".", 1)[0]
+        self.matched_indexes[root] = self.__get_matched_index()
+        self.reset(partial=True)
 
     @property
     def value(self):
@@ -513,17 +540,25 @@ class FieldWalker(object):
         """
         return self.__array_elem_short or self.__array_no_docs
 
+    def matched_index(self, path):
+        root = path.split(".", 1)[0]
+        return self.matched_indexes.get(root)
+
 
 class FieldValues(object):
 
     __slots__ = [
         "__elements",
         "__arrays",
+        "__iter_queue",
+        "__iter_times",
     ]
 
     def __init__(self, elements=None, arrays=None):
         self.__elements = elements or []
         self.__arrays = arrays or []
+        self.__iter_queue = deque()
+        self.__iter_times = 1
 
     @property
     def __merged(self):
@@ -532,8 +567,19 @@ class FieldValues(object):
     def __repr__(self):
         return str(self.__merged)
 
+    def __next__(self):
+        if len(self.__iter_queue):
+            self.__iter_times += 1
+            return self.__iter_queue.popleft()
+        else:
+            raise StopIteration
+
+    next = __next__
+
     def __iter__(self):
-        return iter(self.__merged)
+        self.__iter_times = 0
+        self.__iter_queue = deque(self.__merged)
+        return self
 
     def __len__(self):
         return len(self.__merged)
@@ -593,3 +639,7 @@ class FieldValues(object):
         if not is_array_type(val):
             raise TypeError("Should be a list, got {}".format(val))
         self.__arrays = val
+
+    @property
+    def iter_times(self):
+        return self.__iter_times

@@ -273,30 +273,33 @@ class MontyCursor(object):
                                   max_scan,
                                   )
         # Filtering
-        documents = [doc for doc in documents if queryfilter(doc)]
+        field_walkers = []
+        for doc in documents:
+            if queryfilter(doc):
+                field_walkers.append(queryfilter.field_walker)
 
-        self._doc_count = len(documents)
+        self._doc_count = len(field_walkers)
 
         # Sorting
         if self._ordering:
-            documents = ordering(documents, self._ordering)
+            field_walkers = ordering(field_walkers, self._ordering)
 
         # Limit and Skip
         if self._skip and not self._limit:
-            documents = documents[self._skip:]
+            field_walkers = field_walkers[self._skip:]
         elif self._limit:
             end = self._skip + abs(self._limit)
-            documents = documents[self._skip:end]
+            field_walkers = field_walkers[self._skip:end]
 
-        self._doc_count_with_skip_limit = len(documents)
+        self._doc_count_with_skip_limit = len(field_walkers)
 
         # Projection
         if projector:
-            for doc in documents:
-                projector(doc)
+            for fw in field_walkers:
+                projector(fw)
 
-        self._data = deque(documents)
-        self._retrieved += len(documents)
+        self._data = deque([fw.doc for fw in field_walkers])
+        self._retrieved += len(field_walkers)
         # (NOTE) cursor id should return from storage, but ignore for now.
         self._id = 0
 
