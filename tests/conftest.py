@@ -15,6 +15,7 @@ def pytest_addoption(parser):
                      Select storage engine:
                         * memory (default)
                         * sqlite
+                        * flatfile
                      """)
 
 
@@ -47,6 +48,12 @@ def monty_client(storage, tmp_monty_repo):
         return montydb.MontyClient(":memory:")
     elif storage == "sqlite":
         config = montydb.storage.SQLITE_CONFIG
+        montydb.MontyConfigure(tmp_monty_repo, config)
+        client = montydb.MontyClient(tmp_monty_repo)
+        purge_all_db(client)
+        return client
+    elif storage == "flatfile":
+        config = montydb.storage.FALTFILE_CONFIG
         montydb.MontyConfigure(tmp_monty_repo, config)
         client = montydb.MontyClient(tmp_monty_repo)
         purge_all_db(client)
