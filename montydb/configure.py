@@ -1,5 +1,6 @@
 import os
 import importlib
+import json
 from collections import MutableMapping, OrderedDict
 
 import yaml
@@ -22,6 +23,9 @@ class AttribDict(MutableMapping):
     def __init__(self, ordered):
         super(AttribDict, self).__setattr__('cnf', OrderedDict(ordered))
         super(AttribDict, self).__setattr__('__lok__', False)
+
+    def __repr__(self, indent=None):
+        return json.dumps(self.cnf, default=OrderedDict, indent=indent)
 
     def __getattr__(self, key):
         return self.__getitem__(key)
@@ -65,6 +69,9 @@ class AttribDict(MutableMapping):
     popitem = __restriction__
     setdefault = __restriction__
     update = __restriction__
+
+    def pretty(self):
+        return self.__repr__(indent=4)
 
     def lock(self):
         super(AttribDict, self).__setattr__('__lok__', True)
@@ -145,6 +152,9 @@ class MontyConfigure(object):
             else:
                 self._config = yaml_config_load(default_config, SafeLoader)
                 self.save()
+
+    def __repr__(self):
+        return "MontyConfigure(\n{})".format(self.to_yaml())
 
     def _get_storage_engine(self):
         """
