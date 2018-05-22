@@ -149,9 +149,7 @@ class _cmp_decimal(object):
                 return True
             return self._dec.to_decimal() > other.to_decimal()
         else:
-            raise TypeError("'>' not supported between instances of "
-                            "'Decimal128' and {!r}".format(
-                                type(other).__name__))
+            return NotImplemented
 
     def __ge__(self, other):
         if self._is_numeric(other):
@@ -162,9 +160,7 @@ class _cmp_decimal(object):
             else:
                 return False
         else:
-            raise TypeError("'>=' not supported between instances of "
-                            "'Decimal128' and {!r}".format(
-                                type(other).__name__))
+            return NotImplemented
 
     def __lt__(self, other):
         if self._is_numeric(other):
@@ -175,9 +171,7 @@ class _cmp_decimal(object):
                 return False
             return self._dec.to_decimal() < other.to_decimal()
         else:
-            raise TypeError("'<' not supported between instances of "
-                            "'Decimal128' and {!r}".format(
-                                type(other).__name__))
+            return NotImplemented
 
     def __le__(self, other):
         if self._is_numeric(other):
@@ -188,9 +182,7 @@ class _cmp_decimal(object):
             else:
                 return False
         else:
-            raise TypeError("'<=' not supported between instances of "
-                            "'Decimal128' and {!r}".format(
-                                type(other).__name__))
+            return NotImplemented
 
 
 class Weighted(tuple):
