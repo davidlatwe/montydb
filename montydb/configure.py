@@ -1,6 +1,7 @@
 import os
 import importlib
 import json
+import jsonschema
 from collections import MutableMapping, OrderedDict
 
 import yaml
@@ -11,6 +12,24 @@ except ImportError:
     from yaml import Loader, Dumper
 
 from .storage import SQLITE_CONFIG, MEMORY_CONFIG, MEMORY_REPOSITORY
+
+
+BASE_SCHEMA = """
+type: object
+required:
+    - storage
+properties:
+  storage:
+    type: object
+    required:
+        - engine
+        - module
+    properties:
+      engine:
+        type: string
+      module:
+        type: string
+"""
 
 
 class AttribDict(MutableMapping):
@@ -163,6 +182,11 @@ class MontyConfigure(object):
     def config(self):
         return self._config
 
+    def validate(self):
+        yaml_config = self.to_yaml()
+        jsonschema.validate(yaml.load(yaml_config, SafeLoader),
+                            yaml.load(BASE_SCHEMA, SafeLoader))
+
     def to_yaml(self):
         return yaml_config_dump(self._config,
                                 Dumper=SafeDumper,
@@ -172,6 +196,7 @@ class MontyConfigure(object):
         if self._repository == MEMORY_REPOSITORY:
             raise RuntimeError("Memory storage has no config to save.")
 
+        self.validate()
         with open(self._config_path, "w") as stream:
             yaml_config_dump(self._config,
                              stream,
