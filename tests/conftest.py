@@ -47,13 +47,13 @@ def monty_client(storage, tmp_monty_repo):
     if storage == "memory":
         return montydb.MontyClient(":memory:")
     elif storage == "sqlite":
-        config = montydb.storage.SQLITE_CONFIG
+        config = montydb.storage.SQLiteConfig
         montydb.MontyConfigure(tmp_monty_repo, config)
         client = montydb.MontyClient(tmp_monty_repo)
         purge_all_db(client)
         return client
     elif storage == "flatfile":
-        config = montydb.storage.FALTFILE_CONFIG
+        config = montydb.storage.FlatFileConfig
         montydb.MontyConfigure(tmp_monty_repo, config)
         client = montydb.MontyClient(tmp_monty_repo)
         purge_all_db(client)
