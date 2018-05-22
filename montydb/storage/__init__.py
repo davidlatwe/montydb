@@ -11,7 +11,7 @@ from .sqlite import (
     SQLiteStorage,
 )
 from .flatfile import (
-    FALTFILE_CONFIG,
+    FlatFileConfig,
     FlatFileStorage,
 )
 from .memory import (
@@ -31,7 +31,7 @@ __all__ = [
     "SQLiteConfig",
     "SQLiteStorage",
 
-    "FALTFILE_CONFIG",
+    "FlatFileConfig",
     "FlatFileStorage",
 
     "MEMORY_REPOSITORY",

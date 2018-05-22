@@ -159,8 +159,8 @@ class MontyConfigure(object):
 
         if self.in_memory:
             storage_config = MemoryConfig
-        elif storage_config and not isinstance(storage_config, StorageConfig):
-            raise TypeError("Need an instance of 'StorageConfig'")
+        elif storage_config and not issubclass(storage_config, StorageConfig):
+            raise TypeError("Need a subclass of 'StorageConfig'")
         storage_config = storage_config or SQLiteConfig
 
         if self.exists():
