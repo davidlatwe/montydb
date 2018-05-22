@@ -24,6 +24,7 @@
 
 ### Requirements
 * `pip install pyyaml`
+* `pip install jsonschema`
 * `pip install pymongo` (for `bson`)
 
 ### Example Code
