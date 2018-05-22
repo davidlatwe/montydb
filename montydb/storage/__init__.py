@@ -1,12 +1,13 @@
 
 from .base import (
+    StorageConfig,
     AbstractStorage,
     AbstractDatabase,
     AbstractCollection,
     AbstractCursor,
 )
 from .sqlite import (
-    SQLITE_CONFIG,
+    SQLiteConfig,
     SQLiteStorage,
 )
 from .flatfile import (
@@ -14,25 +15,26 @@ from .flatfile import (
     FlatFileStorage,
 )
 from .memory import (
-    MEMORY_CONFIG,
     MEMORY_REPOSITORY,
+    MemoryConfig,
     MemoryStorage,
 )
 
 
 __all__ = [
+    "StorageConfig",
     "AbstractStorage",
     "AbstractDatabase",
     "AbstractCollection",
     "AbstractCursor",
 
-    "SQLITE_CONFIG",
+    "SQLiteConfig",
     "SQLiteStorage",
 
     "FALTFILE_CONFIG",
     "FlatFileStorage",
 
-    "MEMORY_CONFIG",
     "MEMORY_REPOSITORY",
+    "MemoryConfig",
     "MemoryStorage",
 ]

@@ -10,6 +10,7 @@ from bson.json_util import (
 )
 
 from .base import (
+    StorageConfig,
     AbstractStorage,
     AbstractDatabase,
     AbstractCollection,
@@ -20,10 +21,33 @@ from .base import (
 FALTFILE_CONFIG = """
 storage:
   engine: FlatFileStorage
+  config: FlatFileConfig
   module: {}
 options:
   cache_modified: 0
 """.format(__name__)
+
+
+FLATFILE_CONFIG_SCHEMA = """
+type: object
+required:
+    - options
+properties:
+  options:
+    type: object
+    required:
+        - cache_modified
+    properties:
+      cache_modified:
+        type: integer
+        minimum: 0
+"""
+
+
+class FlatFileConfig(StorageConfig):
+    config = FALTFILE_CONFIG
+    schema = FLATFILE_CONFIG_SCHEMA
+
 
 FLATFILE_DB_EXT = ".json"
 

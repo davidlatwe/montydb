@@ -3,6 +3,12 @@ from abc import ABCMeta, abstractmethod
 from ..engine.helpers import with_metaclass
 
 
+class StorageConfig(object):
+    """Base class of storage config"""
+    config = NotImplemented
+    schema = NotImplemented
+
+
 class AbstractStorage(with_metaclass(ABCMeta, object)):
     """
     """

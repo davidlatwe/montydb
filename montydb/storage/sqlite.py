@@ -9,6 +9,7 @@ from bson.py3compat import _unicode
 
 from ..base import WriteConcern
 from .base import (
+    StorageConfig,
     AbstractStorage,
     AbstractDatabase,
     AbstractCollection,
@@ -32,6 +33,7 @@ from .base import (
 SQLITE_CONFIG = """
 storage:
   engine: SQLiteStorage
+  config: SQLiteConfig
   module: {}
 pragmas:
   database:
@@ -41,6 +43,46 @@ pragmas:
     synchronous: 1
     automatic_index: OFF
 """.format(__name__)
+
+
+SQLITE_CONFIG_SCHEMA = """
+type: object
+required:
+  - pragmas
+properties:
+  pragmas:
+    type: object
+    required:
+      - database
+      - connection
+    properties:
+      database:
+        type: object
+        properties:
+          journal_mode:
+            type: string
+            enum: [DELETE, TRUNCATE, PERSIST, MEMORY, WAL, "OFF"]
+      connection:
+        type: object
+        properties:
+          synchronous:
+            oneOf:
+              - type: string
+                enum: ["OFF", NORMAL, FULL, EXTRA, "0", "1", "2", "3"]
+              - type: integer
+                enum: [0, 1, 2, 3]
+          automatic_index:
+            oneOf:
+              - type: boolean
+              - type: string
+                enum: ["ON", "OFF"]
+"""
+
+
+class SQLiteConfig(StorageConfig):
+    config = SQLITE_CONFIG
+    schema = SQLITE_CONFIG_SCHEMA
+
 
 SQLITE_DB_EXT = ".collection"
 SQLITE_RECORD_TABLE = "documents"

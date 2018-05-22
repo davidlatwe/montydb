@@ -2,6 +2,7 @@
 from bson import ObjectId, SON, BSON
 
 from .base import (
+    StorageConfig,
     AbstractStorage,
     AbstractDatabase,
     AbstractCollection,
@@ -12,8 +13,15 @@ from .base import (
 MEMORY_CONFIG = """
 storage:
   engine: MemoryStorage
+  config: MemoryConfig
   module: {}
 """.format(__name__)
+
+
+class MemoryConfig(StorageConfig):
+    config = MEMORY_CONFIG
+    schema = None
+
 
 MEMORY_REPOSITORY = ":memory:"
 

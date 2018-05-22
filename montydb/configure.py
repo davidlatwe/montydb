@@ -11,7 +11,12 @@ try:
 except ImportError:
     from yaml import Loader, Dumper
 
-from .storage import SQLITE_CONFIG, MEMORY_CONFIG, MEMORY_REPOSITORY
+from .storage import (
+    StorageConfig,
+    SQLiteConfig,
+    MemoryConfig,
+    MEMORY_REPOSITORY,
+)
 
 
 BASE_SCHEMA = """
@@ -23,9 +28,12 @@ properties:
     type: object
     required:
         - engine
+        - config
         - module
     properties:
       engine:
+        type: string
+      config:
         type: string
       module:
         type: string
@@ -136,8 +144,8 @@ class MontyConfigure(object):
     Args:
         repository (str): Database root directory path.
 
-        default_config (str, optional): YAML format config string.
-            Defaults to `montydb.storage.SQLITE_CONFIG`.
+        storage_config (str, optional): YAML format config string.
+            Defaults to `montydb.storage.SQLiteConfig`.
             If no `conf.yaml` config file exists in `repository` path,
             will take this parameter and save as `conf.yaml`.
             Ignored if `conf.yaml` exists.
@@ -145,25 +153,26 @@ class MontyConfigure(object):
 
     CONFIG_FNAME = "conf.yaml"
 
-    def __init__(self, repository, default_config=SQLITE_CONFIG):
-        if repository == MEMORY_REPOSITORY:
-            self._repository = repository
-            self._config_path = None
-            self._config = yaml_config_load(MEMORY_CONFIG, SafeLoader)
+    def __init__(self, repository, storage_config=None):
+        self.in_memory = repository == MEMORY_REPOSITORY
+        self._repository = repository
+
+        if self.in_memory:
+            storage_config = MemoryConfig
+        elif storage_config and not isinstance(storage_config, StorageConfig):
+            raise TypeError("Need an instance of 'StorageConfig'")
+        storage_config = storage_config or SQLiteConfig
+
+        if self.exists():
+            # Ignore param `storage_config`
+            with open(self.config_path, "r") as stream:
+                self._config = yaml_config_load(stream, SafeLoader)
+                self._schema = self._get_storage_config().schema
+                self.validate()
         else:
-            if not os.path.isdir(repository):
-                os.makedirs(repository)
-
-            self._repository = repository
-            self._config_path = os.path.join(repository, self.CONFIG_FNAME)
-
-            if self.exists():
-                # Ignore param `default_config`
-                with open(self._config_path, "r") as stream:
-                    self._config = yaml_config_load(stream, SafeLoader)
-            else:
-                self._config = yaml_config_load(default_config, SafeLoader)
-                self.save()
+            self._config = yaml_config_load(storage_config.config, SafeLoader)
+            self._schema = storage_config.schema
+            self.save()
 
     def __repr__(self):
         return "MontyConfigure(\n{})".format(self.to_yaml())
@@ -173,19 +182,38 @@ class MontyConfigure(object):
         Get storage engine from config file,
         return default engine from default config if no config exists.
         """
-        storage_cls_name = self._config.storage.engine
+        engine_cls_name = self._config.storage.engine
         module = importlib.import_module(self._config.storage.module)
-        storage_cls = getattr(module, storage_cls_name)
-        return storage_cls(self._repository, self._config)
+        engine_cls = getattr(module, engine_cls_name)
+        return engine_cls(self._repository, self._config)
+
+    def _get_storage_config(self):
+        """
+        Get storage engine from config file,
+        return default engine from default config if no config exists.
+        """
+        config_cls_name = self._config.storage.config
+        module = importlib.import_module(self._config.storage.module)
+        config_cls = getattr(module, config_cls_name)
+        return config_cls
 
     @property
     def config(self):
         return self._config
 
+    @property
+    def config_path(self):
+        if self.in_memory:
+            return None
+        return os.path.join(self._repository, self.CONFIG_FNAME)
+
     def validate(self):
         yaml_config = self.to_yaml()
         jsonschema.validate(yaml.load(yaml_config, SafeLoader),
                             yaml.load(BASE_SCHEMA, SafeLoader))
+        if self._schema:
+            jsonschema.validate(yaml.load(yaml_config, SafeLoader),
+                                yaml.load(self._schema, SafeLoader))
 
     def to_yaml(self):
         return yaml_config_dump(self._config,
@@ -193,21 +221,24 @@ class MontyConfigure(object):
                                 default_flow_style=False)
 
     def save(self):
-        if self._repository == MEMORY_REPOSITORY:
-            raise RuntimeError("Memory storage has no config to save.")
+        if self.in_memory:
+            return None
+
+        if not os.path.isdir(self._repository):
+            os.makedirs(self._repository)
 
         self.validate()
-        with open(self._config_path, "w") as stream:
+        with open(self.config_path, "w") as stream:
             yaml_config_dump(self._config,
                              stream,
                              Dumper=SafeDumper,
                              default_flow_style=False)
 
     def exists(self):
-        if self._repository == MEMORY_REPOSITORY:
-            raise RuntimeError("Memory storage does not have existing config.")
+        if self.in_memory:
+            return None
 
-        return os.path.isfile(self._config_path)
+        return os.path.isfile(self.config_path)
 
     def touched(self):
         """Return True if repository contains not only config file.
@@ -215,8 +246,8 @@ class MontyConfigure(object):
         If return True, means database possibly existed, then should
         not change some config attribute.
         """
-        if self._repository == MEMORY_REPOSITORY:
-            raise RuntimeError("Memory storage does not save anything.")
+        if self.in_memory:
+            return None
 
         for f in os.listdir(self._repository):
             if not f == self.CONFIG_FNAME:
