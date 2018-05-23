@@ -25,13 +25,13 @@ before_install:
   - tar xzf mongodb-linux-x86_64-${MONGODB}.tgz
   - ${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongod --version
   - pip install pip -U
-  - pip install pytest
   - pip install pytest-cov
   - pip install coveralls
   - python setup.py install
 
 install:
   - pip install pyyaml
+  - pip install jsonschema
   - pip install pymongo
 
 before_script:
@@ -40,6 +40,7 @@ before_script:
 
 script:
   - pytest --cov montydb --storage sqlite
+  - pytest --cov montydb --storage flatfile
   - pytest --cov montydb --storage memory
 
 after_script:
