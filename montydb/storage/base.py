@@ -17,7 +17,6 @@ class AbstractStorage(with_metaclass(ABCMeta, object)):
         self.is_opened = False
         self._repository = repository
         self._config = storage_config
-        self._config.lock()
 
     def __repr__(self):
         return "MontyStorage(engine={!r})".format(self.__class__.__name__)

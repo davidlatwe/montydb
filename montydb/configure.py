@@ -49,7 +49,6 @@ class AttribDict(MutableMapping):
 
     def __init__(self, ordered):
         super(AttribDict, self).__setattr__('cnf', OrderedDict(ordered))
-        super(AttribDict, self).__setattr__('__lok__', False)
 
     def __repr__(self, indent=None):
         return json.dumps(self.cnf, default=OrderedDict, indent=indent)
@@ -69,8 +68,6 @@ class AttribDict(MutableMapping):
         return self.cnf[key]
 
     def __setitem__(self, key, val):
-        if self.__lok__:
-            raise RuntimeError("Locked, all values are not changeable now.")
         if key not in self.cnf:
             raise RuntimeError("Adding new option is not allowed.")
         self.cnf[key] = val
@@ -92,12 +89,6 @@ class AttribDict(MutableMapping):
 
     def pretty(self):
         return self.__repr__(indent=4)
-
-    def lock(self):
-        super(AttribDict, self).__setattr__('__lok__', True)
-        for key in self.cnf:
-            if isinstance(self.cnf[key], AttribDict):
-                self.cnf[key].lock()
 
 
 def yaml_config_load(stream, Loader=Loader, object_pairs_hook=AttribDict):
@@ -239,17 +230,3 @@ class MontyConfigure(object):
             return None
 
         return os.path.isfile(self.config_path)
-
-    def touched(self):
-        """Return True if repository contains not only config file.
-
-        If return True, means database possibly existed, then should
-        not change some config attribute.
-        """
-        if self.in_memory:
-            return None
-
-        for f in os.listdir(self._repository):
-            if not f == self.CONFIG_FNAME:
-                return True
-        return False

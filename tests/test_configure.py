@@ -38,11 +38,6 @@ def test_configure_memory_exists():
     assert configure.exists() is None
 
 
-def test_configure_memory_touched():
-    configure = MontyConfigure(":memory:")
-    assert configure.touched() is None
-
-
 def test_configure_memory_config_path():
     configure = MontyConfigure(":memory:")
     assert configure.config_path is None
