@@ -21,11 +21,10 @@
 
 import collections
 
-from bson import BSON
+from bson import BSON, SON
 from bson.py3compat import integer_types, string_type, abc, iteritems
 from bson.codec_options import CodecOptions
 from bson.raw_bson import RawBSONDocument
-from bson.son import SON
 from bson.codec_options import _parse_codec_options
 
 
@@ -44,7 +43,9 @@ def _bson_touch(doc, codec_op):
     BSON before sending to server.
     """
     if isinstance(doc, abc.Mapping):
-        return BSON(BSON.encode(doc, codec_options=codec_op)).decode(codec_op)
+        # Preserve the order of the query document when decode it back
+        order_keep = CodecOptions(document_class=SON)
+        return BSON(BSON.encode(doc, False, codec_op)).decode(order_keep)
     else:
         return doc  # should be None type.
 
