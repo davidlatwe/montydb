@@ -13,7 +13,7 @@ with open("README.md", "r") as fh:
 setup(
     name="montydb",
     version=version,
-    packages=find_packages(),
+    packages=find_packages(exclude=("tests",)),
 
     # development metadata
     zip_safe=True,
@@ -25,7 +25,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="BSD-3-Clause",
-    keywords="",
+    keywords="database nosql mongodb",
     url="https://github.com/davidlatwe/MontyDB",
     classifiers=(
         "Development Status :: 1 - Planning",
@@ -42,7 +42,14 @@ setup(
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: Implementation :: CPython",
-        "Programming Language :: Python :: Implementation :: PyPy",
         "Operating System :: OS Independent",
+    ),
+    install_requires=(
+        "pyyaml",
+        "jsonschema",
+        "pymongo",
+    ),
+    tests_require=(
+        "pytest-cov",
     ),
 )
