@@ -57,7 +57,11 @@ class MontyDatabase(BaseObject):
     def collection_names(self):
         return self.client._storage.collection_list(self._name)
 
-    def create_collection(self, name):
+    def create_collection(self,
+                          name,
+                          codec_options=None,
+                          write_concern=None,
+                          **kwargs):
         """
         Create a collection, before any insertion,
         raise error if exists.
@@ -66,7 +70,10 @@ class MontyDatabase(BaseObject):
             error_msg = "collection {} already exists".format(encode_(name))
             raise errors.CollectionInvalid(error_msg)
         else:
-            collection = self.get_collection(name)
+            collection = self.get_collection(name,
+                                             codec_options,
+                                             write_concern,
+                                             **kwargs)
             self.client._storage.collection_create(self._name, name)
             return collection
 
@@ -81,7 +88,11 @@ class MontyDatabase(BaseObject):
                             "basestring")
         self.client._storage.collection_drop(self._name, name)
 
-    def get_collection(self, name):
+    def get_collection(self,
+                       name,
+                       codec_options=None,
+                       write_concern=None,
+                       **kwargs):
         """
         Get a collection.
         """
@@ -96,4 +107,9 @@ class MontyDatabase(BaseObject):
         if is_invaild or not name:
             raise errors.OperationFailure("Invaild collection name.")
         else:
-            return MontyCollection(self, name)
+            return MontyCollection(self,
+                                   name,
+                                   False,
+                                   codec_options,
+                                   write_concern,
+                                   **kwargs)
