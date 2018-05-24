@@ -14,7 +14,7 @@ class AbstractStorage(with_metaclass(ABCMeta, object)):
     """
 
     def __init__(self, repository, storage_config):
-        self.is_opened = False
+        self.is_opened = True
         self._repository = repository
         self._config = storage_config
 
@@ -43,6 +43,7 @@ class AbstractStorage(with_metaclass(ABCMeta, object)):
     def _re_open(self):
         """Auto re-open"""
         self.is_opened = True
+        self._config.reload(repository=self._repository)
 
     def close(self):
         """Could do some clean up"""

@@ -90,6 +90,21 @@ class AttribDict(MutableMapping):
     def pretty(self):
         return self.__repr__(indent=4)
 
+    def reload(self, repository=None, update=None):
+        if repository is not None:
+            configure = MontyConfigure(repository)
+            if not configure.exists():
+                raise RuntimeError("Config file must be saved before reload.")
+            update = configure.load().config
+
+        for key in self.cnf:
+            # new config should have the same key.
+            val = update[key]
+            if isinstance(self.cnf[key], AttribDict):
+                self.cnf[key].reload(update=val)
+            else:
+                self.cnf[key] = val
+
 
 def yaml_config_load(stream, Loader=Loader, object_pairs_hook=AttribDict):
     """
@@ -142,31 +157,22 @@ class MontyConfigure(object):
             Ignored if `conf.yaml` exists.
     """
 
-    CONFIG_FNAME = "conf.yaml"
+    __config_filename = "conf.yaml"
 
-    def __init__(self, repository, storage_config=None):
+    def __init__(self, repository):
         self.in_memory = repository == MEMORY_REPOSITORY
         self._repository = repository
-
-        if self.in_memory:
-            storage_config = MemoryConfig
-        elif storage_config and not issubclass(storage_config, StorageConfig):
-            raise TypeError("Need a subclass of 'StorageConfig'")
-        storage_config = storage_config or SQLiteConfig
-
-        if self.exists():
-            # Ignore param `storage_config`
-            with open(self.config_path, "r") as stream:
-                self._config = yaml_config_load(stream, SafeLoader)
-                self._schema = self._get_storage_config().schema
-                self.validate()
-        else:
-            self._config = yaml_config_load(storage_config.config, SafeLoader)
-            self._schema = storage_config.schema
-            self.save()
+        self._config = None
+        self._schema = None
 
     def __repr__(self):
         return "MontyConfigure(\n{})".format(self.to_yaml())
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.save()
 
     def _get_storage_engine(self):
         """
@@ -196,7 +202,7 @@ class MontyConfigure(object):
     def config_path(self):
         if self.in_memory:
             return None
-        return os.path.join(self._repository, self.CONFIG_FNAME)
+        return os.path.join(self._repository, self.__config_filename)
 
     def validate(self):
         yaml_config = self.to_yaml()
@@ -210,6 +216,25 @@ class MontyConfigure(object):
         return yaml_config_dump(self._config,
                                 Dumper=SafeDumper,
                                 default_flow_style=False)
+
+    def load(self, storage_config=None):
+        if self.in_memory:
+            storage_config = MemoryConfig
+        elif storage_config and not issubclass(storage_config, StorageConfig):
+            raise TypeError("Need a subclass of 'StorageConfig'")
+        storage_config = storage_config or SQLiteConfig
+
+        if self.exists():
+            # Ignore param `storage_config`
+            with open(self.config_path, "r") as stream:
+                self._config = yaml_config_load(stream, SafeLoader)
+                self._schema = self._get_storage_config().schema
+                self.validate()
+        else:
+            self._config = yaml_config_load(storage_config.config, SafeLoader)
+            self._schema = storage_config.schema
+
+        return self
 
     def save(self):
         if self.in_memory:

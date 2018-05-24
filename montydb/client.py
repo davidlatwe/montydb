@@ -17,7 +17,8 @@ class MontyClient(BaseObject):
                  **kwargs):
         """
         """
-        self._storage = MontyConfigure(repository)._get_storage_engine()
+        with MontyConfigure(repository) as conf:
+            self._storage = conf.load()._get_storage_engine()
         wconcern = self._storage.wconcern_parser(kwargs)
 
         options = kwargs

@@ -24,7 +24,7 @@ def storage(request):
     return request.config.getoption("--storage")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def tmp_monty_repo():
     tmp_dir = os.path.join(tempfile.gettempdir(), "monty")
     if os.path.isdir(tmp_dir):
@@ -47,19 +47,17 @@ def monty_client(storage, tmp_monty_repo):
     if storage == "memory":
         return montydb.MontyClient(":memory:")
     elif storage == "sqlite":
-        config = montydb.storage.SQLiteConfig
-        montydb.MontyConfigure(tmp_monty_repo, config)
-        client = montydb.MontyClient(tmp_monty_repo)
-        purge_all_db(client)
-        return client
+        with montydb.MontyConfigure(tmp_monty_repo) as conf:
+            conf.load(montydb.storage.SQLiteConfig)
     elif storage == "flatfile":
-        config = montydb.storage.FlatFileConfig
-        montydb.MontyConfigure(tmp_monty_repo, config)
-        client = montydb.MontyClient(tmp_monty_repo)
-        purge_all_db(client)
-        return client
+        with montydb.MontyConfigure(tmp_monty_repo) as conf:
+            conf.load(montydb.storage.FlatFileConfig)
     else:
         pytest.fail("Unknown storage engine: {!r}".format(storage), False)
+
+    client = montydb.MontyClient(tmp_monty_repo)
+    purge_all_db(client)
+    return client
 
 
 @pytest.fixture

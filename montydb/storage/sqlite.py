@@ -35,47 +35,44 @@ storage:
   engine: SQLiteStorage
   config: SQLiteConfig
   module: {}
-pragmas:
-  database:
-    journal_mode: WAL
-  connection:
-    # These will be picked up by wconcern
-    synchronous: 1
-    automatic_index: OFF
+connection:
+  journal_mode: WAL
+write_concern:
+  # These will be picked up by wconcern
+  synchronous: 1
+  automatic_index: OFF
+  busy_timeout: 5000
 """.format(__name__)
 
 
 SQLITE_CONFIG_SCHEMA = """
 type: object
 required:
-  - pragmas
+  - connection
+  - write_concern
 properties:
-  pragmas:
+  connection:
     type: object
-    required:
-      - database
-      - connection
     properties:
-      database:
-        type: object
-        properties:
-          journal_mode:
-            type: string
-            enum: [DELETE, TRUNCATE, PERSIST, MEMORY, WAL, "OFF"]
-      connection:
-        type: object
-        properties:
-          synchronous:
-            oneOf:
-              - type: string
-                enum: ["OFF", NORMAL, FULL, EXTRA, "0", "1", "2", "3"]
-              - type: integer
-                enum: [0, 1, 2, 3]
-          automatic_index:
-            oneOf:
-              - type: boolean
-              - type: string
-                enum: ["ON", "OFF"]
+      journal_mode:
+        type: string
+        enum: [DELETE, TRUNCATE, PERSIST, MEMORY, WAL, "OFF"]
+  write_concern:
+    type: object
+    properties:
+      synchronous:
+        oneOf:
+          - type: string
+            enum: ["OFF", NORMAL, FULL, EXTRA, "0", "1", "2", "3"]
+          - type: integer
+            enum: [0, 1, 2, 3]
+      automatic_index:
+        oneOf:
+          - type: boolean
+          - type: string
+            enum: ["ON", "OFF"]
+      busy_timeout:
+        type: integer
 """
 
 
@@ -114,13 +111,18 @@ SELECT_LIMIT_RECORD = """
 class SQLiteKVEngine(object):
 
     def __init__(self, db_pragmas):
-        self.db_pragmas = self._assemble_pragmas(db_pragmas)
+        self.__db_pragmas = db_pragmas
         self.__conn = None
+
+    @property
+    def db_pragmas(self):
+        return self._assemble_pragmas(self.__db_pragmas)
 
     def _connect(self, db_file, wconcern=None):
         self.__conn = sqlite3.connect(db_file)
         self.__conn.text_factory = str
 
+        wcon_pragmas = ""
         if wconcern:
             wcon_doc = wconcern.document
             # wtimeout (milliseconds) -> busy_timeout (milliseconds)
@@ -129,8 +131,10 @@ class SQLiteKVEngine(object):
                 del wcon_doc["wtimeout"]
                 wcon_doc["busy_timeout"] = timeout
 
-            conn_pragmas = self._assemble_pragmas(wcon_doc)
-            self.__conn.executescript(conn_pragmas)
+            wcon_pragmas = self._assemble_pragmas(wcon_doc)
+
+        # update connection pragmas and write_concern pragmas
+        self.__conn.executescript(self.db_pragmas + ";" + wcon_pragmas)
 
         return contextlib.closing(self.__conn)
 
@@ -152,8 +156,6 @@ class SQLiteKVEngine(object):
     def create_table(self, db_file):
         with self._connect(db_file) as conn:
             with conn:
-                # Assemble PRAGMAS and init db
-                conn.executescript(self.db_pragmas)
                 conn.execute(CREATE_TABLE.format(SQLITE_RECORD_TABLE))
 
     def write_one(self, db_file, params, wconcern=None):
@@ -222,11 +224,7 @@ class SQLiteStorage(AbstractStorage):
 
     def __init__(self, repository, storage_config):
         super(SQLiteStorage, self).__init__(repository, storage_config)
-
-        self._conn = SQLiteKVEngine(self._config.pragmas.database)
-
-        # initialization complete
-        self.is_opened = True
+        self._conn = SQLiteKVEngine(self._config.connection)
 
     def _db_path(self, db_name):
         """
@@ -235,15 +233,18 @@ class SQLiteStorage(AbstractStorage):
         return os.path.join(self._repository, db_name)
 
     def wconcern_parser(self, client_kwargs):
-        wtimeout = client_kwargs.get("wtimeout")
+        _client_btimeout = client_kwargs.get("busy_timeout")
         # Default from config
-        conn_pragmas = self._config.pragmas.connection
+        wcon_pragmas = self._config.write_concern
+        wtimeout = client_kwargs.get(
+            "wtimeout",
+            _client_btimeout or wcon_pragmas.get("busy_timeout"))
         synchronous = client_kwargs.get(
             "synchronous",
-            conn_pragmas.get("synchronous"))
+            wcon_pragmas.get("synchronous"))
         automatic_index = client_kwargs.get(
             "automatic_index",
-            conn_pragmas.get("automatic_index"))
+            wcon_pragmas.get("automatic_index"))
 
         return SQLiteWriteConcern(wtimeout,
                                   synchronous,

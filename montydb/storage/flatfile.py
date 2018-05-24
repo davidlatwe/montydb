@@ -23,7 +23,7 @@ storage:
   engine: FlatFileStorage
   config: FlatFileConfig
   module: {}
-options:
+connection:
   cache_modified: 0
 """.format(__name__)
 
@@ -31,9 +31,9 @@ options:
 FLATFILE_CONFIG_SCHEMA = """
 type: object
 required:
-    - options
+    - connection
 properties:
-  options:
+  connection:
     type: object
     required:
         - cache_modified
@@ -74,12 +74,12 @@ def _write_pretty(file_path, documents):
 
 class FlatFileKVEngine(object):
 
-    def __init__(self, file_path, cache_modified):
+    def __init__(self, file_path, conn_config):
         """
         """
         self.file_path = file_path
 
-        self.__cache_modified = cache_modified
+        self.__conn_config = conn_config
         self.__cache = SON()
         self.modified_count = 0
 
@@ -111,14 +111,14 @@ class FlatFileKVEngine(object):
         self.modified_count += len(documents)
         self.__cache.update(documents)
 
-        if self.modified_count > self.__cache_modified:
+        if self.modified_count > self.__conn_config.cache_modified:
             self.flush()
 
     def delete(self, doc_id):
         self.modified_count += 1
         del self.__cache[doc_id]
 
-        if self.modified_count > self.__cache_modified:
+        if self.modified_count > self.__conn_config.cache_modified:
             self.flush()
 
 
@@ -129,7 +129,6 @@ class FlatFileStorage(AbstractStorage):
     def __init__(self, repository, storage_config):
         super(FlatFileStorage, self).__init__(repository, storage_config)
         self._cache_manager = {}
-        self.is_opened = True
 
     def _db_path(self, db_name):
         """
@@ -210,7 +209,6 @@ class FlatFileCollection(AbstractCollection):
 
     def __init__(self, name, database, write_concern, codec_options):
         config = database._storage._config
-        cache_modified = config.options.cache_modified
         super(FlatFileCollection, self).__init__(name,
                                                  database,
                                                  write_concern,
@@ -219,7 +217,7 @@ class FlatFileCollection(AbstractCollection):
         self._col_path = self._database._col_path(self._name)
         if self._name not in database._cache_manager:
             database._cache_manager[self._name] = FlatFileKVEngine(
-                self._col_path, cache_modified)
+                self._col_path, config.connection)
 
     @property
     def _flatfile(self):
