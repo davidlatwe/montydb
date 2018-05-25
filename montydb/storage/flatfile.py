@@ -45,6 +45,10 @@ properties:
 
 
 class FlatFileConfig(StorageConfig):
+    """FaltFile storage configuration settings
+
+    Default configuration and schema of FaltFile storage
+    """
     config = FALTFILE_CONFIG
     schema = FLATFILE_CONFIG_SCHEMA
 

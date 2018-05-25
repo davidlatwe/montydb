@@ -11,11 +11,11 @@ try:
 except ImportError:
     from yaml import Loader, Dumper
 
+from .storage.base import StorageConfig
+from .storage.memory import MEMORY_REPOSITORY
 from .storage import (
-    StorageConfig,
     SQLiteConfig,
     MemoryConfig,
-    MEMORY_REPOSITORY,
 )
 
 

@@ -77,6 +77,10 @@ properties:
 
 
 class SQLiteConfig(StorageConfig):
+    """SQLite storage configuration settings
+
+    Default configuration and schema of SQLite storage
+    """
     config = SQLITE_CONFIG
     schema = SQLITE_CONFIG_SCHEMA
 

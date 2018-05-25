@@ -19,6 +19,10 @@ storage:
 
 
 class MemoryConfig(StorageConfig):
+    """Memory storage configuration settings
+
+    Default configuration of Memory storage
+    """
     config = MEMORY_CONFIG
     schema = None
 

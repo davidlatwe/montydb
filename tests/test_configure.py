@@ -3,13 +3,13 @@ import pytest
 import os
 
 from montydb import MontyConfigure
+from montydb.storage.memory import MemoryStorage
+from montydb.storage.sqlite import SQLiteStorage
+from montydb.storage.flatfile import FlatFileStorage
+from montydb.storage.base import StorageConfig
 from montydb.storage import (
-    MemoryStorage,
     SQLiteConfig,
-    SQLiteStorage,
     FlatFileConfig,
-    FlatFileStorage,
-    StorageConfig,
 )
 
 
