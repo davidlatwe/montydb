@@ -22,10 +22,13 @@
 * Switch in between without changing document operation code. (If common ops is all you need)
 * Improve my personal skill :p
 
+### Install
+`pip install montydb`
+
 ### Requirements
-* `pip install pyyaml`
-* `pip install jsonschema`
-* `pip install pymongo` (for `bson`)
+* `pyyaml`
+* `jsonschema`
+* `pymongo` (for `bson`)
 
 ### Example Code
 ```python
@@ -40,62 +43,126 @@
 # {'_id': ObjectId('5ad34e537e8dd45d9c61a456'), 'stock': 'A', 'qty': 5}
 ```
 
-* **Storage Engine Setup**
+### Storage Engine Configurations
+
+To select or config a storage engine, we need to use `MontyConfigure` class. It will load a storage engine's default config and offer you a chance to tweak those settings then auto save a `conf.yaml` file in the database repository, except *Memory storage*.
+
+The configuration is only needed when repository creation or settings modification, `MontyClient` will pick up `conf.yaml` if exists.
+
+**Currently, one database repository can only assign single storage engine.**
 
   - **Memory**
   
-  ```python
-  >>> from montydb import MontyClient
-  >>> client = MontyClient(":memory:")
-  ```
-  - **Sqlite**
+  Memory storage does not need nor have any configuration, nothing saved to disk.
   
   ```python
   >>> from montydb import MontyClient
-  >>> client = MontyClient("/db/path")  # SQLite is default on-disk storage
+  >>> client = MontyClient(":memory:")  # Just use it.
   ```
+
+  - **SQLite**
+  
+  SQLite is the default on-disk storage engine, you can skip the configuration if the default setting is okay.
+  
+  ```python
+  >>> from montydb import MontyClient
+  >>> client = MontyClient("/db/repo")  # Just use it.
+  ```
+
+  Here is the SQLite default settings, they are infact SQLite pragmas:
+
+  ```yaml
+  connection:
+    journal_mode: WAL
+  write_concern:
+    synchronous: 1
+    automatic_index: OFF
+    busy_timeout: 5000
+  ```
+
+  If you are not happy with the default, use `MontyConfigure` before you get client.
+
+  ```python
+  >>> from montydb import MontyClient, MontyConfigure, storage
+  >>> with MontyConfigure("/db/repo") as cf:  # Auto save config when exit
+  ...     cf.load(storage.SQLiteConfig)       # Load sqlite config
+  ...     cf.config.connection.journal_mode = "DELETE"
+  ...     cf.config.write_concern.busy_timeout = 8000
+  ...
+  >>> client = MontyClient("/db/repo")  # Running tweaked sqlite storage now
+  ```
+
   - **FlatFile**
+  
+  FlatFile storage is not default storage engine, you need to do repository configuration first before create client object.
   
   ```python
   >>> from montydb import MontyClient, MontyConfigure, storage
-  >>> with MontyConfigure("/db/path") as conf:  # Auto save config when exit
-  ...     conf.load(storage.FlatFileConfig)     # Load flatfile config
+  >>> with MontyConfigure("/db/repo") as cf:  # Auto save config when exit
+  ...     cf.load(storage.FlatFileConfig)     # Load flatfile config
   ...
-  >>> client = MontyClient("/db/path")  # Running on flatfile storage now
+  >>> client = MontyClient("/db/repo")  # Running on flatfile storage now
   ```
 
-* **Configurations**
+  Here is the FlatFile default setting:
 
-   If you already load and save a storage config, next config load will be ignored and load the previous saved on-disk config instead.
-   For example:
+  ```yaml
+  connection:
+    cache_modified: 0
+  ```
+
+  `cache_modified` is an integer of how many document CRUD cached before flush to disk.
 
   ```python
-  >>> with MontyConfigure("/db/path") as conf:  # Auto save config when exit
-  ...     conf.load(storage.FlatFileConfig)     # Load flatfile config
+  >>> with MontyConfigure("/db/repo") as cf:  # Auto save config when exit
+  ...     cf.load(storage.FlatFileConfig)     # Load flatfile config
+  ...     cf.config.connection.cache_modified = 1000
   ...
-  >>> with MontyConfigure("/db/path") as conf:  # Auto save config when exit
-  ...     conf.load(storage.SQLiteConfig)       # Load sqlite config, but
-  ...                                           # "/db/path" already has
-  ...                                           # flatfile config been saved,
-  ...                                           # SQLiteConfig will be ignored.
-  ...     s = conf.config.storage
-  ...     assert s.engine == "FlatFileStorage"  # True
+  >>> client = MontyClient("/db/repo")  # Running tweaked flatfile storage now
   ```
 
-  The `storage.SQLiteConfig` and `storage.FlatFileConfig` are the default config of those storage engines, you can tweak those configuration with `MontyConfigure`. For example:
+  > NOTICE
+  >
+  > If you already load and save a storage config, next config load will be ignored and load the previous saved on-disk config instead. You have to delete `conf.yaml` manually if you want to change storage engine.
+  > For example:
 
   ```python
-  >>> with MontyConfigure("/db/path") as conf:  # Auto save config when exit
-  ...     conf.load(storage.FlatFileConfig)     # Load flatfile config
-  ...     conn_config = conf.config.connection
-  ...     conn_config.cache_modified = 100      # collection will cache 100
-  ...                                           # modifications and flush to
-  ...                                           # disk when it reach 101
+  >>> with MontyConfigure("/db/repo") as cf:
+  ...     cf.load(storage.FlatFileConfig)
   ...
-  >>> client = MontyClient("/db/path")  # Running on flatfile with tweaked config
+  >>> with MontyConfigure("/db/repo") as cf:
+  ...     cf.load(storage.SQLiteConfig)
+  ...     st = cf.config.storage
+  ...     assert st.engine == "FlatFileStorage"  # True
+  ```
+ 
+ > NOTICE
+ > 
+ > `MontyClient` will reload `conf.yaml` at next operation after `client.close()`
+
+  ```python
+  >>> from montydb import MontyClient, MontyConfigure, storage
+  >>> with MontyConfigure("/db/repo") as cf:
+  ...     cf.load(storage.FlatFileConfig)
+  ...
+  >>> # Create with flatfile default config
+  >>> client = MontyClient("/db/repo")
+  >>> col = client.my_db.my_col
+  >>> # Write to disk immediately due to default 0 cache
+  >>> col.insert_one({"doc": 0})
+  >>> # Edit `conf.yaml` directly and change cache_modified to 3,
+  >>> # or use `MontyConfigure` to do that.
+  >>> # Close client when done.
+  >>> client.close()
+  >>> 
+  >>> col.insert_one({"doc": 1})  # client auto re-open and reload config
+  >>> col.insert_one({"doc": 2})
+  >>> col.insert_one({"doc": 3})
+  >>> col.insert_one({"doc": 4})  # flush !
   ```
 
-### Status
+
+**After storage engine configuration, you should feel like using MongoDB's Python driver, unless it's not implemented.**
+
+### Develop Status
 See [Projects' TODO](https://github.com/davidlatwe/MontyDB/projects/1)
-
-Doc or Wiki coming soon.
