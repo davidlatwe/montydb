@@ -175,24 +175,20 @@ class MontyConfigure(object):
         self.save()
 
     def _get_storage_engine(self):
-        """
-        Get storage engine from config file,
-        return default engine from default config if no config exists.
+        """Get storage engine from config
         """
         engine_cls_name = self._config.storage.engine
         module = importlib.import_module(self._config.storage.module)
         engine_cls = getattr(module, engine_cls_name)
         return engine_cls(self._repository, self._config)
 
-    def _get_storage_config(self):
-        """
-        Get storage engine from config file,
-        return default engine from default config if no config exists.
+    def _get_storage_config_schema(self):
+        """Get storage engine config schema from config
         """
         config_cls_name = self._config.storage.config
         module = importlib.import_module(self._config.storage.module)
         config_cls = getattr(module, config_cls_name)
-        return config_cls
+        return config_cls.schema
 
     @property
     def config(self):
@@ -228,7 +224,7 @@ class MontyConfigure(object):
             # Ignore param `storage_config`
             with open(self.config_path, "r") as stream:
                 self._config = yaml_config_load(stream, SafeLoader)
-                self._schema = self._get_storage_config().schema
+                self._schema = self._get_storage_config_schema()
                 self.validate()
         else:
             self._config = yaml_config_load(storage_config.config, SafeLoader)
@@ -253,5 +249,4 @@ class MontyConfigure(object):
     def exists(self):
         if self.in_memory:
             return None
-
         return os.path.isfile(self.config_path)
