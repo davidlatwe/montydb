@@ -12,11 +12,8 @@ except ImportError:
     from yaml import Loader, Dumper
 
 from .storage.base import StorageConfig
-from .storage.memory import MEMORY_REPOSITORY
-from .storage import (
-    SQLiteConfig,
-    MemoryConfig,
-)
+from .storage.memory import MemoryConfig, MEMORY_REPOSITORY
+from .storage.sqlite import SQLiteConfig
 
 
 BASE_SCHEMA = """
