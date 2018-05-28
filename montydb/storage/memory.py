@@ -89,9 +89,12 @@ class MemoryCollection(AbstractCollection):
 
     @property
     def _col(self):
-        if not self._database.collection_exists(self._name):
+        if not self._col_exists():
             self._database.collection_create(self._name)
         return self._database._db[self._name]
+
+    def _col_exists(self):
+        return self._database.collection_exists(self._name)
 
     def _encode_doc(self, doc):
         return BSON.encode(doc, False, self.coptions)
@@ -129,7 +132,9 @@ class MemoryCursor(AbstractCursor):
 
     @property
     def _col(self):
-        return self._collection._col
+        if self._collection._col_exists():
+            return self._collection._col
+        return SON()
 
     def _decode_doc(self, doc):
         return BSON(doc).decode(self._collection.coptions)

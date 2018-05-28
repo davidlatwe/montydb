@@ -181,6 +181,8 @@ class SQLiteKVEngine(object):
                 return self._read(sql).fetchone()
 
     def read_all(self, db_file):
+        if not os.path.isfile(db_file):
+            return []
         with self._connect(db_file) as conn:
             with conn:
                 sql = SELECT_ALL_RECORD.format(SQLITE_RECORD_TABLE)
@@ -195,6 +197,8 @@ class SQLiteKVEngine(object):
                     yield result
 
     def limit_read_all(self, db_file, limit):
+        if not os.path.isfile(db_file):
+            return []
         with self._connect(db_file) as conn:
             with conn:
                 sql = SELECT_LIMIT_RECORD.format(SQLITE_RECORD_TABLE, limit)
