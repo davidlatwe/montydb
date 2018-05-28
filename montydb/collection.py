@@ -177,10 +177,10 @@ class MontyCollection(BaseObject):
             ))
 
     def delete_one(self, filter):
-        pass
+        raise NotImplementedError("Not implemented.")
 
     def delete_many(self, filter):
-        pass
+        raise NotImplementedError("Not implemented.")
 
     def aggregate(self, pipeline, session=None, **kwargs):
         # return CommandCursor
