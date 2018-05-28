@@ -1,7 +1,7 @@
 import os
 import importlib
 import json
-import jsonschema
+from jsonschema.validators import Draft4Validator
 from collections import MutableMapping, OrderedDict
 
 import yaml
@@ -14,6 +14,7 @@ except ImportError:
 from .storage.base import StorageConfig
 from .storage.memory import MemoryConfig, MEMORY_REPOSITORY
 from .storage.sqlite import SQLiteConfig
+from .errors import ConfigurationError
 
 
 BASE_SCHEMA = """
@@ -37,6 +38,35 @@ properties:
 """
 
 
+def _make_validator(schema):
+    return Draft4Validator(schema, types={"object": MutableMapping})
+
+
+def _config_validator(config, config_schema):
+    errors = []
+    base_val = _make_validator(yaml.load(BASE_SCHEMA, SafeLoader))
+    errors += base_val.iter_errors(config)
+    if config_schema:
+        conf_val = _make_validator(yaml.load(config_schema, SafeLoader))
+        errors += conf_val.iter_errors(config)
+
+    header = """
+    Configuration file schema error, total {}:
+    """.format(len(errors))
+    msg_ = """
+    - ERR #{}: {}
+    config path: {}
+    bad value: {}
+    schema: {}
+    """
+    errmsg = []
+    for i, e in enumerate(errors, 1):
+        p_ = ".".join(e.path)
+        errmsg.append(msg_.format(i, e.message, p_, e.instance, e.schema))
+    if errmsg:
+        raise ConfigurationError("".join([header] + errmsg))
+
+
 class AttribDict(MutableMapping):
     """
     Based on source:
@@ -57,16 +87,17 @@ class AttribDict(MutableMapping):
         self.__setitem__(key, val)
 
     def __delitem__(self, key):
-        raise RuntimeError("Can not delete option.")
+        raise ConfigurationError("Can not delete option.")
 
     def __getitem__(self, key):
         if key not in self.cnf:
-            raise RuntimeError("Option {!r} does not exists.".format(key))
+            raise ConfigurationError("Option {!r} does not exists."
+                                     "".format(key))
         return self.cnf[key]
 
     def __setitem__(self, key, val):
         if key not in self.cnf:
-            raise RuntimeError("Adding new option is not allowed.")
+            raise ConfigurationError("Adding new option is not allowed.")
         self.cnf[key] = val
 
     def __iter__(self):
@@ -76,7 +107,7 @@ class AttribDict(MutableMapping):
         return len(self.cnf)
 
     def __restriction__(self, *args, **kwargs):
-        raise RuntimeError('Can not use this method.')
+        raise ConfigurationError('Can not use this method.')
 
     clear = __restriction__
     pop = __restriction__
@@ -91,7 +122,8 @@ class AttribDict(MutableMapping):
         if repository is not None:
             configure = MontyConfigure(repository)
             if not configure.exists():
-                raise RuntimeError("Config file must be saved before reload.")
+                raise ConfigurationError("Config file must be saved before "
+                                         "reload.")
             update = configure.load().config
 
         for key in self.cnf:
@@ -198,12 +230,7 @@ class MontyConfigure(object):
         return os.path.join(self._repository, self.__config_filename)
 
     def validate(self):
-        yaml_config = self.to_yaml()
-        jsonschema.validate(yaml.load(yaml_config, SafeLoader),
-                            yaml.load(BASE_SCHEMA, SafeLoader))
-        if self._schema:
-            jsonschema.validate(yaml.load(yaml_config, SafeLoader),
-                                yaml.load(self._schema, SafeLoader))
+        _config_validator(self._config, self._schema)
 
     def to_yaml(self):
         return yaml_config_dump(self._config,

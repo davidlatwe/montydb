@@ -1,19 +1,19 @@
 
 import sys
 import re
-
-from bson.py3compat import abc, PY3
+from collections import Mapping
 
 
 FS_ENCODE = sys.getfilesystemencoding()
 
+PY3 = sys.version_info[0] == 3
 PY36 = sys.version_info[0] == 3 and sys.version_info[1] >= 6
 
 RE_PATTERN_TYPE = type(re.compile(""))
 
 
 def is_mapping_type(obj):
-    return isinstance(obj, abc.Mapping)
+    return isinstance(obj, Mapping)
 
 
 def is_array_type(obj):

@@ -3,6 +3,7 @@ import pytest
 import os
 
 from montydb import MontyConfigure
+from montydb.errors import ConfigurationError
 from montydb.storage.memory import MemoryStorage
 from montydb.storage.sqlite import SQLiteStorage
 from montydb.storage.flatfile import FlatFileStorage
@@ -48,13 +49,13 @@ def test_configure_config_err(tmp_monty_repo):
     configure = MontyConfigure(tmp_monty_repo).load()
     config = configure.config
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ConfigurationError):
         config.storage.custom_config = "HELLO"
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ConfigurationError):
         config.storage["custom_config"] = "HELLO"
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ConfigurationError):
         del config.storage["engine"]
 
 
@@ -73,7 +74,22 @@ class FakeConfig(StorageConfig):
     connection:
       fake_attr: false
     """.format(__name__)
-    schema = None
+    schema = """
+    type: object
+    properties:
+      connection:
+        type: object
+        properties:
+          fake_attr:
+            type: boolean
+    """
+
+
+def test_configure_validation_fail(tmp_monty_repo):
+    with pytest.raises(ConfigurationError):
+        with MontyConfigure(tmp_monty_repo) as cf:
+            cf.load(FakeConfig)
+            cf.config.connection.fake_attr = None
 
 
 def test_configure_reload(tmp_monty_repo):
@@ -102,5 +118,5 @@ def test_configure_reload_faild(tmp_monty_repo):
     configure = MontyConfigure(tmp_monty_repo)
     config = configure.load(FakeConfig).config
     # no save
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ConfigurationError):
         config.reload(repository=tmp_monty_repo)
