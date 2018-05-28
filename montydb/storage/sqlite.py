@@ -146,17 +146,6 @@ class SQLiteKVEngine(object):
         return ";".join(["PRAGMA {0}={1}".format(k, v)
                          for k, v in pragma_dict.items()])
 
-    def _read(self, sql, param=()):
-        """Ignore table's existence and get a cursor.
-        """
-        try:
-            return self.__conn.execute(sql, param)
-        except sqlite3.OperationalError as e:
-            if e.args[0].startswith("no such table"):
-                return self.__conn.cursor()
-            else:
-                raise
-
     def create_table(self, db_file):
         with self._connect(db_file) as conn:
             with conn:
@@ -174,35 +163,18 @@ class SQLiteKVEngine(object):
                 sql = INSERT_RECORD.format(SQLITE_RECORD_TABLE)
                 conn.executemany(sql, seq_params)
 
-    def read_one(self, db_file):
-        with self._connect(db_file) as conn:
-            with conn:
-                sql = SELECT_ALL_RECORD.format(SQLITE_RECORD_TABLE)
-                return self._read(sql).fetchone()
-
-    def read_all(self, db_file):
+    def read_all(self, db_file, limit):
         if not os.path.isfile(db_file):
             return []
         with self._connect(db_file) as conn:
             with conn:
-                sql = SELECT_ALL_RECORD.format(SQLITE_RECORD_TABLE)
-                return self._read(sql).fetchall()
+                if limit:
+                    sql = SELECT_LIMIT_RECORD.format(
+                        SQLITE_RECORD_TABLE, limit)
+                else:
+                    sql = SELECT_ALL_RECORD.format(SQLITE_RECORD_TABLE)
 
-    def batch_read_all(self, db_file, arraysize=1000):
-        with self._connect(db_file) as conn:
-            with conn:
-                sql = SELECT_ALL_RECORD.format(SQLITE_RECORD_TABLE)
-                cursor = self._read(sql)
-                for result in iter(lambda: cursor.fetchmany(arraysize), []):
-                    yield result
-
-    def limit_read_all(self, db_file, limit):
-        if not os.path.isfile(db_file):
-            return []
-        with self._connect(db_file) as conn:
-            with conn:
-                sql = SELECT_LIMIT_RECORD.format(SQLITE_RECORD_TABLE, limit)
-                return self._read(sql).fetchall()
+                return conn.execute(sql).fetchall()
 
 
 class SQLiteWriteConcern(WriteConcern):
@@ -400,11 +372,7 @@ class SQLiteCursor(AbstractCursor):
         return BSON(doc[0]).decode(self._collection.coptions)
 
     def query(self, max_scan):
-        if not max_scan:
-            docs = self._conn.read_all(self._col_path)
-        else:
-            docs = self._conn.limit_read_all(self._col_path, max_scan)
-
+        docs = self._conn.read_all(self._col_path, max_scan)
         return [self._decode_doc(doc) for doc in docs]
 
 
