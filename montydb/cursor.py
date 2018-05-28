@@ -252,6 +252,9 @@ class MontyCursor(object):
 
         max_scan = 0
         if self._max_scan:
+            if (isinstance(self._max_scan, bool) or
+                    not isinstance(self._max_scan, (int, float))):
+                raise OperationFailure("'maxScan' field must be numeric.")
             if int(self._max_scan) < 0:
                 raise OperationFailure(
                     "MaxScan value must be non-negative, but received: {}"

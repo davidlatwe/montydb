@@ -92,6 +92,9 @@ class MontyCollection(BaseObject):
                     bypass_document_validation=False, *args, **kwargs):
         """
         """
+        if not isinstance(documents, collections.Iterable) or not documents:
+            raise TypeError("documents must be a non-empty list")
+
         if bypass_document_validation:
             pass
 
