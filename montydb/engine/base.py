@@ -197,16 +197,16 @@ def gravity(value):
     TYPE_WEIGHT = {
         MinKey: -1,
         # less than None: 0, this scenario handles in
-        # ordering phase, not during weighting
+        #                 ordering phase, not during weighting
         type(None): 1,
         int: 2,
         float: 2,
         Int64: 2,
-        Decimal128: 2,
+        # Decimal128: 2,
         # string: 3,
-        dict: 4,
-        list: 5,
-        tuple: 5,
+        # dict: 4,
+        # list: 5,
+        # tuple: 5,
         Binary: 6,
         # bytes: 6,
         ObjectId: 7,
@@ -222,42 +222,35 @@ def gravity(value):
     # get value type weight
     try:
         wgt = TYPE_WEIGHT[type(value)]
+
     except KeyError:
         if is_mapping_type(value):
-            wgt = 4
-        elif isinstance(value, Code):  # also an instance of string_type
-            wgt = 12 if value.scope is None else 13
-        elif isinstance(value, string_type):
-            wgt = 3
-        elif isinstance(value, bytes):
-            wgt = 6
+            weighted = (4, tuple(_dict_parser(value)))
+
+        elif is_array_type(value):
+            weighted = (5, tuple(_list_parser(value)))
+
         elif isinstance(value, (RE_PATTERN_TYPE, Regex)):
-            wgt = 11
+            weighted = (11, value.pattern, re_int_flag_to_str(value.flags))
+
+        elif isinstance(value, Code):  # also an instance of string_type
+            scope = value.scope
+            scope = None if scope is None else tuple(_dict_parser(scope))
+            weighted = (12 if scope is None else 13, str(value), scope)
+
+        elif isinstance(value, string_type):
+            weighted = (3, value)
+
+        elif isinstance(value, bytes):
+            weighted = (6, value)
+
+        elif isinstance(value, Decimal128):
+            if value in _decimal128_NaN_ls:
+                value = Decimal128('NaN')  # MongoDB does not sort them
+            weighted = (2, _cmp_decimal(value))
+
         else:
             raise TypeError("Not weightable type: {!r}".format(type(value)))
-
-    # gain weight
-    if wgt == 4:
-        weighted = (wgt, tuple(_dict_parser(value)))
-
-    elif wgt == 5:
-        weighted = (wgt, tuple(_list_parser(value)))
-
-    elif wgt == 2 and isinstance(value, Decimal128):
-        if value in _decimal128_NaN_ls:
-            # MongoDB does not sort them
-            value = Decimal128('NaN')
-        weighted = (wgt, _cmp_decimal(value))
-
-    elif wgt == 11:
-        weighted = (wgt, value.pattern, re_int_flag_to_str(value.flags))
-
-    elif wgt == 13 or wgt == 12:
-        scope = None
-        if value.scope is not None:
-            scope = tuple(_dict_parser(value.scope))
-        weighted = (wgt, str(value), scope)
-
     else:
         weighted = (wgt, value)
 
