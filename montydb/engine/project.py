@@ -65,7 +65,6 @@ class Projector(object):
         self.include_flag = None
         self.regular_field = []
         self.array_field = {}
-        self.array_slice = {}
 
         self.parser(spec, qfilter)
 
@@ -77,12 +76,9 @@ class Projector(object):
 
         for field_path in self.array_field:
             self.array_field[field_path](field_walker)
-        for field_path in self.array_slice:
-            self.array_slice[field_path](field_walker)
 
         if self.include_flag:
             self.regular_field += list(self.array_field.keys())
-            self.regular_field += list(self.array_slice.keys())
             self.inclusion(field_walker, self.regular_field)
         else:
             self.exclusion(field_walker, self.regular_field)
@@ -119,7 +115,7 @@ class Projector(object):
                             "$slice only supports numbers and [skip, limit] "
                             "arrays")
 
-                    self.array_slice[key] = self.parse_slice(key, slicing)
+                    self.array_field[key] = self.parse_slice(key, slicing)
 
                 elif sub_k == "$elemMatch":
                     if not is_mapping_type(sub_v):
