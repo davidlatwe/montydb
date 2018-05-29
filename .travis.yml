@@ -10,7 +10,9 @@ python:
   - nightly
 
 env:
-  - MONGODB=3.6.4
+  global:
+    - CC_TEST_REPORTER_ID=aa9820d7f18c6a86da387e2604f592f37845d0dac88afb10f73738872647c321
+    - MONGODB=3.6.4
 
 matrix:
   fast_finish: true
@@ -27,6 +29,7 @@ before_install:
   - pip install pip -U
   - pip install pytest-cov
   - pip install coveralls
+  - pip install codecov
   - python setup.py install
 
 install:
@@ -37,15 +40,21 @@ install:
 before_script:
   - mkdir ${PWD}/mongodb-linux-x86_64-${MONGODB}/data
   - ${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongod --dbpath ${PWD}/mongodb-linux-x86_64-${MONGODB}/data --logpath ${PWD}/mongodb-linux-x86_64-${MONGODB}/mongodb.log --fork
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
 
 script:
   - pytest --cov montydb --storage sqlite
-  - pytest --cov montydb --storage flatfile
-  - pytest --cov montydb --storage memory
+  - pytest --cov montydb --storage flatfile --cov-append
+  - pytest --cov montydb --storage memory --cov-append
 
 after_script:
   - pkill mongod
 
-after_success: coveralls
+after_success:
+  - codecov
+  - coveralls
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
 
 sudo: false
