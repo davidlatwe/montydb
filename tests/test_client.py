@@ -1,7 +1,7 @@
 
 import pytest
 import os
-from unittest.mock import patch, MagicMock
+import platform
 
 import montydb
 from montydb.errors import OperationFailure
@@ -26,8 +26,8 @@ def test_client_eq_other_type(monty_client):
     assert not monty_client == "other_type"
 
 
-def test_client_ne(monty_client):
-    other_client = montydb.MontyClient("other_address")
+def test_client_ne(monty_client, tmp_monty_repo):
+    other_client = montydb.MontyClient(tmp_monty_repo + "/other_address")
     assert not monty_client == other_client
 
 
@@ -81,18 +81,21 @@ def test_client_get_database(monty_client):
         monty_client.get_database("test.db")
 
 
-def test_client_get_database_on_windows_faild(monty_client):
-    with patch('platform.system', MagicMock(return_value="Windows")):
-        with pytest.raises(OperationFailure):
-            monty_client.get_database("$invalid")
+def _system_win():
+    return "Windows"
 
 
-def test_client_get_database_non_windows_faild(monty_client):
-    with patch('platform.system', MagicMock(return_value="Windows")):
-        with pytest.raises(OperationFailure):
-            monty_client.get_database("$invalid")
+def test_client_get_database_on_windows_faild(monty_client, monkeypatch):
+    monkeypatch.setattr(platform, "system", _system_win)
+    with pytest.raises(OperationFailure):
+        monty_client.get_database("$invalid")
 
 
-def test_client_context(monty_client):
-    with montydb.MontyClient("address"):
+def test_client_get_database_non_windows_faild(monty_client, monkeypatch):
+    with pytest.raises(OperationFailure):
+        monty_client.get_database("$invalid")
+
+
+def test_client_context(monty_client, tmp_monty_repo):
+    with montydb.MontyClient(tmp_monty_repo + "/address"):
         pass
