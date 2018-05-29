@@ -192,7 +192,7 @@ class ClientOptions(object):
     @property
     def _options(self):
         """The original options used to create this ClientOptions."""
-        return self.__options
+        return self.__options  # pragma: no cover
 
     @property
     def codec_options(self):
@@ -215,13 +215,13 @@ class BaseObject(object):
     def __init__(self, codec_options, write_concern):
 
         if not isinstance(codec_options, CodecOptions):
-            raise TypeError("codec_options must be an instance of "
-                            "bson.codec_options.CodecOptions")
+            raise TypeError("codec_options must be an "  # pragma: no cover
+                            "instance of bson.codec_options.CodecOptions")
         self.__codec_options = codec_options
 
         if not isinstance(write_concern, WriteConcern):
-            raise TypeError("write_concern must be an instance of "
-                            "montydb.base.WriteConcern")
+            raise TypeError("write_concern must be an "  # pragma: no cover
+                            "instance of montydb.base.WriteConcern")
         self.__write_concern = write_concern
 
     @property

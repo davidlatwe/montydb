@@ -23,6 +23,11 @@ def test_cursor_collection(monty_collection):
     assert cur.collection == monty_collection
 
 
+def test_cursor_filter_type_error(monty_collection):
+    with pytest.raises(TypeError):
+        monty_collection.find([])
+
+
 def test_cursor_skip(monty_collection):
     cur = monty_collection.find({}, skip=5)
     assert next(cur)["doc"] == 5

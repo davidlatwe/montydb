@@ -10,6 +10,7 @@ from .errors import InvalidOperation, OperationFailure
 from .engine.queries import QueryFilter, ordering
 from .engine.project import Projector
 from .base import (
+    validate_boolean,
     validate_is_mapping,
     _fields_list_to_dict,
     _index_list,
@@ -372,8 +373,7 @@ class MontyCursor(object):
         raise NotImplementedError
 
     def count(self, with_limit_and_skip=False):
-        if not isinstance(with_limit_and_skip, bool):
-            raise TypeError("with_limit_and_skip must be True or False")
+        validate_boolean("with_limit_and_skip", with_limit_and_skip)
         if self._id is None:
             # (NOTE) this might need improve
             self.__query()

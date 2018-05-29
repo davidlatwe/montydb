@@ -50,7 +50,7 @@ SERIALIZED = """
 
 
 def test_utils_monty_dump(tmp_monty_repo):
-    tmp_dump = os.path.join(tmp_monty_repo, "dumped.json")
+    tmp_dump = os.path.join(tmp_monty_repo, "test_mkdirs", "dumped.json")
     monty_dump(tmp_dump, DOCUMENTS)
 
     with open(tmp_dump, "r") as dump:

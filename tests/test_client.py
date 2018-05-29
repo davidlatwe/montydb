@@ -28,7 +28,7 @@ def test_client_eq_other_type(monty_client):
 
 def test_client_ne(monty_client, tmp_monty_repo):
     other_client = montydb.MontyClient(tmp_monty_repo + "/other_address")
-    assert not monty_client == other_client
+    assert monty_client != other_client
 
 
 def test_client_getattr(monty_client):
@@ -99,3 +99,8 @@ def test_client_get_database_non_windows_faild(monty_client, monkeypatch):
 def test_client_context(monty_client, tmp_monty_repo):
     with montydb.MontyClient(tmp_monty_repo + "/address"):
         pass
+
+
+def test_client_wtimeout_type_error(monty_client):
+    with pytest.raises(TypeError):
+        montydb.MontyClient(monty_client.address, wtimeout=0.5)
