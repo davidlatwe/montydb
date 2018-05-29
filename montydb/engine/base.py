@@ -140,49 +140,36 @@ class _cmp_decimal(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def __gt__(self, other):
+    def _lt_gt(self, other, lt):
         if self._is_numeric(other):
             other = self._to_decimal128(other)
             if other == _decimal128_INF or self._dec == _decimal128_NaN:
-                return False
+                return lt
             if other == _decimal128_NaN or self._dec == _decimal128_INF:
-                return True
-            return self._dec.to_decimal() > other.to_decimal()
+                return not lt
+            cmp_ = (self._dec, other) if lt else (other, self._dec)
+            return cmp_[0].to_decimal() < cmp_[1].to_decimal()
+        else:
+            return NotImplemented
+
+    def __gt__(self, other):
+        return self._lt_gt(other, False)
+
+    def __lt__(self, other):
+        return self._lt_gt(other, True)
+
+    def _le_ge(self, other, le):
+        if self._is_numeric(other):
+            attr = self.__gt__ if le else self.__lt__
+            return self._dec == _decimal128_INF or not attr(other)
         else:
             return NotImplemented
 
     def __ge__(self, other):
-        if self._is_numeric(other):
-            if self._dec == _decimal128_INF:
-                return True
-            if not self.__lt__(other):
-                return True
-            else:
-                return False
-        else:
-            return NotImplemented
-
-    def __lt__(self, other):
-        if self._is_numeric(other):
-            other = self._to_decimal128(other)
-            if other == _decimal128_INF or self._dec == _decimal128_NaN:
-                return True
-            if other == _decimal128_NaN or self._dec == _decimal128_INF:
-                return False
-            return self._dec.to_decimal() < other.to_decimal()
-        else:
-            return NotImplemented
+        return self._le_ge(other, False)
 
     def __le__(self, other):
-        if self._is_numeric(other):
-            if self._dec == _decimal128_INF:
-                return True
-            if not self.__gt__(other):
-                return True
-            else:
-                return False
-        else:
-            return NotImplemented
+        return self._le_ge(other, True)
 
 
 class Weighted(tuple):
