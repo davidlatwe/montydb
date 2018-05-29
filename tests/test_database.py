@@ -2,7 +2,7 @@
 import pytest
 
 from montydb import MontyCollection
-from montydb.errors import OperationFailure
+from montydb.errors import OperationFailure, CollectionInvalid
 
 
 def test_database_name(monty_database):
@@ -13,10 +13,29 @@ def test_database_client(monty_database, monty_client):
     assert monty_database.client == monty_client
 
 
+def test_database_eq(monty_database, monty_client):
+    other_database = monty_client.get_database(monty_database.name)
+    assert monty_database == other_database
+
+
+def test_database_eq_other_type(monty_database):
+    assert not monty_database == "other_type"
+
+
+def test_database_ne(monty_database, monty_client):
+    other_database = monty_client.get_database("other_db")
+    assert not monty_database == other_database
+
+
 def test_database_getitem(monty_database):
     col = monty_database["test_col_get_item"]
     assert isinstance(col, MontyCollection)
     assert col.name == "test_col_get_item"
+
+
+def test_database_getattr_faild(monty_database):
+    with pytest.raises(AttributeError):
+        monty_database._bad_name
 
 
 def test_database_get_collection(monty_database):
@@ -65,3 +84,9 @@ def test_database_drop_colllection(monty_database):
 
     with pytest.raises(TypeError):
         monty_database.drop_collection(0)
+
+
+def test_database_create_existed_colllection(monty_database):
+    monty_database.create_collection("collection_double")
+    with pytest.raises(CollectionInvalid):
+        monty_database.create_collection("collection_double")

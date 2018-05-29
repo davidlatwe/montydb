@@ -114,6 +114,12 @@ def test_cursor_get_item_with_slice_and_stop_eq_start(monty_collection):
         next(cur)
 
 
+def test_cursor_get_item_with_slice_none(monty_collection):
+    cur = monty_collection.find({})
+    cur = cur[None:None]
+    assert cur.count(with_limit_and_skip=True) == 20
+
+
 def test_cursor_get_item_but_out_of_range(monty_collection):
     cur = monty_collection.find({})
     with pytest.raises(IndexError):
