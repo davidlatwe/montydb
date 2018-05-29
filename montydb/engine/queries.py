@@ -6,14 +6,12 @@ from bson.regex import Regex, str_flags_to_int
 from bson.son import SON
 from bson.min_key import MinKey
 from bson.max_key import MaxKey
-from bson.int64 import Int64
 from bson.decimal128 import Decimal128
-from bson.binary import Binary
-from bson.code import Code
 
 from ..errors import OperationFailure
 
 from .base import (
+    gravity,
     FieldWalker,
     Weighted,
     BSON_TYPE_ALIAS_ID,
@@ -480,42 +478,7 @@ Field-level Query Operators
 
 
 def _is_comparable(val, qry):
-    # Same type
-    if type(qry) is type(val):
-        if isinstance(qry, Code):
-            # Code object with scope is different from code without scope
-            if qry.scope is None and val.scope is None:
-                return True
-            elif not (qry.scope is None or val.scope is None):
-                return True
-            else:
-                return False
-        else:
-            return True
-
-    # Type Bracketing
-    # String
-    if isinstance(qry, string_type) and isinstance(val, string_type):
-        if isinstance(qry, Code) or isinstance(val, Code):
-            # Code also an instance of string_type
-            return False
-        if isinstance(qry, Binary) or isinstance(val, Binary):
-            # Binary also an instance of string_type in PY2
-            return False
-        return True
-    # Binary
-    if isinstance(qry, (bytes, Binary)) and isinstance(val, (bytes, Binary)):
-        return True
-    # Object
-    if is_mapping_type(qry) and is_mapping_type(val):
-        return True
-    # Numberic
-    if not any([isinstance(qry, bool), isinstance(val, bool)]):
-        number_type = (integer_types, float, Int64, Decimal128, _cmp_decimal)
-        if isinstance(qry, number_type) and isinstance(val, number_type):
-            return True
-
-    return False
+    return gravity(val, weight_only=True) == gravity(qry, weight_only=True)
 
 
 def _eq_match(field_walker, query):

@@ -180,18 +180,9 @@ class Weighted(tuple):
         return super(Weighted, cls).__new__(cls, gravity(value))
 
 
-def gravity(value):
+def gravity(value, weight_only=None):
     """
     """
-
-    def _dict_parser(dict_doc):
-        for key, value in dict_doc.items():
-            wgt, value = gravity(value)
-            yield (wgt, key, value)
-
-    def _list_parser(list_doc):
-        return (gravity(member) for member in list_doc)
-
     # a short cut for getting weight number,
     # to get rid of lots `if` stetments.
     TYPE_WEIGHT = {
@@ -202,7 +193,8 @@ def gravity(value):
         int: 2,
         float: 2,
         Int64: 2,
-        # Decimal128: 2,
+        Decimal128: 2,
+        _cmp_decimal: 2,
         # string: 3,
         # dict: 4,
         # list: 5,
@@ -225,36 +217,73 @@ def gravity(value):
 
     except KeyError:
         if is_mapping_type(value):
-            weighted = (4, tuple(_dict_parser(value)))
-
+            wgt = 4
         elif is_array_type(value):
-            weighted = (5, tuple(_list_parser(value)))
-
+            wgt = 5
         elif isinstance(value, (RE_PATTERN_TYPE, Regex)):
-            weighted = (11, value.pattern, re_int_flag_to_str(value.flags))
-
+            wgt = 11
         elif isinstance(value, Code):  # also an instance of string_type
-            scope = value.scope
-            scope = None if scope is None else tuple(_dict_parser(scope))
-            weighted = (12 if scope is None else 13, str(value), scope)
-
+            wgt = 12 if value.scope is None else 13
         elif isinstance(value, string_type):
-            weighted = (3, value)
-
+            wgt = 3
         elif isinstance(value, bytes):
-            weighted = (6, value)
-
-        elif isinstance(value, Decimal128):
-            if value in _decimal128_NaN_ls:
-                value = Decimal128('NaN')  # MongoDB does not sort them
-            weighted = (2, _cmp_decimal(value))
-
+            wgt = 6
         else:
             raise TypeError("Not weightable type: {!r}".format(type(value)))
-    else:
-        weighted = (wgt, value)
 
-    return weighted
+    if weight_only:
+        return wgt
+    return _weighted(wgt, value)
+
+
+def _weighted(weight, value):
+
+    def __dict_parser(dict_doc):
+        for key, val in dict_doc.items():
+            wgt, val = gravity(val)
+            yield (wgt, key, val)
+
+    def __list_parser(list_doc):
+        return (gravity(member) for member in list_doc)
+
+    def numeric_type(wgt, val):
+        if isinstance(value, (Decimal128, _cmp_decimal)):
+            if isinstance(val, _cmp_decimal):
+                val = val._dec
+            if val in _decimal128_NaN_ls:
+                val = Decimal128('NaN')  # MongoDB does not sort them
+            return (wgt, _cmp_decimal(val))
+        else:
+            return (wgt, val)
+
+    def mapping_type(wgt, val):
+        return (wgt, tuple(__dict_parser(val)))
+
+    def array_type(wgt, val):
+        return (wgt, tuple(__list_parser(val)))
+
+    def regex_type(wgt, val):
+        return (wgt, val.pattern, re_int_flag_to_str(val.flags))
+
+    def code_type(wgt, val):
+        return (wgt, str(value), None)
+
+    def code_scope_type(wgt, val):
+        return (wgt, str(value), tuple(__dict_parser(val.scope)))
+
+    weight_method = {
+        2: numeric_type,
+        4: mapping_type,
+        5: array_type,
+        11: regex_type,
+        12: code_type,
+        13: code_scope_type,
+    }
+
+    try:
+        return weight_method[weight](weight, value)
+    except KeyError:
+        return (weight, value)
 
 
 def is_array_type_(doc):
