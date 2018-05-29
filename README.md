@@ -2,8 +2,11 @@
 # Monty, Mongo Tinified
 ### A serverless Mongo-like database backed with SQLite in Python
 
-[![Build Status](https://travis-ci.org/davidlatwe/MontyDB.svg?branch=master)](https://travis-ci.org/davidlatwe/MontyDB)
-[![Coverage Status](https://coveralls.io/repos/github/davidlatwe/MontyDB/badge.svg)](https://coveralls.io/github/davidlatwe/MontyDB)
+[![Build Status](http://img.shields.io/travis/davidlatwe/MontyDB/master.svg?style=flat)](https://travis-ci.org/davidlatwe/MontyDB)
+[![Coverage Status](https://img.shields.io/coveralls/github/davidlatwe/MontyDB/master.svg?style=flat)](https://coveralls.io/github/davidlatwe/MontyDB?branch=master)
+[![Version](http://img.shields.io/pypi/v/MontyDB.svg?style=flat)](https://pypi.python.org/pypi/MontyDB)
+![Tested_with_MongoDB-v3.6.4](https://img.shields.io/badge/tested_with_MongoDB-v3.6.4-blue.svg)
+[![Maintainability](https://api.codeclimate.com/v1/badges/1adb14266d05ef3c9b17/maintainability)](https://codeclimate.com/github/davidlatwe/MontyDB/maintainability)
 
 :construction: **Not Ready For Prime Time** :construction:
 
