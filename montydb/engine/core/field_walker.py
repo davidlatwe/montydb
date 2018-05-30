@@ -72,10 +72,6 @@ class FieldWalker(object):
                     # Currently inside an array type value
                     # with given index path.
                     array_index_pos = True
-
-                    if self.__index_posed and self.__embedded_in_array:
-                        if not any(is_array_type(ele) for ele in _doc):
-                            array_index_pos = False
                 else:
                     # Possible quering from an array of documents.
                     _doc = self.__from_array(_doc, field)
