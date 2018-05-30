@@ -1,6 +1,7 @@
 import os
 import importlib
 import json
+import inspect
 from jsonschema.validators import Draft4Validator
 from collections import MutableMapping, OrderedDict
 
@@ -116,7 +117,7 @@ class AttribDict(MutableMapping):
     update = __restriction__
 
     def pretty(self):
-        return self.__repr__(indent=4)
+        return self.__repr__(indent=4)  # pragma: no cover
 
     def reload(self, repository=None, update=None):
         if repository is not None:
@@ -201,7 +202,8 @@ class MontyConfigure(object):
         return self
 
     def __exit__(self, *args):
-        self.save()
+        if self._config is not None:
+            self.save()
 
     def _get_storage_engine(self):
         """Get storage engine from config
@@ -225,23 +227,25 @@ class MontyConfigure(object):
 
     @property
     def config_path(self):
-        if self.in_memory:
-            return None
-        return os.path.join(self._repository, self.__config_filename)
+        if not self.in_memory:
+            return os.path.join(self._repository, self.__config_filename)
 
     def validate(self):
         _config_validator(self._config, self._schema)
 
     def to_yaml(self):
-        return yaml_config_dump(self._config,
+        return yaml_config_dump(self._config,    # pragma: no cover
                                 Dumper=SafeDumper,
                                 default_flow_style=False)
 
     def load(self, storage_config=None):
         if self.in_memory:
             storage_config = MemoryConfig
-        elif storage_config and not issubclass(storage_config, StorageConfig):
+        elif (storage_config is not None and
+                not (inspect.isclass(storage_config) and
+                     issubclass(storage_config, StorageConfig))):
             raise TypeError("Need a subclass of 'StorageConfig'")
+
         storage_config = storage_config or SQLiteConfig
 
         if self.exists():
@@ -270,7 +274,10 @@ class MontyConfigure(object):
                              Dumper=SafeDumper,
                              default_flow_style=False)
 
+    def drop(self):
+        if self.exists():
+            os.remove(self.config_path)
+
     def exists(self):
-        if self.in_memory:
-            return None
-        return os.path.isfile(self.config_path)
+        if not self.in_memory:
+            return os.path.isfile(self.config_path)
