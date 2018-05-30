@@ -45,6 +45,9 @@ class InsertOneResult(_WriteResult):
         self.__inserted_id = inserted_id
         super(InsertOneResult, self).__init__()
 
+    def __repr__(self):
+        return "InsertOneResult(%s)" % repr(self.__inserted_id)
+
     @property
     def inserted_id(self):
         """The inserted document's _id."""
@@ -60,6 +63,10 @@ class InsertManyResult(_WriteResult):
     def __init__(self, inserted_ids, *args):
         self.__inserted_ids = inserted_ids
         super(InsertManyResult, self).__init__()
+
+    def __repr__(self):
+        return "InsertManyResult(\n  {}\n)".format(
+            ",\n  ".join(repr(i) for i in self.__inserted_ids))
 
     @property
     def inserted_ids(self):
