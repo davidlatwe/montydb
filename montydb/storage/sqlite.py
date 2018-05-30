@@ -4,7 +4,7 @@ import shutil
 import sqlite3
 import contextlib
 
-from bson import ObjectId, BSON
+from bson import BSON
 from bson.py3compat import _unicode
 
 from ..base import WriteConcern
@@ -326,7 +326,7 @@ class SQLiteCollection(AbstractCollection):
         return doc["_id"]
 
     @_ensure_table
-    def write_many(self, docs, ordered):
+    def write_many(self, docs, ordered=True):
         """
         """
         self._conn.write_many(

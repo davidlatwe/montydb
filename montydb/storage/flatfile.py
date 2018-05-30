@@ -1,7 +1,7 @@
 
 import os
 import shutil
-from bson import ObjectId, BSON, SON
+from bson import BSON, SON
 from bson.py3compat import _unicode
 from bson.json_util import (
     CANONICAL_JSON_OPTIONS,
@@ -240,19 +240,15 @@ class FlatFileCollection(AbstractCollection):
     @_ensure_table
     def write_one(self, doc):
         _doc = SON()
-        if "_id" not in doc:
-            doc["_id"] = ObjectId()
         _doc[doc["_id"]] = self._encode_doc(doc)
         self._flatfile.write(_doc)
 
         return doc["_id"]
 
     @_ensure_table
-    def write_many(self, docs, ordered):
+    def write_many(self, docs, ordered=True):
         _docs = SON()
         for doc in docs:
-            if "_id" not in doc:
-                doc["_id"] = ObjectId()
             _docs[doc["_id"]] = self._encode_doc(doc)
 
         self._flatfile.write(_docs)

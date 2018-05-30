@@ -1,5 +1,5 @@
 
-from bson import ObjectId, SON, BSON
+from bson import SON, BSON
 
 from .base import (
     StorageConfig,
@@ -100,20 +100,12 @@ class MemoryCollection(AbstractCollection):
         return BSON.encode(doc, False, self.coptions)
 
     def write_one(self, doc):
-        if "_id" not in doc:
-            doc["_id"] = ObjectId()
-
         self._col[str(doc["_id"])] = self._encode_doc(doc)
-
         return doc["_id"]
 
-    def write_many(self, docs, ordered):
+    def write_many(self, docs, ordered=True):
         for doc in docs:
-            if "_id" not in doc:
-                doc["_id"] = ObjectId()
-
             self._col[str(doc["_id"])] = self._encode_doc(doc)
-
         return [doc["_id"] for doc in docs]
 
 
