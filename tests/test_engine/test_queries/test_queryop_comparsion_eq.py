@@ -1,5 +1,5 @@
 
-from montydb.engine.base import FieldWalker
+from montydb.engine.core import FieldWalker
 
 from bson.binary import Binary
 from bson.code import Code

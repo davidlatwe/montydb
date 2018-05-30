@@ -1,5 +1,5 @@
 
-from montydb.engine.base import FieldWalker
+from montydb.engine.core import FieldWalker
 
 
 def test_qop_exists_1(monty_find, mongo_find):

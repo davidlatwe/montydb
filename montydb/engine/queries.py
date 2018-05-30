@@ -1,21 +1,26 @@
 
 import re
 from copy import deepcopy
+from datetime import datetime
+
 from bson.py3compat import integer_types, string_type
 from bson.regex import Regex, str_flags_to_int
 from bson.son import SON
 from bson.min_key import MinKey
 from bson.max_key import MaxKey
 from bson.decimal128 import Decimal128
+from bson.timestamp import Timestamp
+from bson.objectid import ObjectId
+from bson.binary import Binary
+from bson.code import Code
+from bson.int64 import Int64
 
 from ..errors import OperationFailure
 
-from .base import (
+from .core import (
     gravity,
     FieldWalker,
     Weighted,
-    BSON_TYPE_ALIAS_ID,
-    obj_to_bson_type_id,
     _cmp_decimal,
     _decimal128_INF,
     _decimal128_NaN_ls,
@@ -753,7 +758,83 @@ def parse_exists(query):
     return _exists
 
 
+BSON_TYPE_ALIAS_ID = {
+
+    "double": 1,
+    "string": 2,
+    "object": 3,
+    "array": 4,
+    "binData": 5,
+    # undefined (Deprecated)
+    "objectId": 7,
+    "bool": 8,
+    "date": 9,
+    "null": 10,
+    "regex": 11,
+    # dbPointer (Deprecated)
+    "javascript": 13,
+    # symbol (Deprecated)
+    "javascriptWithScope": 15,
+    "int": 16,
+    "timestamp": 17,
+    "long": 18,
+    "decimal": 19,
+    "minKey": -1,
+    "maxKey": 127
+}
+
+
 _BSON_TYPE_ID = tuple(BSON_TYPE_ALIAS_ID.values())
+
+
+def obj_to_bson_type_id(obj):
+
+    BSON_TYPE_ID = {
+        float: 1,
+        # string: 2,
+        dict: 3,
+        list: 4,
+        tuple: 4,
+        Binary: 5,
+        # bytes: 5,
+        # undefined (Deprecated)
+        ObjectId: 7,
+        bool: 8,
+        datetime: 9,
+        type(None): 10,
+        # regex: 11,
+        # dbPointer (Deprecated)
+        # javascript: 13,
+        # symbol (Deprecated)
+        # javascriptWithScope: 15,
+        int: 16,
+        Timestamp: 17,
+        Int64: 18,
+        Decimal128: 19,
+        MinKey: -1,
+        MaxKey: 127
+    }
+
+    try:
+        type_id = BSON_TYPE_ID[type(obj)]
+    except KeyError:
+        if is_mapping_type(obj):
+            type_id = 3
+        elif isinstance(obj, Code):  # also an instance of string_type
+            type_id = 13 if obj.scope is None else 15
+        elif isinstance(obj, string_type):
+            type_id = 2
+        elif isinstance(obj, bytes):
+            type_id = 5
+        elif isinstance(obj, (RE_PATTERN_TYPE, Regex)):
+            type_id = 11
+        else:
+            type_id = None
+    finally:
+        if type_id is None:
+            raise TypeError("Unknown data type: {!r}".format(type(obj)))
+
+        return type_id
 
 
 def parse_type(query):

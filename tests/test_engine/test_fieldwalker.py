@@ -1,4 +1,4 @@
-from montydb.engine.base import FieldWalker
+from montydb.engine.core import FieldWalker
 
 
 def test_fieldwalker_value_retrieve():

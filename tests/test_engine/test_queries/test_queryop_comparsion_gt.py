@@ -1,6 +1,6 @@
 
 import pytest
-from montydb.engine.base import FieldWalker
+from montydb.engine.core import FieldWalker
 from montydb.errors import OperationFailure
 
 from datetime import datetime
