@@ -1,6 +1,7 @@
 
-# Monty, Mongo Tinified
-### A serverless Mongo-like database backed with SQLite in Python
+<img src="artwork/logo.svg" alt="drawing" width="600"/>
+
+#### A literally serverless, Mongo-like database in Python
 
 [![Build Status](https://travis-ci.org/davidlatwe/MontyDB.svg?branch=master)](https://travis-ci.org/davidlatwe/MontyDB)
 [![Coverage Status](https://coveralls.io/repos/github/davidlatwe/MontyDB/badge.svg?branch=master)](https://coveralls.io/github/davidlatwe/MontyDB?branch=master)
@@ -126,3 +127,9 @@ The configuration process only required on repository creation or modification.
 
 ### Develop Status
 See [Projects' TODO](https://github.com/davidlatwe/MontyDB/projects/1)
+
+---
+
+<p align="center">
+  <img src="artwork/icon.svg" alt="drawing" width="60"/>
+</p>
