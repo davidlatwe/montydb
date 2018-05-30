@@ -158,10 +158,7 @@ class FieldWalker(object):
                 field_values += emb_field.value
             else:
                 # FLAGS_FOR_NONE_QUERYING:
-                #   possible missing field in some documents,
-                #   (might be redundant)
-                self.__array_field_missing = True
-                #   or the field not existing in all documents.
+                #   field not exists in all documents.
                 self.__array_field_short = True
 
         if not len(field_values.arrays) == emb_doc_count:
