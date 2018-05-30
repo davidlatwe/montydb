@@ -14,6 +14,25 @@ class OperationFailure(MontyError):
     """Raised when a database operation fails.
     """
 
+    def __init__(self, error, code=None, details=None):
+        self.__code = code
+        self.__details = details
+        MontyError.__init__(self, error)
+
+    @property
+    def code(self):
+        return self.__code
+
+    @property
+    def details(self):
+        return self.__details
+
+    def has_label(self, label):
+        if label == "TemporaryTxnFailure":
+            # WriteConflict, TransactionAborted, and NoSuchTransaction.
+            return self.__code in (112, 244, 251)
+        return False
+
 
 class InvalidOperation(MontyError):
     """Raised when a client attempts to perform an invalid operation."""
