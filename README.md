@@ -1,7 +1,7 @@
 
-<img src="artwork/logo.svg" alt="drawing" width="600"/>
+<img src="artwork/logo.png" alt="drawing" width="600"/>
 
-#### A literally serverless, Mongo-like database in Python
+#### Monty, Mongo tinified. A literally serverless, Mongo-like database in Python
 
 [![Build Status](https://travis-ci.org/davidlatwe/MontyDB.svg?branch=master)](https://travis-ci.org/davidlatwe/MontyDB)
 [![Coverage Status](https://coveralls.io/repos/github/davidlatwe/MontyDB/badge.svg?branch=master)](https://coveralls.io/github/davidlatwe/MontyDB?branch=master)
@@ -131,5 +131,5 @@ See [Projects' TODO](https://github.com/davidlatwe/MontyDB/projects/1)
 ---
 
 <p align="center">
-  <img src="artwork/icon.svg" alt="drawing" width="60"/>
+  <img src="artwork/icon.png" alt="drawing" width="60"/>
 </p>
