@@ -314,12 +314,9 @@ class SQLiteCollection(AbstractCollection):
         return self._database._conn
 
     @_ensure_table
-    def insert_one(self, doc):
+    def write_one(self, doc):
         """
         """
-        if "_id" not in doc:
-            doc["_id"] = ObjectId()
-
         self._conn.write_one(
             self._col_path,
             (str(doc["_id"]), self._encode_doc(doc),),
@@ -329,13 +326,9 @@ class SQLiteCollection(AbstractCollection):
         return doc["_id"]
 
     @_ensure_table
-    def insert_many(self, docs, ordered):
+    def write_many(self, docs, ordered):
         """
         """
-        for doc in docs:
-            if "_id" not in doc:
-                doc["_id"] = ObjectId()
-
         self._conn.write_many(
             self._col_path,
             [(str(doc["_id"]), self._encode_doc(doc)) for doc in docs],
@@ -343,12 +336,6 @@ class SQLiteCollection(AbstractCollection):
         )
 
         return [doc["_id"] for doc in docs]
-
-    def replace_one(self):
-        return NotImplemented
-
-    def update(self):
-        return NotImplemented
 
 
 SQLiteDatabase.col_cls = SQLiteCollection

@@ -145,19 +145,11 @@ class AbstractCollection(with_metaclass(ABCMeta, object)):
         raise NotImplementedError("")
 
     @abstractmethod
-    def insert_one(self):
+    def write_one(self):
         return NotImplemented
 
     @abstractmethod
-    def insert_many(self):
-        return NotImplemented
-
-    @abstractmethod
-    def replace_one(self):
-        return NotImplemented
-
-    @abstractmethod
-    def update(self):
+    def write_many(self):
         return NotImplemented
 
 

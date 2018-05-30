@@ -1,4 +1,5 @@
 import collections
+from bson import ObjectId
 
 from .cursor import MontyCursor
 from .base import BaseObject
@@ -77,8 +78,11 @@ class MontyCollection(BaseObject):
         if bypass_document_validation:
             pass
 
+        if "_id" not in document:
+            document["_id"] = ObjectId()
+
         return InsertOneResult(
-            self.database.client._storage.insert_one(
+            self.database.client._storage.write_one(
                 self.database.name,
                 self._name,
                 self.write_concern,
@@ -98,8 +102,12 @@ class MontyCollection(BaseObject):
         if bypass_document_validation:
             pass
 
+        for doc in documents:
+            if "_id" not in doc:
+                doc["_id"] = ObjectId()
+
         return InsertManyResult(
-            self.database.client._storage.insert_many(
+            self.database.client._storage.write_many(
                 self.database.name,
                 self._name,
                 self.write_concern,
@@ -118,16 +126,7 @@ class MontyCollection(BaseObject):
         if bypass_document_validation:
             pass
 
-        return UpdateResult(
-            self.database.client._storage._update_retryable(
-                self.database.name,
-                self._name,
-                self.write_concern,
-                self.codec_options,
-                filter,
-                replacement,
-                upsert
-            ))
+        raise NotImplementedError("Not implemented.")
 
     def update_one(self,
                    filter,
@@ -140,18 +139,7 @@ class MontyCollection(BaseObject):
         if bypass_document_validation:
             pass
 
-        return UpdateResult(
-            self.database.client._storage.update(
-                self.database.name,
-                self._name,
-                self.write_concern,
-                self.codec_options,
-                filter,
-                update,
-                upsert,
-                check_keys=False,
-                array_filters=array_filters,
-            ))
+        raise NotImplementedError("Not implemented.")
 
     def update_many(self,
                     filter,
@@ -165,19 +153,7 @@ class MontyCollection(BaseObject):
         if bypass_document_validation:
             pass
 
-        return UpdateResult(
-            self.database.client._storage.update(
-                self.database.name,
-                self._name,
-                self.write_concern,
-                self.codec_options,
-                filter,
-                update,
-                upsert,
-                check_keys=False,
-                multi=True,
-                array_filters=array_filters,
-            ))
+        raise NotImplementedError("Not implemented.")
 
     def delete_one(self, filter):
         raise NotImplementedError("Not implemented.")

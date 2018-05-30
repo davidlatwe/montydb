@@ -238,7 +238,7 @@ class FlatFileCollection(AbstractCollection):
         return BSON.encode(doc, False, self.coptions)
 
     @_ensure_table
-    def insert_one(self, doc):
+    def write_one(self, doc):
         _doc = SON()
         if "_id" not in doc:
             doc["_id"] = ObjectId()
@@ -248,7 +248,7 @@ class FlatFileCollection(AbstractCollection):
         return doc["_id"]
 
     @_ensure_table
-    def insert_many(self, docs, ordered):
+    def write_many(self, docs, ordered):
         _docs = SON()
         for doc in docs:
             if "_id" not in doc:
@@ -258,12 +258,6 @@ class FlatFileCollection(AbstractCollection):
         self._flatfile.write(_docs)
 
         return [doc["_id"] for doc in docs]
-
-    def replace_one(self):
-        return NotImplemented
-
-    def update(self):
-        return NotImplemented
 
 
 FlatFileDatabase.col_cls = FlatFileCollection
