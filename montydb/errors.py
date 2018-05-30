@@ -51,3 +51,8 @@ class CollectionInvalid(MontyError):
 class DocumentTooLarge(InvalidDocument):
     """Raised when an encoded document is too large.
     """
+
+
+class WriteError(OperationFailure):
+    """Base exception type for errors raised during write operations.
+    """
