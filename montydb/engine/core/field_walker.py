@@ -13,18 +13,6 @@ def is_array_type_(doc):
 
 class FieldWalker(object):
     """Document traversal context manager
-
-    A helper for document field-level operators working inside a field-themed
-    `LogicBox` object.
-
-    Before each field-themed `LogicBox` processing any operators within, it
-    will first *call* this helper instance and send a document field path to
-    find and cache document field's value for operators' later use, after all
-    operators been processed, the context will reset.
-
-    Args:
-        doc (dict): Document passed from `QueryFilter` instance.
-
     """
 
     __slots__ = [
@@ -48,12 +36,19 @@ class FieldWalker(object):
     ]
 
     def __init__(self, doc):
+        """
+        Args:
+            doc (dict): Document object
+        """
         self.doc = doc
         self.matched_indexes = {}
         self.reset()
 
     def __call__(self, path):
         """Walk through document and acquire value with given key-path
+
+        Args:
+            path (string): Document field path
         """
         doc_ = self.doc
         self.reset()
