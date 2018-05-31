@@ -193,3 +193,25 @@ def test_fieldwalker_value_retrieve():
     path = "a.b.c.1.d.1"
     value = ['y', 'z', 'i', 'j', 'k']
     assert FieldWalker(doc)(path).value == value
+
+    doc = {"a": [{"b": [{"c": [{"0": [{"d": [0, 1]}]}, {"d": [1]}]},
+                        {"c": [{"0": [{"d": [0, 2]}]}, {"d": [3, "y"]}]},
+                        {"c": [{"d": [5, "z"]}, {"0": [{"d": [0, 3]}]}]}]},
+                 {"b": [{"c": [{"0": [{"d": [0, 4]}]}, {"d": [11, "i"]}]},
+                        {"c": [{"0": [{"d": [0, 5]}]}, {"d": [13, "j"]}]},
+                        {"c": [{"0": [{"d": [0, 6]}]}, {"d": [15, "k"]}]}]}
+                 ]}
+    path = "a.b.c.0.d.1"
+    value = [1, 2, 3, 4, 5, 6, 'z']
+    fw = FieldWalker(doc)(path)
+    assert fw.value == value
+    assert fw.index_posed is True
+    assert fw.embedded_in_array is True
+
+    doc = {"a": [{"1": {"b": 5}}, 1]}
+    path = "a.1.b"
+    value = [5]
+    fw = FieldWalker(doc)(path)
+    assert fw.value == value
+    assert fw.index_posed is False
+    assert fw.embedded_in_array is True
