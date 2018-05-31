@@ -8,7 +8,7 @@ from ..helpers import (
 
 
 def is_array_type_(doc):
-    return is_array_type(doc) or isinstance(doc, FieldValues)
+    return is_array_type(doc) or isinstance(doc, _FieldValues)
 
 
 class FieldWalker(object):
@@ -30,17 +30,21 @@ class FieldWalker(object):
     __slots__ = [
         "doc",
         "matched_indexes",
+
         "__value",
         "__exists",
         "__embedded_in_array",
         "__index_posed",
         "__been_in_array",
+
+        # FLAGS_FOR_NONE_QUERYING
         "__NQF_docs_field_missing_in_array",
-        "__array_field_short",
+        "__NQF_array_field_not_exists_in_all_elements",
         "__NQF_out_of_array_index",
         "__NQF_no_docs_in_array",
+
         "__elem_iter_map",
-        "__query_path"
+        "__query_path",
     ]
 
     def __init__(self, doc):
@@ -49,8 +53,9 @@ class FieldWalker(object):
         self.reset()
 
     def __call__(self, path):
-        """For `LogicBox` calling on `with` statement and cache field value"""
-        _doc = self.doc
+        """Walk through document and acquire value with given key-path
+        """
+        doc_ = self.doc
         self.reset()
 
         self.__query_path = path
@@ -58,57 +63,49 @@ class FieldWalker(object):
 
             array_index_pos = False
             array_has_doc = False
-            if is_array_type_(_doc):
-                self.__been_in_array = True
-
-                if len(_doc) == 0:
+            if is_array_type_(doc_):
+                if len(doc_) == 0:
                     self.__exists = False
                     break
 
-                if any(is_mapping_type(ele) for ele in _doc):
-                    array_has_doc = True
+                self.__been_in_array = True
+                array_has_doc = any(is_mapping_type(e_) for e_ in doc_)
+                array_index_pos = field.isdigit()
 
-                if field.isdigit():
-                    # Currently inside an array type value
-                    # with given index path.
-                    array_index_pos = True
-
+                if array_index_pos:
                     if self.__index_posed and self.__embedded_in_array:
-                        if not any(is_array_type(ele) for ele in _doc):
-                            array_index_pos = False
+                        array_index_pos = any(is_array_type(e_) for e_ in doc_)
                 else:
-                    # Possible quering from an array of documents.
-                    _doc = self.__from_array(_doc, field)
+                    doc_ = self.__walk_array(doc_, field)
 
             # Is the path ends with index position ?
             self.__index_posed = array_index_pos
 
-            # If the `_doc` is an array (or `FieldValues` type) and containing
-            # documents, those documents possible has digit key, for example:
-            # [{"1": <value>}, ...]
+            # If the `doc_` is an array (or `_FieldValues` type) and containing
+            # documents, those documents possible has numeric string key,
+            # for example: [{"1": <value>}, ...]
             if array_index_pos and array_has_doc:
-                # Treat index position path as a field of document
-                _idpos_as_field_doc = self.__from_array(_doc, field)
+                # Index position path As a Field of `doc_`
+                iaf_doc_ = self.__walk_array(doc_, field)
                 # Append index position result to the document field result
-                if _idpos_as_field_doc is not None:
-                    if len(_doc) > int(field):
-                        if isinstance(_doc, FieldValues):
-                            _doc.positional(int(field))
-                            _idpos_as_field_doc[field] += _doc
+                if iaf_doc_ is not None:
+                    if len(doc_) > int(field):  # Make sure index in range
+                        if isinstance(doc_, _FieldValues):
+                            iaf_doc_[field] += doc_.positional(int(field))
                         else:
-                            _idpos_as_field_doc[field].append(_doc[int(field)])
-                    _doc = _idpos_as_field_doc
+                            iaf_doc_[field].append(doc_[int(field)])
+
+                    doc_ = iaf_doc_
                     array_index_pos = False
 
             if array_index_pos and self.__embedded_in_array:
-                # the `_doc` in here must be `FieldValues` type
-                _doc.positional(int(field))
-                _doc = {field: _doc}
+                # the `doc_` in here must be `_FieldValues` type
+                doc_ = {field: doc_.positional(int(field))}
                 array_index_pos = False
 
             try:
-                # Try getting value with key(field).
-                _doc = _doc[int(field) if array_index_pos else field]
+                # Try getting value with key(field) or index.
+                doc_ = doc_[int(field) if array_index_pos else field]
                 self.__exists = True
 
             except (KeyError, IndexError, TypeError) as err:
@@ -125,50 +122,58 @@ class FieldWalker(object):
                         not self.__NQF_docs_field_missing_in_array)
 
                 # Reset partialy and stop field walking.
-                _doc = None
+                doc_ = None
                 self.reset(partial=True)
                 break
 
+        """End of walk"""
+
         # Collecting values
-        if not array_index_pos and is_array_type_(_doc):
+        if not array_index_pos and is_array_type_(doc_):
             # Extend `fieldValues.elements` with an array field value from
             # a single document or from multiple documents inside an array.
-            self.__value.extend(_doc)
-        # Append to `fieldValues.arrays`, but if `_doc` is not array type,
+            self.__value.extend(doc_)
+        # Append to `fieldValues.arrays`, but if `doc_` is not array type,
         # will be append to `fieldValues.elements`.
-        self.__value.append(_doc)
+        self.__value.append(doc_)
 
         # FLAGS_FOR_NONE_QUERYING:
-        #   correcting flag after value been collected.
-        #   possible all documents inside the array have no such field,
-        #   instead of missing field in some of the documents.
-        if None not in self.__value.elements and not self.__array_field_short:
+        #   Correcting flag after value been collected.
+        #       Confirm all documents inside the array have no such field,
+        #       instead of missing field in some of the documents.
+        if (None not in self.__value.elements and
+                not self.__NQF_array_field_not_exists_in_all_elements):
             self.__NQF_docs_field_missing_in_array = False
 
         return self
 
-    def __from_array(self, _doc, field):
-        """Querying embedded documents from array.
+    def __walk_array(self, doc_, field):
+        """Walk in to array for embedded documents.
         """
-        field_values = FieldValues()
-        emb_doc_count = 0
+        field_values = _FieldValues()
+        num_of_emb_doc = 0
         self.__elem_iter_map[field] = OrderedDict()
-        for i, emb_doc in enumerate(_doc):
+
+        for i, emb_doc in enumerate(doc_):
             if not is_mapping_type(emb_doc):
                 continue
-            emb_doc_count += 1
+            num_of_emb_doc += 1
+
             emb_field = FieldWalker(emb_doc)(field)
             if emb_field.exists:
                 self.__elem_iter_map[field][i] = len(emb_field.value.elements)
                 field_values += emb_field.value
             else:
                 # FLAGS_FOR_NONE_QUERYING:
-                #   field not exists in all documents.
-                self.__array_field_short = True
+                #   field not exists in all elements.
+                self.__NQF_array_field_not_exists_in_all_elements = True
 
-        if not len(field_values.arrays) == emb_doc_count:
+        if len(field_values.arrays) != num_of_emb_doc:
             # FLAGS_FOR_NONE_QUERYING:
-            #   possible missing field in some documents.
+            #   Possible missing field in some documents.
+            #       Using `field_values.arrays` length to compare is not
+            #       accurate, but will correcting the result after all value
+            #       been collected.
             self.__NQF_docs_field_missing_in_array = True
 
         if field_values:
@@ -180,7 +185,7 @@ class FieldWalker(object):
     def reset(self, partial=None):
         """Rest all, or keeping some flags for internal use.
         """
-        self.__value = FieldValues()
+        self.__value = _FieldValues()
         self.__exists = False
         self.__embedded_in_array = False
         self.__index_posed = False
@@ -190,18 +195,16 @@ class FieldWalker(object):
         if not partial:
             self.__been_in_array = False
             self.__NQF_docs_field_missing_in_array = False
-            self.__array_field_short = False
+            self.__NQF_array_field_not_exists_in_all_elements = False
             self.__NQF_out_of_array_index = False
             self.__NQF_no_docs_in_array = False
 
     def __get_matched_index(self):
         times = self.__value.iter_times
         if len(self.__elem_iter_map) == 0:
-            if not len(self.__value.elements) == 0:
-                return times - 1
+            return None if len(self.__value.elements) == 0 else (times - 1)
         else:
             while len(self.__elem_iter_map):
-                # (NOTE) OrderedDict popitem from right, SON pop forom left.
                 for ind, len_ in self.__elem_iter_map.popitem()[1].items():
                     if times > len_:
                         times -= len_
@@ -220,7 +223,7 @@ class FieldWalker(object):
 
     @property
     def value(self):
-        """An instance of `FieldValues`, hold the result of the query."""
+        """An instance of `_FieldValues`, hold the result of the query."""
         return self.__value
 
     @property
@@ -261,11 +264,10 @@ class FieldWalker(object):
         return self.__NQF_out_of_array_index or self.__NQF_no_docs_in_array
 
     def matched_index(self, path):
-        root = path.split(".", 1)[0]
-        return self.matched_indexes.get(root)
+        return self.matched_indexes.get(path.split(".", 1)[0])
 
 
-class FieldValues(object):
+class _FieldValues(object):
 
     __slots__ = [
         "__elements",
@@ -310,24 +312,24 @@ class FieldValues(object):
     def __bool__(self):
         return bool(self.__elements or self.__arrays)
 
+    __nonzero__ = __bool__
+
     def __getitem__(self, index):
         return self.__elements[index]
 
     def __iadd__(self, val):
-        if not isinstance(val, FieldValues):
-            raise TypeError("Should be a FieldValues type.")
         self.__elements += val.elements
         self.__arrays += val.arrays
         return self
 
     def extend(self, val):
-        if isinstance(val, FieldValues):
+        if isinstance(val, _FieldValues):
             self.__elements += val.elements
         else:
             self.__elements += val
 
     def append(self, val):
-        if isinstance(val, FieldValues):
+        if isinstance(val, _FieldValues):
             self.__arrays += val.arrays
         else:
             if is_array_type(val):
@@ -340,14 +342,15 @@ class FieldValues(object):
                            if len(val) > index]
         self.__arrays = []
 
+        return self
+
     @property
     def elements(self):
         return self.__elements
 
     @elements.setter
     def elements(self, val):
-        if not is_array_type(val):
-            raise TypeError("Should be a list, got {}".format(val))
+        """Args: val (list)"""
         self.__elements = val
 
     @property
@@ -356,8 +359,7 @@ class FieldValues(object):
 
     @arrays.setter
     def arrays(self, val):
-        if not is_array_type(val):
-            raise TypeError("Should be a list, got {}".format(val))
+        """Args: val (list)"""
         self.__arrays = val
 
     @property
