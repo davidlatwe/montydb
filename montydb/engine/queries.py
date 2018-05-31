@@ -718,6 +718,11 @@ def parse_all(query):
 
 
 def parse_elemMatch(query):
+    # (NOTE) $elemMatch in MontyDB may require document input to proceed
+    #        further filter error.OperationFailure check, here we put one
+    #        fake doc {}
+    QueryFilter(query)({})
+
     @keep(query)
     def _elemMatch(field_walker):
         queryfilter = QueryFilter(query)
