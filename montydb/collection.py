@@ -3,11 +3,26 @@ from bson import ObjectId
 
 from .cursor import MontyCursor
 from .base import BaseObject
+from .engine.queries import QueryFilter
+from .engine.update import Updator
 from .results import (BulkWriteResult,
                       DeleteResult,
                       InsertOneResult,
                       InsertManyResult,
                       UpdateResult)
+
+
+def _internal_scan_query(query_spec, collection):
+    queryfilter = QueryFilter(query_spec)
+    storage = collection.database.client._storage
+    documents = storage.query(collection.database.name,
+                              collection.name,
+                              collection.write_concern,
+                              collection.codec_options,
+                              0)
+    for doc in documents:
+        if queryfilter(doc):
+            yield queryfilter.field_walker
 
 
 class MontyCollection(BaseObject):
@@ -139,7 +154,22 @@ class MontyCollection(BaseObject):
         if bypass_document_validation:
             pass
 
-        raise NotImplementedError("Not implemented.")
+        updator = Updator(update)
+        fw = next(_internal_scan_query(filter, self))
+        if updator(fw):
+            self.database.client._storage.write_one(
+                self.database.name,
+                self._name,
+                self.write_concern,
+                self.codec_options,
+                updator.field_walker.doc
+            )
+
+        return UpdateResult({
+            "n": None,
+            "nModified": None,
+            "upserted": None,
+        })
 
     def update_many(self,
                     filter,
@@ -153,7 +183,22 @@ class MontyCollection(BaseObject):
         if bypass_document_validation:
             pass
 
-        raise NotImplementedError("Not implemented.")
+        updator = Updator(update)
+        for fw in _internal_scan_query(filter, self):
+            if updator(fw):
+                self.database.client._storage.write_one(
+                    self.database.name,
+                    self._name,
+                    self.write_concern,
+                    self.codec_options,
+                    updator.field_walker.doc
+                )
+
+        return UpdateResult({
+            "n": None,
+            "nModified": None,
+            "upserted": None,
+        })
 
     def delete_one(self, filter):
         raise NotImplementedError("Not implemented.")
