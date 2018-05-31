@@ -333,9 +333,9 @@ def test_none_query_10_ne(monty_find, mongo_find):
 
 def test_none_query_11(monty_find, mongo_find):
     docs = [
-        {"item": [True, False, {"1": False}]}
+        {"a": [True, False, {"1": False}]}
     ]
-    spec = {"item.1.2": None}
+    spec = {"a.1.2": None}
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
@@ -346,12 +346,63 @@ def test_none_query_11(monty_find, mongo_find):
 
 def test_none_query_11_ne(monty_find, mongo_find):
     docs = [
-        {"item": [True, False, {"1": False}]}
+        {"a": [True, False, {"1": False}]}
     ]
-    spec = {"item.1.2": {"$ne": None}}
+    spec = {"a.1.2": {"$ne": None}}
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
     assert mongo_c.count() == 0
+    assert monty_c.count() == mongo_c.count()
+
+
+def test_none_query_12(monty_find, mongo_find):
+    docs = [
+        {"a": [{}, {"b": "not_null"}]}
+    ]
+    spec = {"a.b": {"$eq": None}}
+
+    monty_c = monty_find(docs, spec)
+    mongo_c = mongo_find(docs, spec)
+
+    fw = FieldWalker(docs[0])("a.b")
+    assert fw.array_field_missing is True
+    assert fw.array_status_normal is False
+
+    assert mongo_c.count() == 1
+    assert monty_c.count() == mongo_c.count()
+
+
+def test_none_query_13(monty_find, mongo_find):
+    docs = [
+        {"a": [{"b": None}, {"b": "not_null"}]}
+    ]
+    spec = {"a.b": {"$eq": None}}
+
+    monty_c = monty_find(docs, spec)
+    mongo_c = mongo_find(docs, spec)
+
+    fw = FieldWalker(docs[0])("a.b")
+    assert fw.array_field_missing is True
+    assert fw.array_status_normal is False
+
+    assert mongo_c.count() == 1
+    assert monty_c.count() == mongo_c.count()
+
+
+def test_none_query_14(monty_find, mongo_find):
+    docs = [
+        {"a": [{"x": [None]}, {"b": "not_null"}]}
+    ]
+    spec = {"a.b": {"$eq": None}}
+
+    monty_c = monty_find(docs, spec)
+    mongo_c = mongo_find(docs, spec)
+
+    fw = FieldWalker(docs[0])("a.b")
+    assert fw.array_field_missing is True
+    assert fw.array_status_normal is False
+
+    assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
