@@ -122,18 +122,20 @@ class AttribDict(MutableMapping):
     def reload(self, repository=None, update=None):
         if repository is not None:
             configure = MontyConfigure(repository)
-            if not configure.exists():
-                raise ConfigurationError("Config file must be saved before "
-                                         "reload.")
-            update = configure.load().config
+            if not configure.in_memory:
+                if not configure.exists():
+                    raise ConfigurationError("Config file must be saved "
+                                             "before reload.")
+                update = configure.load().config
 
-        for key in self.cnf:
-            # new config should have the same key.
-            val = update[key]
-            if isinstance(self.cnf[key], AttribDict):
-                self.cnf[key].reload(update=val)
-            else:
-                self.cnf[key] = val
+        if update is not None:
+            for key in self.cnf:
+                # new config should have the same key.
+                val = update[key]
+                if isinstance(self.cnf[key], AttribDict):
+                    self.cnf[key].reload(update=val)
+                else:
+                    self.cnf[key] = val
 
 
 def yaml_config_load(stream, Loader=Loader, object_pairs_hook=AttribDict):
