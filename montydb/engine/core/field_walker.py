@@ -35,10 +35,10 @@ class FieldWalker(object):
         "__embedded_in_array",
         "__index_posed",
         "__been_in_array",
-        "__array_field_missing",
+        "__NQF_docs_field_missing_in_array",
         "__array_field_short",
-        "__array_elem_short",
-        "__array_no_docs",
+        "__NQF_out_of_array_index",
+        "__NQF_no_docs_in_array",
         "__elem_iter_map",
         "__query_path"
     ]
@@ -72,6 +72,10 @@ class FieldWalker(object):
                     # Currently inside an array type value
                     # with given index path.
                     array_index_pos = True
+
+                    if self.__index_posed and self.__embedded_in_array:
+                        if not any(is_array_type(ele) for ele in _doc):
+                            array_index_pos = False
                 else:
                     # Possible quering from an array of documents.
                     _doc = self.__from_array(_doc, field)
@@ -113,11 +117,12 @@ class FieldWalker(object):
 
                 # FLAGS_FOR_NONE_QUERYING:
                 #   possible index position out of length of array
-                self.__array_elem_short = ecls is IndexError
+                self.__NQF_out_of_array_index = ecls is IndexError
                 # FLAGS_FOR_NONE_QUERYING:
                 #   possible not field missing, but the array has no document
                 if ecls is TypeError and self.__been_in_array:
-                    self.__array_no_docs = not self.__array_field_missing
+                    self.__NQF_no_docs_in_array = (
+                        not self.__NQF_docs_field_missing_in_array)
 
                 # Reset partialy and stop field walking.
                 _doc = None
@@ -138,7 +143,7 @@ class FieldWalker(object):
         #   possible all documents inside the array have no such field,
         #   instead of missing field in some of the documents.
         if None not in self.__value.elements and not self.__array_field_short:
-            self.__array_field_missing = False
+            self.__NQF_docs_field_missing_in_array = False
 
         return self
 
@@ -164,7 +169,7 @@ class FieldWalker(object):
         if not len(field_values.arrays) == emb_doc_count:
             # FLAGS_FOR_NONE_QUERYING:
             #   possible missing field in some documents.
-            self.__array_field_missing = True
+            self.__NQF_docs_field_missing_in_array = True
 
         if field_values:
             self.__embedded_in_array = True
@@ -184,10 +189,10 @@ class FieldWalker(object):
 
         if not partial:
             self.__been_in_array = False
-            self.__array_field_missing = False
+            self.__NQF_docs_field_missing_in_array = False
             self.__array_field_short = False
-            self.__array_elem_short = False
-            self.__array_no_docs = False
+            self.__NQF_out_of_array_index = False
+            self.__NQF_no_docs_in_array = False
 
     def __get_matched_index(self):
         times = self.__value.iter_times
@@ -240,7 +245,7 @@ class FieldWalker(object):
         Possible some of document embedded in array has field missing,
         or all document in array has no such field existed.
         """
-        return self.__array_field_missing
+        return self.__NQF_docs_field_missing_in_array
 
     @property
     def array_status_normal(self):
@@ -253,7 +258,7 @@ class FieldWalker(object):
         array out of index if the path is index position, and since the field
         was not missing, the document won't pop when querying `None`.
         """
-        return self.__array_elem_short or self.__array_no_docs
+        return self.__NQF_out_of_array_index or self.__NQF_no_docs_in_array
 
     def matched_index(self, path):
         root = path.split(".", 1)[0]
