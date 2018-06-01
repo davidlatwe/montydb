@@ -48,13 +48,13 @@ class FieldWalker(object):
         "array_status_normal",
 
         # FLAGS_FOR_NONE_QUERYING
+        "_NQF_been_in_array",
         "_NQF_docs_field_missing_in_array",
         "_NQF_array_field_not_exists_in_all_elements",
         "_NQF_out_of_array_index",
         "_NQF_no_docs_in_array",
 
         "_matched_indexes",
-        "_been_in_array",
         "_elem_iter_map",
         "_query_path",
     ]
@@ -82,7 +82,7 @@ class FieldWalker(object):
         self._query_path = ""
 
         if not partial:
-            self._been_in_array = False
+            self._NQF_been_in_array = False
             self._NQF_docs_field_missing_in_array = False
             self._NQF_array_field_not_exists_in_all_elements = False
             self._NQF_out_of_array_index = False
@@ -107,7 +107,7 @@ class FieldWalker(object):
                     self.exists = False
                     break
 
-                self._been_in_array = True
+                self._NQF_been_in_array = True
                 array_has_doc = any(is_mapping_type_(e_) for e_ in doc_)
                 field_as_index = field.isdigit()
 
@@ -156,7 +156,7 @@ class FieldWalker(object):
                 self._NQF_out_of_array_index = ecls is IndexError
                 # FLAGS_FOR_NONE_QUERYING:
                 #   possible not field missing, but the array has no document
-                if ecls is TypeError and self._been_in_array:
+                if ecls is TypeError and self._NQF_been_in_array:
                     self._NQF_no_docs_in_array = (
                         not self._NQF_docs_field_missing_in_array)
 
