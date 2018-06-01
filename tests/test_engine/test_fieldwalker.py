@@ -216,6 +216,12 @@ def test_fieldwalker_value_retrieve():
     assert fw.index_posed is False
     assert fw.embedded_in_array is True
 
+    doc = {"a": [True, True, {"2": True, "3": True}]}
+    path = "a.3"
+    value = [True]
+    fw = FieldWalker(doc)(path)
+    assert fw.value == value
+
 
 def test_fieldwalker_value_set():
     doc = {"a": 5}
