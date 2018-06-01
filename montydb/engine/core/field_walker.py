@@ -146,10 +146,11 @@ class FieldWalker(object):
                 doc_ = {field: doc_._positional(int(field))}
                 field_as_index = False
 
-            if self.embedded_in_array:
+            if doc_ is not None and self.embedded_in_array:
+                # `doc_` should be {field: _FieldValues},
+                # not a bare _FieldValues instance.
                 if isinstance(doc_, _FieldValues):
-                    if len(doc_) > int(field):
-                        ref_ = doc_[int(field)].ref
+                    ref_ = None
                 else:
                     ref_ = doc_[field].ref
             else:
@@ -288,7 +289,7 @@ class FieldWalker(object):
                 else:
                     fill = int(self._end_key) - len(r_)
                     r_ += [None for i in range(fill)] + [value]
-            else:
+            elif is_mapping_type_(r_):
                 r_[self._end_key] = value
 
 
