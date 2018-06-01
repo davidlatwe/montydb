@@ -150,3 +150,27 @@ def test_weighted_25():
     data = UnKnownObj()
     with pytest.raises(TypeError):
         Weighted(data)
+
+
+def test_weighted_26():
+    data = _cmp_decimal(Decimal128("0.1"))
+    assert Weighted(data) == (2, data)
+
+
+def test_weighted__cmp_decimal_err():
+    with pytest.raises(TypeError):
+        _cmp_decimal("Not_A_Decimal128")
+
+
+def test_weighted__cmp_decimal_ne():
+    assert _cmp_decimal(Decimal128("5.5")) != "NAN"
+
+
+def test_weighted__cmp_decimal_lt_or_gt():
+    with pytest.raises(TypeError):
+        _cmp_decimal(Decimal128("5.5")) > "NAN"
+
+
+def test_weighted__cmp_decimal_le_or_ge():
+    with pytest.raises(TypeError):
+        _cmp_decimal(Decimal128("5.5")) >= "NAN"
