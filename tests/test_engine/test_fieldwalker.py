@@ -122,8 +122,8 @@ def test_fieldwalker_value_retrieve():
                  ]}
     path = "a.b.c.1.d"
     value = [
-        1, 'x', 3, 'y', 5, 'z', 11, 'i', 13, 'j', 15, 'k',
-        [1, 'x'], [3, 'y'], [5, 'z'], [11, 'i'], [13, 'j'], [15, 'k']
+        1, "x", 3, "y", 5, "z", 11, "i", 13, "j", 15, "k",
+        [1, "x"], [3, "y"], [5, "z"], [11, "i"], [13, "j"], [15, "k"]
     ]
     assert FieldWalker(doc)(path).value == value
 
@@ -135,7 +135,7 @@ def test_fieldwalker_value_retrieve():
                         {"c": [14, {"d": [15, "k"]}]}]}
                  ]}
     path = "a.b.c.1.d.1"
-    value = ['x', 'y', 'z', 'i', 'j', 'k']
+    value = ["x", "y", "z", "i", "j", "k"]
     assert FieldWalker(doc)(path).value == value
 
     # array opsitioned and embedded documents and digit-str field
@@ -154,7 +154,7 @@ def test_fieldwalker_value_retrieve():
                         {"c": [14, {"d": [15, "k"]}]}]}
                  ]}
     path = "a.b.c.1.d.1"
-    value = ['x', 'y', 'z', 'i', 'j', 'k']
+    value = ["x", "y", "z", "i", "j", "k"]
     assert FieldWalker(doc)(path).value == value
 
     # with missing field
@@ -167,7 +167,7 @@ def test_fieldwalker_value_retrieve():
                         {"c": [14, {"d": [15, "k"]}]}]}
                  ]}
     path = "a.b.c.1.d.1"
-    value = ['i', 'j', 'k']
+    value = ["i", "j", "k"]
     assert FieldWalker(doc)(path).value == value
 
     doc = {"a": [{"b": [{"c": [0, {"d": [1, "x"]}]},
@@ -178,7 +178,7 @@ def test_fieldwalker_value_retrieve():
                         {"c": [14, {"d": [15, "k"]}]}]}
                  ]}
     path = "a.b.c.1.d.1"
-    value = ['x', 'z', 'i', 'j', 'k']
+    value = ["x", "z", "i", "j", "k"]
     assert FieldWalker(doc)(path).value == value
 
     # array element shortage
@@ -191,7 +191,7 @@ def test_fieldwalker_value_retrieve():
                         {"c": [14, {"d": [15, "k"]}]}]}
                  ]}
     path = "a.b.c.1.d.1"
-    value = ['y', 'z', 'i', 'j', 'k']
+    value = ["y", "z", "i", "j", "k"]
     assert FieldWalker(doc)(path).value == value
 
     doc = {"a": [{"b": [{"c": [{"0": [{"d": [0, 1]}]}, {"d": [1]}]},
@@ -202,7 +202,7 @@ def test_fieldwalker_value_retrieve():
                         {"c": [{"0": [{"d": [0, 6]}]}, {"d": [15, "k"]}]}]}
                  ]}
     path = "a.b.c.0.d.1"
-    value = [1, 2, 3, 4, 5, 6, 'z']
+    value = [1, 2, 3, 4, 5, 6, "z"]
     fw = FieldWalker(doc)(path)
     assert fw.value == value
     assert fw.index_posed is True
@@ -283,3 +283,33 @@ def test_fieldwalker_value_set():
                                 {"c": [12, {"d": [13, "j", 10]}]},
                                 {"c": [14, {"d": [15, "k", 10]}]}]}
                          ]}
+
+    doc = {"a": [{"b": "doc"}, {"0": ["doc"]}]}
+    path = "a.b.1"
+    fw = FieldWalker(doc)(path)
+    fw.setval(10)
+    assert doc == {"a": [{"b": "doc"}, {"0": ["doc"]}]}
+
+    doc = {"a": [{"b": "doc"}, {"0": ["doc"]}]}
+    path = "a.0.b"
+    fw = FieldWalker(doc)(path)
+    fw.setval(10)
+    assert doc == {"a": [{"b": 10}, {"0": ["doc"]}]}
+
+    doc = {"a": [{"b": "doc"}, {"0": {"b": ["doc", "x"]}}]}
+    path = "a.0.b"
+    fw = FieldWalker(doc)(path)
+    fw.setval(10)
+    assert doc == {"a": [{"b": 10}, {"0": {"b": 10}}]}
+
+    doc = {"a": [{"0": None}]}
+    path = "a.0.b"
+    fw = FieldWalker(doc)(path)
+    fw.setval(10)
+    assert doc == {"a": [{"0": None}]}
+
+    doc = {"a": [True, {"1": None}, {"1": False, "0": False}]}
+    path = "a.1.2"
+    fw = FieldWalker(doc)(path)
+    fw.setval(10)
+    assert doc == {"a": [True, {"1": None}, {"1": False, "0": False}]}
