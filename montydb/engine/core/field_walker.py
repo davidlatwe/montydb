@@ -57,6 +57,7 @@ class FieldWalker(object):
         "_matched_indexes",
         "_elem_iter_map",
         "_query_path",
+        "_end_key",
     ]
 
     def __init__(self, doc):
@@ -80,6 +81,7 @@ class FieldWalker(object):
         self.index_posed = False
         self._elem_iter_map = OrderedDict()
         self._query_path = ""
+        self._end_key = None
 
         if not partial:
             self._NQF_been_in_array = False
@@ -95,6 +97,8 @@ class FieldWalker(object):
             path (string): Document field path
         """
         doc_ = self.doc
+        ref_ = None
+        end_key_ = None
         self.reset()
 
         self._query_path = path
@@ -142,6 +146,16 @@ class FieldWalker(object):
                 doc_ = {field: doc_._positional(int(field))}
                 field_as_index = False
 
+            if self.embedded_in_array:
+                if isinstance(doc_, _FieldValues):
+                    if len(doc_) > int(field):
+                        ref_ = doc_[int(field)].ref
+                else:
+                    ref_ = doc_[field].ref
+            else:
+                ref_ = doc_
+            end_key_ = field
+
             try:
                 # Try getting value with key(field) or index.
                 doc_ = doc_[int(field) if field_as_index else field]
@@ -162,6 +176,8 @@ class FieldWalker(object):
 
                 # Reset partialy and stop field walking.
                 doc_ = None
+                ref_ = None
+                end_key_ = None
                 self.reset(partial=True)
                 break
 
@@ -175,6 +191,9 @@ class FieldWalker(object):
         # Append to `fieldValues.arrays`, but if `doc_` is not array type,
         # will be append to `fieldValues.elements`.
         self.value._append(doc_)
+
+        self.value.ref = ref_
+        self._end_key = end_key_
 
         # FLAGS_FOR_NONE_QUERYING:
         #   Correcting flag after value been collected.
@@ -193,6 +212,7 @@ class FieldWalker(object):
         """Walk in to array for embedded documents.
         """
         field_values = _FieldValues()
+        ref_ = []
         num_of_emb_doc = 0
         self._elem_iter_map[field] = OrderedDict()
 
@@ -205,6 +225,7 @@ class FieldWalker(object):
             if emb_field.exists:
                 self._elem_iter_map[field][i] = len(emb_field.value.elements)
                 field_values += emb_field.value
+                ref_.append(emb_field.value.ref)
             else:
                 # FLAGS_FOR_NONE_QUERYING:
                 #   field not exists in all elements.
@@ -220,6 +241,7 @@ class FieldWalker(object):
 
         if field_values:
             self.embedded_in_array = True
+            field_values.ref = ref_
             return {field: field_values}
         else:
             return None
@@ -251,6 +273,24 @@ class FieldWalker(object):
         """
         return self._matched_indexes.get(path.split(".", 1)[0])
 
+    def setval(self, value):
+        if self.value.ref is None:
+            return
+
+        ref_ = self.value.ref
+        if not self.embedded_in_array:
+            ref_ = [ref_]
+
+        for r_ in ref_:
+            if is_array_type_(r_):
+                if len(r_) > int(self._end_key):
+                    r_[int(self._end_key)] = value
+                else:
+                    fill = int(self._end_key) - len(r_)
+                    r_ += [None for i in range(fill)] + [value]
+            else:
+                r_[self._end_key] = value
+
 
 class _FieldValues(object):
 
@@ -259,6 +299,7 @@ class _FieldValues(object):
         "arrays",
         "iter_queue",
         "iter_times",
+        "ref",
     ]
 
     def __init__(self, elements=None, arrays=None):
@@ -266,12 +307,13 @@ class _FieldValues(object):
         self.arrays = arrays or []
         self.iter_queue = deque()
         self.iter_times = 1
+        self.ref = None
 
     def _merged(self):
         return self.elements + self.arrays
 
     def __repr__(self):
-        return str(self._merged())
+        return "_FieldValues({})".format(str(self._merged()))
 
     def __next__(self):
         if len(self.iter_queue):
@@ -325,5 +367,7 @@ class _FieldValues(object):
         self.elements = [val[index] for val in self.arrays
                          if len(val) > index]
         self.arrays = []
+
+        self.ref = [list(r.values())[0] for r in self.ref]
 
         return self
