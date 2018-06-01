@@ -58,6 +58,17 @@ def test_utils_monty_dump(tmp_monty_repo):
         assert data == SERIALIZED.strip()
 
 
+def test_utils_monty_dump_with_existed_dir(tmp_monty_repo):
+    tmp_dump = os.path.join(tmp_monty_repo, "existed_dir", "dumped.json")
+    if not os.path.isdir(os.path.dirname(tmp_dump)):
+        os.makedirs(os.path.dirname(tmp_dump))
+    monty_dump(tmp_dump, DOCUMENTS)
+
+    with open(tmp_dump, "r") as dump:
+        data = dump.read()
+        assert data == SERIALIZED.strip()
+
+
 def test_utils_monty_load(tmp_monty_repo):
     tmp_dump = os.path.join(tmp_monty_repo, "dumped.json")
     if not os.path.isdir(tmp_monty_repo):
