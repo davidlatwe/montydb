@@ -314,7 +314,8 @@ class _FieldValues(object):
         return self.elements + self.arrays
 
     def __repr__(self):
-        return "_FieldValues({})".format(str(self._merged()))
+        return "_FieldValues(elements: {}, arrays: {})".format(self.elements,
+                                                               self.arrays)
 
     def __next__(self):
         if len(self.iter_queue):
