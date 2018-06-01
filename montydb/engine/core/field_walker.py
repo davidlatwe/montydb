@@ -1,21 +1,20 @@
 
-from collections import deque, OrderedDict
-
-from ..helpers import (
-    is_array_type,
-    is_mapping_type,
-)
+from collections import deque, OrderedDict, Mapping
 
 
 def is_array_type_(doc):
-    return is_array_type(doc) or isinstance(doc, _FieldValues)
+    return isinstance(doc, (list, tuple, _FieldValues))
+
+
+def is_mapping_type_(obj):
+    return isinstance(obj, Mapping)
 
 
 class FieldWalker(object):
     """Document traversal context manager
 
     Attributes:
-        doc (mapping type): The document being query.
+        doc (Mapping type): The document being query.
 
         value (_FieldValues): An instance of `_FieldValues`, hold the result
                               of the query.
@@ -109,12 +108,12 @@ class FieldWalker(object):
                     break
 
                 self._been_in_array = True
-                array_has_doc = any(is_mapping_type(e_) for e_ in doc_)
+                array_has_doc = any(is_mapping_type_(e_) for e_ in doc_)
                 field_as_index = field.isdigit()
 
                 if field_as_index:
                     if self.index_posed and self.embedded_in_array:
-                        field_as_index = any(is_array_type(e_) for e_ in doc_)
+                        field_as_index = any(is_array_type_(e_) for e_ in doc_)
                 else:
                     doc_ = self._walk_array(doc_, field)
 
@@ -198,7 +197,7 @@ class FieldWalker(object):
         self._elem_iter_map[field] = OrderedDict()
 
         for i, emb_doc in enumerate(doc_):
-            if not is_mapping_type(emb_doc):
+            if not is_mapping_type_(emb_doc):
                 continue
             num_of_emb_doc += 1
 
@@ -317,7 +316,7 @@ class _FieldValues(object):
         if isinstance(val, _FieldValues):
             self.arrays += val.arrays
         else:
-            if is_array_type(val):
+            if is_array_type_(val):
                 self.arrays.append(val)
             else:
                 self.elements.append(val)
