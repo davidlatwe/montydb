@@ -130,16 +130,16 @@ class FieldWalker(object):
                 if iaf_doc_ is not None:
                     if len(doc_) > int(field):  # Make sure index in range
                         if isinstance(doc_, _FieldValues):
-                            iaf_doc_[field] += doc_.positional(int(field))
+                            iaf_doc_[field] += doc_._positional(int(field))
                         else:
-                            iaf_doc_[field].append(doc_[int(field)])
+                            iaf_doc_[field]._append(doc_[int(field)])
 
                     doc_ = iaf_doc_
                     field_as_index = False
 
             if field_as_index and self.embedded_in_array:
                 # the `doc_` in here must be `_FieldValues` type
-                doc_ = {field: doc_.positional(int(field))}
+                doc_ = {field: doc_._positional(int(field))}
                 field_as_index = False
 
             try:
@@ -171,10 +171,10 @@ class FieldWalker(object):
         if not field_as_index and is_array_type_(doc_):
             # Extend `fieldValues.elements` with an array field value from
             # a single document or from multiple documents inside an array.
-            self.value.extend(doc_)
+            self.value._extend(doc_)
         # Append to `fieldValues.arrays`, but if `doc_` is not array type,
         # will be append to `fieldValues.elements`.
-        self.value.append(doc_)
+        self.value._append(doc_)
 
         # FLAGS_FOR_NONE_QUERYING:
         #   Correcting flag after value been collected.
@@ -306,13 +306,13 @@ class _FieldValues(object):
         self.arrays += val.arrays
         return self
 
-    def extend(self, val):
+    def _extend(self, val):
         if isinstance(val, _FieldValues):
             self.elements += val.elements
         else:
             self.elements += val
 
-    def append(self, val):
+    def _append(self, val):
         if isinstance(val, _FieldValues):
             self.arrays += val.arrays
         else:
@@ -321,7 +321,7 @@ class _FieldValues(object):
             else:
                 self.elements.append(val)
 
-    def positional(self, index):
+    def _positional(self, index):
         self.elements = [val[index] for val in self.arrays
                          if len(val) > index]
         self.arrays = []
