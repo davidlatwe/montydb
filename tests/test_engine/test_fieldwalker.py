@@ -215,3 +215,71 @@ def test_fieldwalker_value_retrieve():
     assert fw.value == value
     assert fw.index_posed is False
     assert fw.embedded_in_array is True
+
+
+def test_fieldwalker_value_set():
+    doc = {"a": 5}
+    path = "a"
+    fw = FieldWalker(doc)(path)
+    fw.setval(10)
+    assert doc == {"a": 10}
+
+    doc = {"a": [5, 8]}
+    path = "a.1"
+    fw = FieldWalker(doc)(path)
+    fw.setval(10)
+    assert doc == {"a": [5, 10]}
+
+    doc = {"a": [{"b": 5}, {"b": 6}]}
+    path = "a.b"
+    fw = FieldWalker(doc)(path)
+    fw.setval(10)
+    assert doc == {"a": [{"b": 10}, {"b": 10}]}
+
+    doc = {"a": {"b": [5, 8]}}
+    path = "a.b.1"
+    fw = FieldWalker(doc)(path)
+    fw.setval(10)
+    assert doc == {"a": {"b": [5, 10]}}
+
+    doc = {"a": [{"b": [5, 8]}, {"b": [6, 9]}]}
+    path = "a.b.1"
+    fw = FieldWalker(doc)(path)
+    fw.setval(10)
+    assert doc == {"a": [{"b": [5, 10]}, {"b": [6, 10]}]}
+
+    doc = {"a": [{"b": [{"c": [0, {"d": [1]}]},
+                        {"c": [2, {"d": [3, "y"]}]},
+                        {"c": [4, {"d": [5, "z"]}]}]},
+                 {"b": [{"c": [10, {"d": [11, "i"]}]},
+                        {"c": [12, {"d": [13, "j"]}]},
+                        {"c": [14, {"d": [15, "k"]}]}]}
+                 ]}
+    path = "a.b.c.1.d.2"
+    fw = FieldWalker(doc)(path)
+    fw.setval(10)
+    assert doc == {"a": [{"b": [{"c": [0, {"d": [1, None, 10]}]},
+                                {"c": [2, {"d": [3, "y", 10]}]},
+                                {"c": [4, {"d": [5, "z", 10]}]}]},
+                         {"b": [{"c": [10, {"d": [11, "i", 10]}]},
+                                {"c": [12, {"d": [13, "j", 10]}]},
+                                {"c": [14, {"d": [15, "k", 10]}]}]}
+                         ]}
+
+    doc = {"a": [{"b": [{"c": [0, {"d": {}}]},
+                        {"c": [2, {"d": [3, "y"]}]},
+                        {"c": [4, {"d": [5, "z"]}]}]},
+                 {"b": [{"c": [10, {"d": [11, "i"]}]},
+                        {"c": [12, {"d": [13, "j"]}]},
+                        {"c": [14, {"d": [15, "k"]}]}]}
+                 ]}
+    path = "a.b.c.1.d.2"
+    fw = FieldWalker(doc)(path)
+    fw.setval(10)
+    assert doc == {"a": [{"b": [{"c": [0, {"d": {"2": 10}}]},
+                                {"c": [2, {"d": [3, "y", 10]}]},
+                                {"c": [4, {"d": [5, "z", 10]}]}]},
+                         {"b": [{"c": [10, {"d": [11, "i", 10]}]},
+                                {"c": [12, {"d": [13, "j", 10]}]},
+                                {"c": [14, {"d": [15, "k", 10]}]}]}
+                         ]}
