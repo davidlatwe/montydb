@@ -1,7 +1,15 @@
 
 import pytest
+import yaml
 import os
+import copy
 
+try:
+    from importlib import reload
+except ImportError:
+    pass
+
+import montydb
 from montydb import MontyConfigure
 from montydb.errors import ConfigurationError
 from montydb.storage.memory import MemoryStorage
@@ -117,6 +125,12 @@ def test_configure_validation_fail(tmp_monty_repo):
             cf.config.connection.fake_attr = None
 
 
+def test_configure_load_without_config_schema(tmp_monty_repo):
+    EmptyConfig = copy.copy(FakeConfig)
+    EmptyConfig.schema = None
+    MontyConfigure(tmp_monty_repo).load(EmptyConfig)
+
+
 def test_configure_reload(tmp_monty_repo):
     configure = MontyConfigure(tmp_monty_repo)
     config = configure.load(FakeConfig).config
@@ -141,16 +155,32 @@ def test_configure_reload(tmp_monty_repo):
 
 def test_configure_reload_faild(tmp_monty_repo):
     configure = MontyConfigure(tmp_monty_repo)
-    config = configure.load(FakeConfig).config
+    config = configure.load().config
     # no save
     with pytest.raises(ConfigurationError):
         config.reload(repository=tmp_monty_repo)
+
+
+def test_configure_reload_in_memory():
+    configure = MontyConfigure(":memory:")
+    config = configure.load(FakeConfig).config
+    # no save
+    config.reload(repository=":memory:")
 
 
 def test_configure_drop(tmp_monty_repo):
     with MontyConfigure(tmp_monty_repo) as cf:
         cf.load(FakeConfig)
         cf.save()
+        cf.drop()
+        assert cf.exists() is False
+
+
+def test_configure_drop_after_del(tmp_monty_repo):
+    with MontyConfigure(tmp_monty_repo) as cf:
+        cf.load(FakeConfig)
+        cf.save()
+        os.remove(cf.config_path)
         cf.drop()
         assert cf.exists() is False
 
@@ -163,3 +193,9 @@ def test_configure_load_wrong_type(tmp_monty_repo):
     with pytest.raises(TypeError):
         with MontyConfigure(tmp_monty_repo) as cf:
             cf.load(FakeConfig())
+
+
+def test_configure_yaml_import_err(monkeypatch):
+    if hasattr(yaml, "CLoader"):
+        monkeypatch.delattr(yaml, "CLoader")
+        reload(montydb.configure)
