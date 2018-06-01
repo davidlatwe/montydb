@@ -265,98 +265,75 @@ class FieldWalker(object):
 class _FieldValues(object):
 
     __slots__ = [
-        "_elements",
-        "_arrays",
-        "_iter_queue",
-        "_iter_times",
+        "elements",
+        "arrays",
+        "iter_queue",
+        "iter_times",
     ]
 
     def __init__(self, elements=None, arrays=None):
-        self._elements = elements or []
-        self._arrays = arrays or []
-        self._iter_queue = deque()
-        self._iter_times = 1
+        self.elements = elements or []
+        self.arrays = arrays or []
+        self.iter_queue = deque()
+        self.iter_times = 1
 
-    @property
     def _merged(self):
-        return self._elements + self._arrays
+        return self.elements + self.arrays
 
     def __repr__(self):
-        return str(self._merged)
+        return str(self._merged())
 
     def __next__(self):
-        if len(self._iter_queue):
-            self._iter_times += 1
-            return self._iter_queue.popleft()
+        if len(self.iter_queue):
+            self.iter_times += 1
+            return self.iter_queue.popleft()
         else:
             raise StopIteration
 
     next = __next__
 
     def __iter__(self):
-        self._iter_times = 0
-        self._iter_queue = deque(self._merged)
+        self.iter_times = 0
+        self.iter_queue = deque(self._merged())
         return self
 
     def __len__(self):
-        return len(self._merged)
+        return len(self._merged())
 
     def __eq__(self, other):
-        return self._merged == other
+        return self._merged() == other
 
     def __bool__(self):
-        return bool(self._elements or self._arrays)
+        return bool(self.elements or self.arrays)
 
     __nonzero__ = __bool__
 
     def __getitem__(self, index):
-        return self._elements[index]
+        return self.elements[index]
 
     def __iadd__(self, val):
-        self._elements += val.elements
-        self._arrays += val.arrays
+        self.elements += val.elements
+        self.arrays += val.arrays
         return self
 
     def extend(self, val):
         if isinstance(val, _FieldValues):
-            self._elements += val.elements
+            self.elements += val.elements
         else:
-            self._elements += val
+            self.elements += val
 
     def append(self, val):
         if isinstance(val, _FieldValues):
-            self._arrays += val.arrays
+            self.arrays += val.arrays
         else:
             if is_array_type(val):
-                self._arrays.append(val)
+                self.arrays.append(val)
             else:
-                self._elements.append(val)
+                self.elements.append(val)
 
     def positional(self, index):
-        self._elements = [val[index] for val in self._arrays
-                          if len(val) > index]
-        self._arrays = []
+        self.elements = [val[index] for val in self.arrays
+                         if len(val) > index]
+        self.arrays = []
 
         return self
-
-    @property
-    def elements(self):
-        return self._elements
-
-    @elements.setter
-    def elements(self, val):
-        """Args: val (list)"""
-        self._elements = val
-
-    @property
-    def arrays(self):
-        return self._arrays
-
-    @arrays.setter
-    def arrays(self, val):
-        """Args: val (list)"""
-        self._arrays = val
-
-    @property
-    def iter_times(self):
-        return self._iter_times
