@@ -167,10 +167,16 @@ def test_weighted__cmp_decimal_ne():
 
 
 def test_weighted__cmp_decimal_lt_or_gt():
-    with pytest.raises(TypeError):
-        _cmp_decimal(Decimal128("5.5")) > "NAN"
+    if PY3:
+        with pytest.raises(TypeError):
+            _cmp_decimal(Decimal128("5.5")) > "NAN"
+    else:
+        assert (_cmp_decimal(Decimal128("5.5")) > "NAN") is False
 
 
 def test_weighted__cmp_decimal_le_or_ge():
-    with pytest.raises(TypeError):
-        _cmp_decimal(Decimal128("5.5")) >= "NAN"
+    if PY3:
+        with pytest.raises(TypeError):
+            _cmp_decimal(Decimal128("5.5")) >= "NAN"
+    else:
+        assert (_cmp_decimal(Decimal128("5.5")) >= "NAN") is False

@@ -28,6 +28,7 @@ before_install:
   - ${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongod --version
   - pip install pip -U
   - pip install pytest-cov
+  - pip install pytest-env-info
   - pip install coveralls
   - pip install codecov
   - python setup.py install

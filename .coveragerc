@@ -6,6 +6,7 @@ omit =
 [report]
 exclude_lines =
     pragma: no cover
+    pragma: no PY${PYTEST_PYMAJVER} cover
     raise NotImplementedError.*
     warnings\.warn.*
     def __repr__

@@ -149,7 +149,7 @@ def gravity(value, weight_only=None):
             wgt = 12 if value.scope is None else 13
         elif isinstance(value, string_type):
             wgt = 3
-        elif isinstance(value, bytes):
+        elif isinstance(value, bytes):  # pragma: no PY2 cover
             wgt = 6
         else:
             raise TypeError("Not weightable type: {!r}".format(type(value)))
