@@ -57,6 +57,7 @@ def test_client_database_names(monty_client, mongo_client):
     monty_db_names = monty_client.database_names()
     mongo_db_names = mongo_client.database_names()
     mongo_db_names.remove("admin")
+    mongo_db_names.remove("config")
     assert monty_db_names == mongo_db_names
 
 

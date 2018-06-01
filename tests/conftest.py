@@ -34,7 +34,8 @@ def tmp_monty_repo():
 
 def purge_all_db(client):
     for db in client.database_names():
-        if db == "admin" and isinstance(client, pymongo.MongoClient):
+        if (db in ["admin", "config"] and
+                isinstance(client, pymongo.MongoClient)):
             continue
         client.drop_database(db)
 
