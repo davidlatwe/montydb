@@ -39,6 +39,9 @@
 {'_id': ObjectId('5ad34e537e8dd45d9c61a456'), 'stock': 'A', 'qty': 6}
 ```
 
+### Develop Status
+See [Projects' TODO](https://github.com/davidlatwe/MontyDB/projects/1)
+
 ### Storage Engine Configurations
 
 The configuration process only required on repository creation or modification.
@@ -125,8 +128,42 @@ The configuration process only required on repository creation or modification.
 
 **After storage engine configuration, you should feel like using MongoDB's Python driver, unless it's not implemented.**
 
-### Develop Status
-See [Projects' TODO](https://github.com/davidlatwe/MontyDB/projects/1)
+### Utilities
+
+* #### `monty_dump`
+
+  Write documents to disk, able to load by `monty_load` or `mongoimport`
+  ```python
+  >>> from montydb.utils import monty_dump
+  >>> documents = [{"a": 1}, {"doc": "some doc"}]
+  >>> monty_dump("/path/dump.json", documents)
+  ```
+
+* ####  `monty_load`
+
+  Read documents from disk, able to read from `monty_dump` or `mongoexport`
+  ```python
+  >>> from montydb.utils import monty_load
+  >>> monty_load("/path/dump.json")
+  [{"a": 1}, {"doc": "some doc"}]
+  ```
+
+* ####  `MontyList`
+
+  Experimental, a subclass of `list`, combined the common CRUD methods from Mongo's Collection and Cursor.
+
+  ```python
+  >>> from montydb.utils import MontyList
+  >>> mtl = MontyList([1, 2, {"a": 1}, {"a": 5}, {"a": 8}])
+  >>> mtl.find({"a": {"$gt": 3}})
+  MontyList([{'a': 5}, {'a': 8}])
+  ```
+  You can dump it with `monty_dump` or read from `monty_load`
+  ```python
+  >>> monty_dump("/path/dump.json", mtl)
+  >>> MontyList(monty_load("/path/dump.json"))
+  MontyList([1, 2, {'a': 1}, {'a': 5}, {'a': 8}])
+  ```
 
 ---
 
