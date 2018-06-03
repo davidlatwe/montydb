@@ -8,12 +8,6 @@ from bson.json_util import (
 )
 
 
-__all__ = [
-    "monty_load",
-    "monty_dump",
-]
-
-
 def monty_load(file_path, json_options=None):
     opt = json_options if json_options else _default_json_opts
     with open(file_path, "r") as fp:

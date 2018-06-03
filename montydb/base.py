@@ -23,7 +23,7 @@ import collections
 
 from bson import BSON, SON
 from bson.py3compat import integer_types, string_type, abc, iteritems
-from bson.codec_options import CodecOptions
+from bson.codec_options import CodecOptions, DEFAULT_CODEC_OPTIONS
 from bson.raw_bson import RawBSONDocument
 from bson.codec_options import _parse_codec_options
 
@@ -32,7 +32,7 @@ ASCENDING = 1
 DESCENDING = -1
 
 
-def _bson_touch(doc, codec_op):
+def _bson_touch(doc, codec_op=DEFAULT_CODEC_OPTIONS):
     """
     BSON will convert bytes string `b""` to unicode in PY2 since it's also
     `str` type, while in PY3 keep it as `bytes`. This might cause trouble

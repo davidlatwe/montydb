@@ -2,7 +2,7 @@
 import os
 import pytest
 
-from montydb.utils import monty_dump, monty_load
+from montydb.utils import monty_dump, monty_load, MontyList
 
 from bson import BSON
 from bson.timestamp import Timestamp
@@ -84,3 +84,53 @@ def test_utils_monty_load(tmp_monty_repo):
 def test_utils_monty_dump_err(tmp_monty_repo):
     with pytest.raises(TypeError):
         monty_dump("tmp.file", {"some": "doc"})
+
+
+def test_MontyList_find():
+    mt = MontyList([1, 4, 3, {"a": 5}, {"a": 4}])
+    mt_find = mt.find({"a": {"$exists": 1}})
+    assert len(mt_find) == 2
+
+    mt = MontyList([1, 4, 3, {"a": 5, "b": 1}, {"a": 4, "b": 0}])
+    mt_find = mt.find({"a": {"$exists": 1}}, {"a": 0}, [("a", 1)])
+    assert mt_find[0] == {"b": 0}
+    assert mt_find[1] == {"b": 1}
+
+
+def test_MontyList_sort():
+    mt = MontyList([1, 4, 3, {"a": 5}, {"a": 4}])
+    mt.sort("a", 1)
+    assert mt == [1, 4, 3, {"a": 4}, {"a": 5}]
+
+
+def test_MontyList_iter():
+    mt = MontyList([1, 2, 3])
+    assert next(mt) == 1
+    assert next(mt) == 2
+    assert next(mt) == 3
+    with pytest.raises(StopIteration):
+        next(mt)
+    mt.rewind()
+    assert next(mt) == 1
+
+
+def test_MontyList_compare():
+    mt = MontyList([1, 2, 3])
+    assert mt == [1, 2, 3]
+    assert mt != [1, 2, 0]
+    assert mt > [1, 2, 0]
+    assert mt < [1, 2, {"a": 0}]
+    assert mt >= [1, 2, 0]
+    assert mt <= [1, 2, {"a": 0}]
+
+    assert mt > {"a": 0}
+    assert mt > None
+    assert mt > "string type"
+    assert mt < True
+    assert mt < MontyList([5])
+
+
+def test_MontyList_getitem_err():
+    mt = MontyList([1, 2, 3])
+    with pytest.raises(TypeError):
+        mt["ind"]
