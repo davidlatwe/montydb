@@ -427,7 +427,7 @@ def _is_expression_obj(sub_spec):
 class _FALG(object):
     def __init__(self, int_flags):
         self.retrieve = int_flags
-    __slots__ = ["retrieve"]
+    __slots__ = ("retrieve",)
 
 
 def _modify_regex_optins(sub_spec):

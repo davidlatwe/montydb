@@ -302,7 +302,7 @@ class MontyCursor(object):
             for fw in field_walkers:
                 projector(fw)
 
-        self._data = deque([fw.doc for fw in field_walkers])
+        self._data = deque(fw.doc for fw in field_walkers)
         self._retrieved += len(field_walkers)
         # (NOTE) cursor id should return from storage, but ignore for now.
         self._id = 0

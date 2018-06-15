@@ -31,7 +31,7 @@ _decimal128_NaN_ls = (_decimal128_NaN,
 
 class _cmp_decimal(object):
 
-    __slots__ = ["_dec"]
+    __slots__ = ("_dec",)
 
     def __init__(self, dec128):
         if isinstance(dec128, Decimal128):
