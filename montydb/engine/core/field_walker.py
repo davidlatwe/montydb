@@ -27,6 +27,9 @@ class _FieldLogger(object):
         "F_ARRAY_NO_DOC",
     )
 
+    def __init__(self):
+        self.matched_indexes = {}
+
     def reset(self, deep):
         self.embedded_in_array = False
         self.index_posed = False
@@ -34,7 +37,6 @@ class _FieldLogger(object):
         self.end_field = None
         if deep:
             self.query_path = ""
-            self.matched_indexes = {}
             self.F_BEEN_IN_ARRAY = False
             self.F_MISSING_IN_ARRAY = False
             self.F_FIELD_NOT_EXISTS = False
