@@ -106,36 +106,35 @@ class FieldWalker(object):
         """Walk through document and acquire value with given key-path
         """
         doc_ = self.doc
+        log_ = self.logger
         ref_ = end_field_ = None
 
         self._reset(deep=True)
-        self.logger.query_path = path
+        log_.query_path = path
 
         for field in path.split("."):
-            self.logger.field_as_index = False
-            self.logger.array_has_doc = False
+            log_.field_as_index = False
+            log_.array_has_doc = False
 
             if _is_array_type(doc_):
                 if len(doc_) == 0:
                     self.exists = False
                     break
 
-                self.logger.been_in_array()
-                self.logger.array_has_doc = any(
-                    self._is_doc_type(e_) for e_ in doc_)
-                self.logger.field_as_index = field.isdigit()
+                log_.been_in_array()
+                log_.array_has_doc = any(self._is_doc_type(e_) for e_ in doc_)
+                log_.field_as_index = field.isdigit()
 
-                if self.logger.field_as_index:
-                    if (self.logger.index_posed and
-                            self.logger.embedded_in_array):
+                if log_.field_as_index:
+                    if log_.index_posed and log_.embedded_in_array:
                         if not any(isinstance(e_, list) for e_ in doc_):
-                            self.logger.field_not_exists()
+                            log_.field_not_exists()
                 else:
                     doc_ = self._walk_array(doc_, field)
 
-            self.logger.index_posed = self.logger.field_as_index
+            log_.index_posed = log_.field_as_index
 
-            if self.logger.field_as_index and self.logger.array_has_doc:
+            if log_.field_as_index and log_.array_has_doc:
                 iaf_doc_ = self._walk_array(doc_, field)
                 if iaf_doc_ is not None:
                     if len(doc_) > int(field):  # Make sure index in range
@@ -145,16 +144,16 @@ class FieldWalker(object):
                             iaf_doc_[field]._extend_values(doc_[int(field)])
 
                     doc_ = iaf_doc_
-                    self.logger.field_as_index = False
+                    log_.field_as_index = False
 
-            if self.logger.field_as_index and self.logger.embedded_in_array:
+            if log_.field_as_index and log_.embedded_in_array:
                 field_values = doc_._positional(int(field))
                 doc_ = {field: field_values} if field_values else None
-                self.logger.field_as_index = False
+                log_.field_as_index = False
 
             ref_ = self._get_ref(doc_, field)
             end_field_ = field
-            key = int(field) if self.logger.field_as_index else field
+            key = int(field) if log_.field_as_index else field
             try:
                 doc_ = doc_[key]
                 self.exists = True
@@ -162,9 +161,9 @@ class FieldWalker(object):
                 err_cls = err.__class__
 
                 if err_cls is IndexError:
-                    self.logger.parse_index_error()
+                    log_.parse_index_error()
                 if err_cls is TypeError:
-                    self.logger.parse_type_error()
+                    log_.parse_type_error()
 
                 doc_ = None
                 ref_ = end_field_ = None
@@ -173,15 +172,15 @@ class FieldWalker(object):
 
         """End of walk"""
 
-        if not self.logger.field_as_index and _is_array_type(doc_):
+        if not log_.field_as_index and _is_array_type(doc_):
             self.value._extend_elements(doc_)
         self.value._extend_values(doc_)
 
         self.value._ref = ref_
-        self.logger.end_field = end_field_
+        log_.end_field = end_field_
 
         if None not in self.value.elements:
-            self.logger.confirm_missing()
+            log_.confirm_missing()
 
         return self
 
