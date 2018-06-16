@@ -16,7 +16,6 @@ class _FieldLogger(object):
         "query_path",
         "end_field",
         "matched_indexes",
-        "index_posed",
         "field_as_index",
         "array_has_doc",
 
@@ -32,7 +31,6 @@ class _FieldLogger(object):
 
     def reset(self, deep):
         self.embedded_in_array = False
-        self.index_posed = False
         self.elem_iter_map = []
         self.end_field = None
         if deep:
@@ -112,6 +110,7 @@ class FieldWalker(object):
         self._reset(deep=True)
         log_.query_path = path
 
+        """Begin the walk"""
         for field in path.split("."):
             log_.field_as_index = False
             log_.array_has_doc = False
@@ -126,13 +125,11 @@ class FieldWalker(object):
                 log_.field_as_index = field.isdigit()
 
                 if log_.field_as_index:
-                    if log_.index_posed and log_.embedded_in_array:
+                    if log_.embedded_in_array:
                         if not any(isinstance(e_, list) for e_ in doc_):
                             log_.field_not_exists()
                 else:
                     doc_ = self._walk_array(doc_, field)
-
-            log_.index_posed = log_.field_as_index
 
             if log_.field_as_index and log_.array_has_doc:
                 iaf_doc_ = self._walk_array(doc_, field)
@@ -169,7 +166,6 @@ class FieldWalker(object):
                 ref_ = end_field_ = None
                 self._reset()
                 break
-
         """End of walk"""
 
         if not log_.field_as_index and _is_array_type(doc_):
