@@ -285,7 +285,6 @@ class Projector(object):
             for val in field_walker.value:
                 if is_mapping_type(val):
                     key_list += list(val.keys())
-            field_walker.reset()
             key_list = list(set(key_list))
         else:
             key_list = list(field_walker.doc.keys())
@@ -308,22 +307,22 @@ class Projector(object):
 
             if drop:
                 if fore_path:
-                    with field_walker(fore_path[:-1]):
-                        self.drop_doc(field_walker, key)
+                    field_walker(fore_path[:-1])
+                    self.drop_doc(field_walker, key)
                 else:
                     if key in field_walker.doc:
                         del field_walker.doc[key]
             else:
                 fore_path = current_path + "."
-                with field_walker(current_path):
-                    self.inclusion(field_walker, include_field, fore_path)
+                field_walker(current_path)
+                self.inclusion(field_walker, include_field, fore_path)
 
     def exclusion(self, field_walker, exclude_field):
         for field_path in exclude_field:
             if "." in field_path:
                 fore_path, key = field_path.rsplit(".", 1)
-                with field_walker(fore_path):
-                    self.drop_doc(field_walker, key)
+                field_walker(fore_path)
+                self.drop_doc(field_walker, key)
             else:
                 if field_path in field_walker.doc:
                     del field_walker.doc[field_path]

@@ -205,16 +205,12 @@ def test_fieldwalker_value_retrieve():
     value = [1, 2, 3, 4, 5, 6, "z"]
     fw = FieldWalker(doc)(path)
     assert fw.value == value
-    assert fw.index_posed is True
-    assert fw.embedded_in_array is True
 
     doc = {"a": [{"1": {"b": 5}}, 1]}
     path = "a.1.b"
     value = [5]
     fw = FieldWalker(doc)(path)
     assert fw.value == value
-    assert fw.index_posed is False
-    assert fw.embedded_in_array is True
 
     doc = {"a": [True, True, {"2": True, "3": True}]}
     path = "a.3"
@@ -312,10 +308,10 @@ def test_fieldwalker_value_set():
     path = "a.0.b"
     fw = FieldWalker(doc)(path)
     fw.setval(10)
-    assert doc == {"a": [{"0": None}]}
+    assert doc == {"a": [{"0": None, "b": 10}]}
 
     doc = {"a": [True, {"1": None}, {"1": False, "0": False}]}
     path = "a.1.2"
     fw = FieldWalker(doc)(path)
     fw.setval(10)
-    assert doc == {"a": [True, {"1": None}, {"1": False, "0": False}]}
+    assert doc == {"a": [True, {"1": None, "2": 10}, {"1": False, "0": False}]}

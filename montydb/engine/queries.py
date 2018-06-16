@@ -517,10 +517,9 @@ def _eq_match(field_walker, query):
                     return True
     else:
         if query is None:
-            if field_walker.array_field_missing:
-                return True
-            if field_walker.array_status_normal:
-                return False
+            missing = field_walker.missing()
+            if missing is not None:
+                return missing
 
         if isinstance(query, Decimal128):
             query = _cmp_decimal(query)

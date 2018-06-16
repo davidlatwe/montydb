@@ -74,11 +74,9 @@ def test_none_query_3(monty_find, mongo_find):
 
     field_walker_0 = FieldWalker(docs[0])("a.b.0")
     assert field_walker_0.value == [None]
-    assert field_walker_0.array_status_normal is False
 
     field_walker_1 = FieldWalker(docs[1])("a.b.0")
     assert field_walker_1.value == [None]
-    assert field_walker_1.array_status_normal is True
 
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
@@ -114,11 +112,9 @@ def test_none_query_4(monty_find, mongo_find):
 
     field_walker_0 = FieldWalker(docs[0])("a.b")
     assert field_walker_0.value == [1]
-    assert field_walker_0.array_field_missing is False
 
     field_walker_1 = FieldWalker(docs[1])("a.b")
     assert field_walker_1.value == [None]
-    assert field_walker_1.array_field_missing is True
 
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
@@ -153,8 +149,6 @@ def test_none_query_5(monty_find, mongo_find):
 
     field_walker_0 = FieldWalker(docs[0])("a.1")
     assert field_walker_0.value == [None]
-    assert field_walker_0.array_field_missing is False
-    assert field_walker_0.array_status_normal is True
 
     assert mongo_c.count() == 0
     assert monty_c.count() == mongo_c.count()
@@ -185,8 +179,6 @@ def test_none_query_6(monty_find, mongo_find):
     field_walker_0 = FieldWalker(docs[0])("a.b")
     assert field_walker_0.value == [1]
     # not all embedded doc in array has filed "b"
-    assert field_walker_0.array_field_missing is True
-    assert field_walker_0.array_status_normal is False
 
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
@@ -217,8 +209,6 @@ def test_none_query_7(monty_find, mongo_find):
     field_walker_0 = FieldWalker(docs[0])("a.1")
     assert field_walker_0.value == [1, {"2": 1}]
     # not all embedded doc in array has filed "1"
-    assert field_walker_0.array_field_missing is True
-    assert field_walker_0.array_status_normal is False
 
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
@@ -249,8 +239,6 @@ def test_none_query_8(monty_find, mongo_find):
     field_walker_0 = FieldWalker(docs[0])("a.1")
     assert field_walker_0.value == [5]
     # not all embedded doc in array has filed "1"
-    assert field_walker_0.array_field_missing is True
-    assert field_walker_0.array_status_normal is False
 
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
@@ -280,8 +268,6 @@ def test_none_query_9(monty_find, mongo_find):
 
     field_walker_0 = FieldWalker(docs[0])("a.0")
     assert field_walker_0.value == [1, {"0": 1}]
-    assert field_walker_0.array_field_missing is False
-    assert field_walker_0.array_status_normal is False
 
     assert mongo_c.count() == 0
     assert monty_c.count() == mongo_c.count()
@@ -311,8 +297,6 @@ def test_none_query_10(monty_find, mongo_find):
 
     field_walker_0 = FieldWalker(docs[0])("a.b")
     assert field_walker_0.value == [None]
-    assert field_walker_0.array_field_missing is False
-    assert field_walker_0.array_status_normal is True
 
     assert mongo_c.count() == 0
     assert monty_c.count() == mongo_c.count()
@@ -366,10 +350,6 @@ def test_none_query_12(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    fw = FieldWalker(docs[0])("a.b")
-    assert fw.array_field_missing is True
-    assert fw.array_status_normal is False
-
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
 
@@ -382,10 +362,6 @@ def test_none_query_13(monty_find, mongo_find):
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
-
-    fw = FieldWalker(docs[0])("a.b")
-    assert fw.array_field_missing is True
-    assert fw.array_status_normal is False
 
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
