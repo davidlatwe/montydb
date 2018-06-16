@@ -128,25 +128,9 @@ class FieldWalker(object):
                     if log_.embedded_in_array:
                         if not any(isinstance(e_, list) for e_ in doc_):
                             log_.field_not_exists()
+                    doc_ = self._walk_field_as_index(doc_, field)
                 else:
                     doc_ = self._walk_array(doc_, field)
-
-            if log_.field_as_index and log_.array_has_doc:
-                iaf_doc_ = self._walk_array(doc_, field)
-                if iaf_doc_ is not None:
-                    if len(doc_) > int(field):  # Make sure index in range
-                        if isinstance(doc_, _FieldValues):
-                            iaf_doc_[field] += doc_._positional(int(field))
-                        else:
-                            iaf_doc_[field]._extend_values(doc_[int(field)])
-
-                    doc_ = iaf_doc_
-                    log_.field_as_index = False
-
-            if log_.field_as_index and log_.embedded_in_array:
-                field_values = doc_._positional(int(field))
-                doc_ = {field: field_values} if field_values else None
-                log_.field_as_index = False
 
             ref_ = self._get_ref(doc_, field)
             end_field_ = field
@@ -187,6 +171,27 @@ class FieldWalker(object):
         root = self.logger.query_path.split(".", 1)[0]
         self.logger.matched_indexes[root] = self._get_matched_index()
         self._reset()
+
+    def _walk_field_as_index(self, doc_, field):
+        if self.logger.array_has_doc:
+            iaf_doc_ = self._walk_array(doc_, field)
+            if iaf_doc_ is not None:
+                index = int(field)
+                if len(doc_) > index:  # Make sure index in range
+                    if isinstance(doc_, _FieldValues):
+                        iaf_doc_[field] += doc_._positional(index)
+                    else:
+                        iaf_doc_[field]._extend_values(doc_[index])
+
+                self.logger.field_as_index = False
+                return iaf_doc_
+
+        if self.logger.embedded_in_array:
+            field_values = doc_._positional(int(field))
+            self.logger.field_as_index = False
+            return {field: field_values} if field_values else None
+
+        return doc_
 
     def _walk_array(self, doc_, field):
         """Walk in to array for embedded documents.
