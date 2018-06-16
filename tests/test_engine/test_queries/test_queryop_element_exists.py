@@ -132,3 +132,21 @@ def test_qop_exists_6(monty_find, mongo_find):
 
     assert mongo_c.count() == 0
     assert monty_c.count() == mongo_c.count()
+
+
+def test_qop_exists_7(monty_find, mongo_find):
+    docs = [
+        {"a": [{"b": [{"c": [0, {"d": []}]},
+                      {"c": [2, {"d": [3, "y"]}]}]},
+               {"b": [{"c": [10, {"d": [11, "i"]}]},
+                      {"c": [12, {"d": [13, "j"]}]}]}
+               ]}
+    ]
+    spec = {"a.b.c.1.d.2": {"$exists": 0}}
+
+    monty_c = monty_find(docs, spec)
+    mongo_c = mongo_find(docs, spec)
+
+    assert FieldWalker(docs[0])("a.b.c.1.d.2").exists is False
+    assert mongo_c.count() == 1
+    assert monty_c.count() == mongo_c.count()

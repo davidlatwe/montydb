@@ -400,9 +400,27 @@ def test_none_query_14(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    fw = FieldWalker(docs[0])("a.b")
-    assert fw.array_field_missing is True
-    assert fw.array_status_normal is False
+    assert mongo_c.count() == 1
+    assert monty_c.count() == mongo_c.count()
+
+
+def test_none_query_15(monty_find, mongo_find):
+    docs = [
+        {"a": [True, {'1': False}, False]}
+    ]
+
+    spec = {"a.1.1": None}
+
+    monty_c = monty_find(docs, spec)
+    mongo_c = mongo_find(docs, spec)
+
+    assert mongo_c.count() == 1
+    assert monty_c.count() == mongo_c.count()
+
+    spec = {"a.1.1": False}
+
+    monty_c = monty_find(docs, spec)
+    mongo_c = mongo_find(docs, spec)
 
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()

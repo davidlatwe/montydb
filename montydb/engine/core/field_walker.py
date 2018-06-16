@@ -117,7 +117,8 @@ class FieldWalker(object):
 
                 if field_as_index:
                     if self.index_posed and self.embedded_in_array:
-                        field_as_index = any(is_array_type_(e_) for e_ in doc_)
+                        if not any(isinstance(e_, list) for e_ in doc_):
+                            self._NQF_array_field_not_exists_in_all_elements = True
                 else:
                     doc_ = self._walk_array(doc_, field)
 
@@ -143,7 +144,8 @@ class FieldWalker(object):
 
             if field_as_index and self.embedded_in_array:
                 # the `doc_` in here must be `_FieldValues` type
-                doc_ = {field: doc_._positional(int(field))}
+                field_values = doc_._positional(int(field))
+                doc_ = {field: field_values} if field_values else None
                 field_as_index = False
 
             if doc_ is not None and self.embedded_in_array:
