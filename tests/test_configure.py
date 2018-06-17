@@ -2,6 +2,8 @@
 import pytest
 import yaml
 import os
+import tempfile
+import shutil
 import copy
 
 try:
@@ -22,17 +24,25 @@ from montydb.storage import (
 )
 
 
-def test_configure_get_storage_engine(tmp_monty_repo):
+@pytest.fixture
+def tmp_config_repo():
+    tmp_dir = os.path.join(tempfile.gettempdir(), "monty_config")
+    if os.path.isdir(tmp_dir):
+        shutil.rmtree(tmp_dir)
+    return tmp_dir
+
+
+def test_configure_get_storage_engine(tmp_config_repo):
     configure = MontyConfigure(":memory:")
     storage = configure.load()._get_storage_engine()
     assert isinstance(storage, MemoryStorage)
 
-    tmp_dir = os.path.join(tmp_monty_repo, "sqlite")
+    tmp_dir = os.path.join(tmp_config_repo, "sqlite")
     configure = MontyConfigure(tmp_dir).load(SQLiteConfig)
     storage = configure._get_storage_engine()
     assert isinstance(storage, SQLiteStorage)
 
-    tmp_dir = os.path.join(tmp_monty_repo, "flatfile")
+    tmp_dir = os.path.join(tmp_config_repo, "flatfile")
     configure = MontyConfigure(tmp_dir).load(FlatFileConfig)
     storage = configure._get_storage_engine()
     assert isinstance(storage, FlatFileStorage)
@@ -53,8 +63,8 @@ def test_configure_memory_config_path():
     assert configure.config_path is None
 
 
-def test_configure_exists(tmp_monty_repo):
-    configure = MontyConfigure(tmp_monty_repo)
+def test_configure_exists(tmp_config_repo):
+    configure = MontyConfigure(tmp_config_repo)
     configure.load().save()
     assert configure.exists()
 
@@ -79,8 +89,8 @@ class FakeConfig(StorageConfig):
     """
 
 
-def test_configure_config(tmp_monty_repo):
-    configure = MontyConfigure(tmp_monty_repo).load(FakeConfig)
+def test_configure_config(tmp_config_repo):
+    configure = MontyConfigure(tmp_config_repo).load(FakeConfig)
     config = configure.config
 
     with pytest.raises(ConfigurationError):
@@ -98,8 +108,8 @@ def test_configure_config(tmp_monty_repo):
     assert len(config) == 2
 
 
-def test_configure_restriction(tmp_monty_repo):
-    configure = MontyConfigure(tmp_monty_repo).load(FakeConfig)
+def test_configure_restriction(tmp_config_repo):
+    configure = MontyConfigure(tmp_config_repo).load(FakeConfig)
     config = configure.config
 
     with pytest.raises(ConfigurationError):
@@ -118,21 +128,21 @@ def test_configure_restriction(tmp_monty_repo):
         config.update({"custom_config": True})
 
 
-def test_configure_validation_fail(tmp_monty_repo):
+def test_configure_validation_fail(tmp_config_repo):
     with pytest.raises(ConfigurationError):
-        with MontyConfigure(tmp_monty_repo) as cf:
+        with MontyConfigure(tmp_config_repo) as cf:
             cf.load(FakeConfig)
             cf.config.connection.fake_attr = None
 
 
-def test_configure_load_without_config_schema(tmp_monty_repo):
+def test_configure_load_without_config_schema(tmp_config_repo):
     EmptyConfig = copy.copy(FakeConfig)
     EmptyConfig.schema = None
-    MontyConfigure(tmp_monty_repo).load(EmptyConfig)
+    MontyConfigure(tmp_config_repo).load(EmptyConfig)
 
 
-def test_configure_reload(tmp_monty_repo):
-    configure = MontyConfigure(tmp_monty_repo)
+def test_configure_reload(tmp_config_repo):
+    configure = MontyConfigure(tmp_config_repo)
     config = configure.load(FakeConfig).config
     configure.save()
 
@@ -148,17 +158,17 @@ def test_configure_reload(tmp_monty_repo):
     with open(configure.config_path, "w") as fp:
         fp.write(FAKE_CONFIG_TRUE)
 
-    config.reload(repository=tmp_monty_repo)
+    config.reload(repository=tmp_config_repo)
 
     assert config.connection.fake_attr
 
 
-def test_configure_reload_faild(tmp_monty_repo):
-    configure = MontyConfigure(tmp_monty_repo)
+def test_configure_reload_faild(tmp_config_repo):
+    configure = MontyConfigure(tmp_config_repo)
     config = configure.load().config
     # no save
     with pytest.raises(ConfigurationError):
-        config.reload(repository=tmp_monty_repo)
+        config.reload(repository=tmp_config_repo)
 
 
 def test_configure_reload_in_memory():
@@ -168,16 +178,16 @@ def test_configure_reload_in_memory():
     config.reload(repository=":memory:")
 
 
-def test_configure_drop(tmp_monty_repo):
-    with MontyConfigure(tmp_monty_repo) as cf:
+def test_configure_drop(tmp_config_repo):
+    with MontyConfigure(tmp_config_repo) as cf:
         cf.load(FakeConfig)
         cf.save()
         cf.drop()
         assert cf.exists() is False
 
 
-def test_configure_drop_after_del(tmp_monty_repo):
-    with MontyConfigure(tmp_monty_repo) as cf:
+def test_configure_drop_after_del(tmp_config_repo):
+    with MontyConfigure(tmp_config_repo) as cf:
         cf.load(FakeConfig)
         cf.save()
         os.remove(cf.config_path)
@@ -185,13 +195,13 @@ def test_configure_drop_after_del(tmp_monty_repo):
         assert cf.exists() is False
 
 
-def test_configure_load_wrong_type(tmp_monty_repo):
+def test_configure_load_wrong_type(tmp_config_repo):
     with pytest.raises(TypeError):
-        with MontyConfigure(tmp_monty_repo) as cf:
+        with MontyConfigure(tmp_config_repo) as cf:
             cf.load({})
 
     with pytest.raises(TypeError):
-        with MontyConfigure(tmp_monty_repo) as cf:
+        with MontyConfigure(tmp_config_repo) as cf:
             cf.load(FakeConfig())
 
 

@@ -19,12 +19,12 @@ def pytest_addoption(parser):
                      """)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def storage(request):
     return request.config.getoption("--storage")
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def tmp_monty_repo():
     tmp_dir = os.path.join(tempfile.gettempdir(), "monty")
     if os.path.isdir(tmp_dir):
@@ -40,7 +40,7 @@ def purge_all_db(client):
         client.drop_database(db)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def monty_client(storage, tmp_monty_repo):
     if os.path.isdir(tmp_monty_repo):
         shutil.rmtree(tmp_monty_repo)
@@ -68,11 +68,11 @@ def mongo_client():
     return client
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def monty_database(monty_client):
     return monty_client["test_db"]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def mongo_database(mongo_client):
     return mongo_client["test_db"]

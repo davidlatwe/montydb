@@ -47,6 +47,8 @@ def test_client_getitem(monty_client):
 
 
 def test_client_database_names(monty_client, mongo_client):
+    for db in monty_client.database_names():
+        monty_client.drop_database(db)
 
     db_names = ["test1", "test2"]
 
