@@ -132,6 +132,9 @@ class FlatFileStorage(AbstractStorage):
 
     def __init__(self, repository, storage_config):
         super(FlatFileStorage, self).__init__(repository, storage_config)
+        self._init_cache_manager()
+
+    def _init_cache_manager(self):
         self._cache_manager = {}
 
     def _db_path(self, db_name):
@@ -144,6 +147,7 @@ class FlatFileStorage(AbstractStorage):
         for db in self._cache_manager:
             for col in self._cache_manager[db]:
                 self._cache_manager[db][col].flush()
+        self._init_cache_manager()
         self.is_opened = False
 
     def database_create(self, db_name):
@@ -154,6 +158,8 @@ class FlatFileStorage(AbstractStorage):
         db_path = self._db_path(db_name)
         if os.path.isdir(db_path):
             shutil.rmtree(db_path)
+        if db_name in self._cache_manager:
+            del self._cache_manager[db_name]
 
     def database_list(self):
         return [
@@ -196,6 +202,8 @@ class FlatFileDatabase(AbstractDatabase):
     def collection_drop(self, col_name):
         if self.collection_exists(col_name):
             os.remove(self._col_path(col_name))
+        if col_name in self._cache_manager:
+            del self._cache_manager[col_name]
 
     def collection_list(self):
         if not self.database_exists():
