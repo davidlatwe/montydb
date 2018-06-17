@@ -1,4 +1,6 @@
 
+from collections import OrderedDict
+
 from ..errors import WriteError
 
 
@@ -21,7 +23,7 @@ class Updator(object):
 
         }
 
-        self.operations = self.parser(spec)
+        self.operations = OrderedDict(sorted(self.parser(spec).items()))
         self.__field_walker = None
 
     def __repr__(self):
@@ -41,7 +43,7 @@ class Updator(object):
         if not next(iter(spec)).startswith("$"):
             raise ValueError("update only works with $ operators")
 
-        field_to_update = dict()
+        field_to_update = {}
         for op, cmd_doc in spec.items():
             if op not in self.update_ops:
                 raise WriteError("Unknown modifier: {}".format(op))
