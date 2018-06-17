@@ -18,6 +18,8 @@ class _FieldLogger(object):
         "matched_indexes",
         "field_as_index",
         "array_has_doc",
+        "element_walkers",
+        "num_of_emb_doc",
 
         "F_BEEN_IN_ARRAY",
         "F_MISSING_IN_ARRAY",
@@ -40,6 +42,10 @@ class _FieldLogger(object):
             self.F_FIELD_NOT_EXISTS = False
             self.F_INDEX_ERROR = False
             self.F_ARRAY_NO_DOC = False
+
+    def init_array_pre_walk(self):
+        self.element_walkers = []
+        self.num_of_emb_doc = 0
 
     def possible_index_as_field(self):
         return self.field_as_index and self.array_has_doc
@@ -120,17 +126,13 @@ class FieldWalker(object):
                     self.exists = False
                     break
 
-                log_.been_in_array()
-                log_.array_has_doc = any(self._is_doc_type(e_) for e_ in doc_)
                 log_.field_as_index = field.isdigit()
+                self._pre_walk_array(doc_)
 
                 if log_.field_as_index:
-                    if log_.embedded_in_array:
-                        if not any(isinstance(e_, list) for e_ in doc_):
-                            log_.field_not_exists()
                     doc_ = self._walk_field_as_index(doc_, field)
                 else:
-                    doc_ = self._walk_array(doc_, field)
+                    doc_ = self._walk_array(field)
 
             ref_ = self._get_ref(doc_, field)
             end_field_ = field
@@ -172,9 +174,27 @@ class FieldWalker(object):
         self.logger.matched_indexes[root] = self._get_matched_index()
         self._reset()
 
+    def _pre_walk_array(self, doc_):
+        log_ = self.logger
+        log_.been_in_array()
+        log_.init_array_pre_walk()
+
+        no_list = True
+        for i, elem in enumerate(doc_):
+            if self._is_doc_type(elem):
+                log_.num_of_emb_doc += 1
+                log_.element_walkers.append((i, FieldWalker(elem)))
+            if no_list and isinstance(elem, list):
+                no_list = False
+        if log_.field_as_index and log_.embedded_in_array and no_list:
+            log_.field_not_exists()
+
+        log_.array_has_doc = bool(log_.num_of_emb_doc)
+
     def _walk_field_as_index(self, doc_, field):
-        if self.logger.array_has_doc:
-            iaf_doc_ = self._walk_array(doc_, field)
+        log_ = self.logger
+        if log_.array_has_doc:
+            iaf_doc_ = self._walk_array(field)
             if iaf_doc_ is not None:
                 index = int(field)
                 if len(doc_) > index:  # Make sure index in range
@@ -183,44 +203,40 @@ class FieldWalker(object):
                     else:
                         iaf_doc_[field]._extend_values(doc_[index])
 
-                self.logger.field_as_index = False
+                log_.field_as_index = False
                 return iaf_doc_
 
-        if self.logger.embedded_in_array:
+        if log_.embedded_in_array:
             field_values = doc_._positional(int(field))
-            self.logger.field_as_index = False
+            log_.field_as_index = False
             return {field: field_values} if field_values else None
 
         return doc_
 
-    def _walk_array(self, doc_, field):
+    def _walk_array(self, field):
         """Walk in to array for embedded documents.
         """
+        log_ = self.logger
         field_values = _FieldValues()
         ref_ = []
-        num_of_emb_doc = 0
         elem_iter_map_field = []
 
-        for i, emb_doc in enumerate(doc_):
-            if not self._is_doc_type(emb_doc):
-                continue
-            num_of_emb_doc += 1
-
-            emb_field = FieldWalker(emb_doc)(field)
+        for i, emb_fw in log_.element_walkers:
+            emb_field = emb_fw(field)
             if emb_field.exists:
                 elem_iter_map_field.append((i, len(emb_field.value.elements)))
                 field_values += emb_field.value
                 ref_.append(emb_field.value._ref)
             else:
-                self.logger.field_not_exists()
+                log_.field_not_exists()
 
-        if len(field_values.arrays) != num_of_emb_doc:
-            self.logger.missing_in_array()
+        if len(field_values.arrays) != log_.num_of_emb_doc:
+            log_.missing_in_array()
 
-        self.logger.elem_iter_map.append(elem_iter_map_field)
+        log_.elem_iter_map.append(elem_iter_map_field)
 
         if field_values:
-            self.logger.embedded_in_array = True
+            log_.embedded_in_array = True
             field_values._ref = ref_
             return {field: field_values}
         else:
@@ -263,9 +279,10 @@ class FieldWalker(object):
         return None
 
     def setval(self, value):
+        log_ = self.logger
         if self.value._ref is None:
             ref_ = self.doc
-            fields = self.logger.query_path.split(".")
+            fields = log_.query_path.split(".")
             end = fields.pop()
             pre_field = ""
             for field in fields:
@@ -279,18 +296,18 @@ class FieldWalker(object):
             ref_[end] = value
         else:
             ref_ = self.value._ref
-            if not self.logger.embedded_in_array:
+            if not log_.embedded_in_array:
                 ref_ = [ref_]
 
             for r_ in ref_:
                 if isinstance(r_, list):
-                    if len(r_) > int(self.logger.end_field):
-                        r_[int(self.logger.end_field)] = value
+                    if len(r_) > int(log_.end_field):
+                        r_[int(log_.end_field)] = value
                     else:
-                        fill = int(self.logger.end_field) - len(r_)
+                        fill = int(log_.end_field) - len(r_)
                         r_ += [None for i in range(fill)] + [value]
                 elif self._is_doc_type(r_):
-                    r_[self.logger.end_field] = value
+                    r_[log_.end_field] = value
 
 
 class _FieldValues(object):
