@@ -61,7 +61,7 @@ def monty_client(storage, tmp_monty_repo):
     return client
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def mongo_client():
     client = pymongo.MongoClient("mongodb://localhost:27017")
     purge_all_db(client)
