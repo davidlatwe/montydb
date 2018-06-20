@@ -119,9 +119,9 @@ def gravity(value, weight_only=None):
         Decimal128: 2,
         _cmp_decimal: 2,
         # string: 3,
-        # dict: 4,
-        # list: 5,
-        # tuple: 5,
+        dict: 4,
+        list: 5,
+        tuple: 5,
         Binary: 6,
         # bytes: 6,
         ObjectId: 7,
@@ -141,8 +141,6 @@ def gravity(value, weight_only=None):
     except KeyError:
         if is_mapping_type(value):
             wgt = 4
-        elif is_array_type(value):
-            wgt = 5
         elif isinstance(value, (RE_PATTERN_TYPE, Regex)):
             wgt = 11
         elif isinstance(value, Code):  # also an instance of string_type
