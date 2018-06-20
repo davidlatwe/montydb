@@ -66,12 +66,37 @@ def validate_boolean(option, value):
     raise TypeError("%s must be True or False" % (option,))
 
 
+def validate_list(option, value):
+    """Validates that 'value' is a list."""
+    if not isinstance(value, list):
+        raise TypeError("%s must be a list" % (option,))
+    return value
+
+
+def validate_list_or_none(option, value):
+    """Validates that 'value' is a list or None."""
+    if value is None:
+        return value
+    return validate_list(option, value)
+
+
 def validate_is_mapping(option, value):
     """Validate the type of method arguments that expect a document."""
     if not isinstance(value, abc.Mapping):
         raise TypeError("%s must be an instance of dict, bson.son.SON, or "
                         "other type that inherits from "
                         "collections.Mapping" % (option,))
+
+
+def validate_ok_for_update(update):
+    """Validate an update document."""
+    validate_is_mapping("update", update)
+    # Update can not be {}
+    if not update:
+        raise ValueError('update only works with $ operators')
+    first = next(iter(update))
+    if not first.startswith('$'):
+        raise ValueError('update only works with $ operators')
 
 
 def _fields_list_to_dict(fields, option_name):

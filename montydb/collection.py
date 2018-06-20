@@ -1,8 +1,14 @@
 import collections
 from bson import ObjectId
 
+from .base import (
+    BaseObject,
+    validate_is_mapping,
+    validate_ok_for_update,
+    validate_list_or_none,
+)
+
 from .cursor import MontyCursor
-from .base import BaseObject
 from .engine.queries import QueryFilter
 from .engine.update import Updator
 from .results import (BulkWriteResult,
@@ -151,10 +157,14 @@ class MontyCollection(BaseObject):
                    array_filters=None, *args, **kwargs):
         """
         """
+        validate_is_mapping("filter", filter)
+        validate_ok_for_update(update)
+        validate_list_or_none('array_filters', array_filters)
+
         if bypass_document_validation:
             pass
 
-        updator = Updator(update)
+        updator = Updator(update, array_filters)
         fw = next(_internal_scan_query(filter, self))
         if updator(fw):
             self.database.client._storage.write_one(
@@ -179,11 +189,14 @@ class MontyCollection(BaseObject):
                     array_filters=None, *args, **kwargs):
         """
         """
+        validate_is_mapping("filter", filter)
+        validate_ok_for_update(update)
+        validate_list_or_none('array_filters', array_filters)
 
         if bypass_document_validation:
             pass
 
-        updator = Updator(update)
+        updator = Updator(update, array_filters)
         for fw in _internal_scan_query(filter, self):
             if updator(fw):
                 self.database.client._storage.write_one(
