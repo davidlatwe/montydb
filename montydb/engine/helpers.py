@@ -3,6 +3,9 @@ import sys
 import re
 from collections import Mapping
 
+from bson.py3compat import integer_types
+from bson.int64 import Int64
+from bson.decimal128 import Decimal128
 
 FS_ENCODE = sys.getfilesystemencoding()
 
@@ -18,6 +21,11 @@ def is_mapping_type(obj):
 
 def is_array_type(obj):
     return isinstance(obj, (list, tuple))
+
+
+def is_numeric_type(obj):
+    number_type = (integer_types, float, Int64, Decimal128)
+    return isinstance(obj, number_type)
 
 
 def is_pattern_type(obj):
