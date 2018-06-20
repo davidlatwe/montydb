@@ -1,9 +1,26 @@
 
+import re
 from collections import deque
 
 
 def _is_array_type(obj):
     return isinstance(obj, (list, _FieldValues))
+
+
+class FieldSetValueError(TypeError):
+
+    def __init__(self, error, code=None, details=None):
+        self.__code = code
+        self.__details = details
+        super(FieldSetValueError, self).__init__(error)
+
+    @property
+    def code(self):
+        return self.__code
+
+    @property
+    def details(self):
+        return self.__details
 
 
 class _FieldLogger(object):
@@ -13,13 +30,16 @@ class _FieldLogger(object):
     __slots__ = (
         "embedded_in_array",
         "elem_iter_map",
-        "query_path",
-        "end_field",
+        "query_fields",
+        "query_step",
         "matched_indexes",
         "field_as_index",
         "array_has_doc",
         "element_walkers",
         "num_of_emb_doc",
+        "references",
+        "references_operator",
+        "array_filters",
 
         "F_BEEN_IN_ARRAY",
         "F_MISSING_IN_ARRAY",
@@ -30,13 +50,16 @@ class _FieldLogger(object):
 
     def __init__(self):
         self.matched_indexes = {}
+        self.array_filters = []
 
     def reset(self, deep):
         self.embedded_in_array = False
         self.elem_iter_map = []
-        self.end_field = None
+        self.references_operator = 0
         if deep:
-            self.query_path = ""
+            self.query_fields = None
+            self.query_step = None
+            self.references = None
             self.F_BEEN_IN_ARRAY = False
             self.F_MISSING_IN_ARRAY = False
             self.F_FIELD_NOT_EXISTS = False
@@ -77,6 +100,38 @@ class _FieldLogger(object):
         return (self.F_INDEX_ERROR or self.F_ARRAY_NO_DOC)
 
 
+PATH_SPLIT_REGEX = r"\.(?!(?:[^\[]*\[[^\]]*\])*[^\[\]]*\])"
+
+
+def positional_operator(fw):
+    root = fw.logger.query_fields[0]
+    fw.logger.references = fw.logger.references[fw.matched_index(root)]
+    fw.logger.references_operator = 0
+
+
+def all_positional_operator(fw):
+    pass
+
+
+def filtered_positional_operator(fw):
+    log_ = fw.logger
+    idnt = log_.query_fields[log_.query_step + 1][2:-1]
+    filters = log_.array_filters[idnt]
+    filtered_ref = []
+    for ref in log_.references:
+        if all(f(ref) for f in filters):
+            filtered_ref.append(ref)
+    log_.references = filtered_ref
+
+
+REFERENCES_OPERATORS = (
+    lambda fw: None,
+    positional_operator,
+    all_positional_operator,
+    filtered_positional_operator,
+)
+
+
 class FieldWalker(object):
     """Document traversal context manager
     """
@@ -106,18 +161,25 @@ class FieldWalker(object):
     def _is_doc_type(self, obj):
         return isinstance(obj, self.doc_type)
 
+    def _path_spliter(self, p):
+        return p.split(".") if "[" not in p else re.split(PATH_SPLIT_REGEX, p)
+
     def __call__(self, path):
         """Walk through document and acquire value with given key-path
         """
         doc_ = self.doc
         log_ = self.logger
-        ref_ = end_field_ = None
 
         self._reset(deep=True)
-        log_.query_path = path
+        log_.references = doc_
+        log_.query_fields = path.split(".")
 
         """Begin the walk"""
-        for field in path.split("."):
+        for step, field in enumerate(log_.query_fields):
+            if field[:1] == "$":
+                self._parse_references_operator(field)
+                continue
+
             log_.field_as_index = False
             log_.array_has_doc = False
 
@@ -134,12 +196,10 @@ class FieldWalker(object):
                 else:
                     doc_ = self._walk_array(field)
 
-            ref_ = self._get_ref(doc_, field)
-            end_field_ = field
+            ref = self._get_references(doc_, field)
             key = int(field) if log_.field_as_index else field
             try:
                 doc_ = doc_[key]
-                self.exists = True
             except (KeyError, IndexError, TypeError) as err:
                 err_cls = err.__class__
 
@@ -149,17 +209,17 @@ class FieldWalker(object):
                     log_.parse_type_error()
 
                 doc_ = None
-                ref_ = end_field_ = None
                 self._reset()
                 break
+            else:
+                self.exists = True
+                log_.query_step = step
+                log_.references = ref
         """End of walk"""
 
         if not log_.field_as_index and _is_array_type(doc_):
             self.value._extend_elements(doc_)
         self.value._extend_values(doc_)
-
-        self.value._ref = ref_
-        log_.end_field = end_field_
 
         if None not in self.value.elements:
             log_.confirm_missing()
@@ -170,7 +230,7 @@ class FieldWalker(object):
         return self
 
     def __exit__(self, *args):
-        root = self.logger.query_path.split(".", 1)[0]
+        root = self.logger.query_fields[0]
         self.logger.matched_indexes[root] = self._get_matched_index()
         self._reset()
 
@@ -202,7 +262,7 @@ class FieldWalker(object):
                         iaf_doc_[field] += doc_._positional(index)
                     else:
                         iaf_doc_[field]._extend_values(doc_[index])
-
+                log_.references = doc_
                 log_.field_as_index = False
                 return iaf_doc_
 
@@ -226,7 +286,7 @@ class FieldWalker(object):
             if emb_field.exists:
                 elem_iter_map_field.append((i, len(emb_field.value.elements)))
                 field_values += emb_field.value
-                ref_.append(emb_field.value._ref)
+                ref_.append(emb_fw.logger.references)
             else:
                 log_.field_not_exists()
 
@@ -237,17 +297,25 @@ class FieldWalker(object):
 
         if field_values:
             log_.embedded_in_array = True
-            field_values._ref = ref_
+            log_.references = ref_
             return {field: field_values}
         else:
             return None
 
-    def _get_ref(self, doc_, field):
-        if doc_ is not None and self.logger.embedded_in_array:
-            if isinstance(doc_, _FieldValues):
-                return None
+    def _parse_references_operator(self, op):
+        if op == "$":
+            self.logger.references_operator = 1
+        else:
+            array_filter = re.split(r"([\[\]])", op)[2]
+            if array_filter:
+                self.logger.references_operator = 3
             else:
-                return doc_[field]._ref
+                self.logger.references_operator = 2
+
+    def _get_references(self, doc_, field):
+        if doc_ is not None and self.logger.embedded_in_array:
+            REFERENCES_OPERATORS[self.logger.references_operator](self)
+            return self.logger.references
         else:
             return doc_
 
@@ -257,7 +325,7 @@ class FieldWalker(object):
         if len(elem_iter_map) == 0:
             return None if len(self.value.elements) == 0 else (times - 1)
         else:
-            while len(elem_iter_map):
+            while elem_iter_map:
                 for ind, len_ in elem_iter_map.pop():
                     if times > len_:
                         times -= len_
@@ -278,36 +346,50 @@ class FieldWalker(object):
             return False
         return None
 
-    def setval(self, value):
+    def setval(self, value, func=None):
         log_ = self.logger
-        if self.value._ref is None:
-            ref_ = self.doc
-            fields = log_.query_path.split(".")
-            end = fields.pop()
-            pre_field = ""
-            for field in fields:
-                if isinstance(ref_, list) and field.isdigit():
-                    ref_ = ref_[int(field)]
-                elif self._is_doc_type(ref_):
-                    ref_ = ref_.setdefault(field, {})
-                else:
-                    return (field, pre_field, ref_)
-                pre_field = field
-            ref_[end] = value
-        else:
-            ref_ = self.value._ref
-            if not log_.embedded_in_array:
-                ref_ = [ref_]
+        func = func or (lambda _, val: val)
+        fields = log_.query_fields[log_.query_step:]
+        pre_field = None
+        end = fields.pop()
+        ref = log_.references
+        for field in fields:
+            if isinstance(ref, list) and field.isdigit():
+                index, length = int(field), len(ref)
+                if length <= index:
+                    fill_none = [None for _ in range(index - length)]
+                    ref += fill_none + [self.doc_type()]
+                ref = ref[index]
+            elif self._is_doc_type(ref):
+                if field not in ref:
+                    ref[field] = self.doc_type()
+                ref = ref[field]
+            else:
+                element = {pre_field or field: ref}
+                raise FieldSetValueError("ERROR",
+                                         details=(field, element))
+            pre_field = field
 
-            for r_ in ref_:
-                if isinstance(r_, list):
-                    if len(r_) > int(log_.end_field):
-                        r_[int(log_.end_field)] = value
-                    else:
-                        fill = int(log_.end_field) - len(r_)
-                        r_ += [None for i in range(fill)] + [value]
-                elif self._is_doc_type(r_):
-                    r_[log_.end_field] = value
+        if isinstance(ref, list):
+            if end.isdigit():
+                index, length = int(end), len(ref)
+                if length <= index:
+                    fill_none = [None for _ in range(index - length)]
+                    ref += fill_none + [None]
+                ref[index] = func(ref[index], value)
+            elif self.logger.references_operator > 1:
+                for r in ref:
+                    r[end] = func(r.get(end), value)
+            else:
+                element = {pre_field or end: ref}
+                raise FieldSetValueError("ERROR",
+                                         details=(end, element))
+        elif self._is_doc_type(ref):
+            ref[end] = func(ref.get(end), value)
+        else:
+            element = {pre_field or end: ref}
+            raise FieldSetValueError("ERROR",
+                                     details=(end, element))
 
 
 class _FieldValues(object):
@@ -317,7 +399,6 @@ class _FieldValues(object):
         "arrays",
         "_iter_queue",
         "_iter_times",
-        "_ref",
     )
 
     def __init__(self):
@@ -325,7 +406,6 @@ class _FieldValues(object):
         self.arrays = []
         self._iter_queue = None
         self._iter_times = 1
-        self._ref = None
 
     def _merged(self):
         return self.elements + self.arrays
@@ -385,7 +465,4 @@ class _FieldValues(object):
     def _positional(self, index):
         self.elements = [m_[index] for m_ in self.arrays if len(m_) > index]
         self.arrays = []
-
-        self._ref = [next(iter(r.values())) for r in self._ref]
-
         return self

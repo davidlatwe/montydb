@@ -1,5 +1,8 @@
 
-from .field_walker import FieldWalker
+from .field_walker import (
+    FieldWalker,
+    FieldSetValueError,
+)
 
 from .weighted import (
     Weighted,
@@ -12,6 +15,8 @@ from .weighted import (
 
 __all__ = [
     "FieldWalker",
+    "FieldSetValueError",
+
     "Weighted",
     "gravity",
     "_cmp_decimal",
