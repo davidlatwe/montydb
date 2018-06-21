@@ -200,3 +200,18 @@ def test_update_inc_positional_filtered_2(monty_update, mongo_update):
     monty_c.rewind()
     assert next(monty_c) == {"a": [
         {"b": 4, "c": 1}, {"b": 6, "c": 1}, {"b": 4, "c": 0}]}
+
+
+def test_update_inc_positional_filtered_3(monty_update, mongo_update):
+    docs = [
+        {"a": [5, 2]}
+    ]
+    spec = {"$inc": {"a.$[elem]": 10}}
+    array_filters = [{"elem": {"$lt": 4}}]
+
+    monty_c = monty_update(docs, spec, array_filters=array_filters)
+    mongo_c = mongo_update(docs, spec, array_filters=array_filters)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {"a": [5, 12]}

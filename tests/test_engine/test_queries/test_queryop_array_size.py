@@ -14,7 +14,7 @@ def test_qop_size_1(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0])("a").value == [0, 1, 2, [0, 1, 2]]
+    assert FieldWalker(docs[0]).go("a").get().value == [0, 1, 2, [0, 1, 2]]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -30,7 +30,7 @@ def test_qop_size_2(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0])("a.0").value == [[0, 1]]
+    assert FieldWalker(docs[0]).go("a.0").get().value == [[0, 1]]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -46,7 +46,7 @@ def test_qop_size_3(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0])("a.0.b").value == [0, 1, [0, 1]]
+    assert FieldWalker(docs[0]).go("a.0.b").get().value == [0, 1, [0, 1]]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -62,7 +62,9 @@ def test_qop_size_4(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0])("a.b").value == [0, 1, 0, [0, 1], [0]]
+    assert FieldWalker(docs[0]).go("a.b").get().value == [
+        0, 1, 0, [0, 1], [0]
+    ]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)

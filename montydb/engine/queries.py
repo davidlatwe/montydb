@@ -36,20 +36,20 @@ from .helpers import (
 )
 
 
-def ordering(field_walkers, order):
+def ordering(fieldwalkers, order):
     """
     """
-    total = len(field_walkers)
+    total = len(fieldwalkers)
     pre_sect_stack = []
 
     for path, revr in order.items():
         is_reverse = bool(1 - revr)
         value_stack = []
 
-        for indx, field_walker in enumerate(field_walkers):
+        for indx, fieldwalker in enumerate(fieldwalkers):
             # get field value
-            field_walker = FieldWalker(field_walker.doc)(path)
-            elements = field_walker.value.elements
+            fieldwalker = FieldWalker(fieldwalker.doc).go(path).get()
+            elements = fieldwalker.value.elements
             if elements:
                 value = tuple([Weighted(val) for val in elements])
 
@@ -58,7 +58,7 @@ def ordering(field_walkers, order):
                     # or largest member
                     value = max(value) if is_reverse else min(value)
 
-            elif not field_walker.exists:
+            elif not fieldwalker.log.exists:
                 value = Weighted(None)
 
             else:
@@ -83,7 +83,7 @@ def ordering(field_walkers, order):
         for _, value, indx in value_stack:
             # restore if in reverse mode
             indx = (total - indx) if is_reverse else indx
-            ordereddoc.append(field_walkers[indx])
+            ordereddoc.append(fieldwalkers[indx])
 
             # define section
             # maintain the sorting result in next level sorting
@@ -93,10 +93,10 @@ def ordering(field_walkers, order):
             last_doc = value
 
         # save result for next level sorting
-        field_walkers = ordereddoc
+        fieldwalkers = ordereddoc
         pre_sect_stack = sect_stack
 
-    return field_walkers
+    return fieldwalkers
 
 
 class LogicBox(list):
@@ -152,49 +152,49 @@ class LogicBox(list):
 
         return name.format(content)[1:-1].replace("'", "")
 
-    def __call__(self, field_walker):
+    def __call__(self, fieldwalker):
         """Recursively calling `LogicBox` or operators content within
 
         A short-circuit logic sub-structure, passing `FieldWalker` instance.
 
         Args:
-            field_walker (FieldWalker): Recived from `QueryFilter` instance.
+            fieldwalker (FieldWalker): Recived from `QueryFilter` instance.
 
         """
         try:
-            return self._logic[self.theme](field_walker)
+            return self._logic[self.theme](fieldwalker)
         except KeyError:
-            return self.__call_field(field_walker)
+            return self.__call_field(fieldwalker)
 
-    def __gen(self, field_walker):
-        return (cond(field_walker) for cond in self[:])
+    def __gen(self, fieldwalker):
+        return (cond(fieldwalker) for cond in self[:])
 
-    def __call_field(self, field_walker):
+    def __call_field(self, fieldwalker):
         """Entering document field context before process"""
-        with field_walker(self.theme):
-            return all(self.__gen(field_walker))
+        with fieldwalker.go(self.theme).get():
+            return all(self.__gen(fieldwalker))
 
-    def __call_elemMatch(self, field_walker):
+    def __call_elemMatch(self, fieldwalker):
         """"""
-        field_value_array = field_walker.value.arrays
+        field_value_array = fieldwalker.value.arrays
         for value in field_value_array:
             for v in value:
-                field_walker.value.elements = [v]
-                field_walker.value.arrays = []
-                if all(self.__gen(field_walker)):
+                fieldwalker.value.elements = [v]
+                fieldwalker.value.arrays = []
+                if all(self.__gen(fieldwalker)):
                     return True
 
-    def __call_and(self, field_walker):
-        return all(self.__gen(field_walker))
+    def __call_and(self, fieldwalker):
+        return all(self.__gen(fieldwalker))
 
-    def __call_or(self, field_walker):
-        return any(self.__gen(field_walker))
+    def __call_or(self, fieldwalker):
+        return any(self.__gen(fieldwalker))
 
-    def __call_nor(self, field_walker):
-        return not any(self.__gen(field_walker))
+    def __call_nor(self, fieldwalker):
+        return not any(self.__gen(fieldwalker))
 
-    def __call_not(self, field_walker):
-        return not all(self.__gen(field_walker))
+    def __call_not(self, fieldwalker):
+        return not all(self.__gen(fieldwalker))
 
 
 class QueryFilter(object):
@@ -257,7 +257,7 @@ class QueryFilter(object):
 
         # Start parsing query object
         self.conditions = self.parser(spec)
-        self.__field_walker = None
+        self.__fieldwalker = None
 
         # ready to be called.
 
@@ -274,12 +274,12 @@ class QueryFilter(object):
             doc (dict): Document recived from database.
 
         """
-        self.__field_walker = FieldWalker(doc)
-        return all(cond(self.__field_walker) for cond in self.conditions)
+        self.__fieldwalker = FieldWalker(doc)
+        return all(cond(self.__fieldwalker) for cond in self.conditions)
 
     @property
-    def field_walker(self):
-        return self.__field_walker
+    def fieldwalker(self):
+        return self.__fieldwalker
 
     def parser(self, spec):
         """Top-level parser"""
@@ -486,7 +486,7 @@ def _is_comparable(val, qry):
     return gravity(val, weight_only=True) == gravity(qry, weight_only=True)
 
 
-def _eq_match(field_walker, query):
+def _eq_match(fieldwalker, query):
     """
     Document key order matters
 
@@ -509,7 +509,7 @@ def _eq_match(field_walker, query):
     if is_mapping_type(query):
         if PY36 and not isinstance(query, SON):
             query = SON(query)
-        for val in field_walker.value:
+        for val in fieldwalker.value:
             if is_mapping_type(val):
                 if PY36 and not isinstance(val, SON):
                     val = SON(val)
@@ -517,14 +517,14 @@ def _eq_match(field_walker, query):
                     return True
     else:
         if query is None:
-            missing = field_walker.missing()
+            missing = fieldwalker.log.missing
             if missing is not None:
                 return missing
 
         if isinstance(query, Decimal128):
             query = _cmp_decimal(query)
 
-        for val in field_walker.value:
+        for val in fieldwalker.value:
             if isinstance(val, Decimal128):
                 val = _cmp_decimal(val)
 
@@ -534,24 +534,24 @@ def _eq_match(field_walker, query):
 
 def parse_eq(query):
     @keep(query)
-    def _eq(field_walker):
-        return _eq_match(field_walker, query)
+    def _eq(fieldwalker):
+        return _eq_match(fieldwalker, query)
 
     return _eq
 
 
 def parse_ne(query):
     @keep(query)
-    def _ne(field_walker):
-        return not _eq_match(field_walker, query)
+    def _ne(fieldwalker):
+        return not _eq_match(fieldwalker, query)
 
     return _ne
 
 
 def parse_gt(query):
     @keep(query)
-    def _gt(field_walker):
-        for value in field_walker.value:
+    def _gt(fieldwalker):
+        for value in fieldwalker.value:
             if _is_comparable(value, query):
                 if query in _decimal128_NaN_ls:
                     return False
@@ -565,8 +565,8 @@ def parse_gt(query):
 
 def parse_gte(query):
     @keep(query)
-    def _gte(field_walker):
-        for value in field_walker.value:
+    def _gte(fieldwalker):
+        for value in fieldwalker.value:
             if _is_comparable(value, query):
                 if query in _decimal128_NaN_ls:
                     return True if value in _decimal128_NaN_ls else False
@@ -582,8 +582,8 @@ def parse_gte(query):
 
 def parse_lt(query):
     @keep(query)
-    def _lt(field_walker):
-        for value in field_walker.value:
+    def _lt(fieldwalker):
+        for value in fieldwalker.value:
             if _is_comparable(value, query):
                 if value in _decimal128_NaN_ls:
                     return False
@@ -600,8 +600,8 @@ _dec_NaN_INF_ls = tuple(list(_decimal128_NaN_ls) + [_decimal128_INF])
 
 def parse_lte(query):
     @keep(query)
-    def _lte(field_walker):
-        for value in field_walker.value:
+    def _lte(fieldwalker):
+        for value in fieldwalker.value:
             if _is_comparable(value, query):
                 if query in _decimal128_NaN_ls:
                     return True if value in _decimal128_NaN_ls else False
@@ -617,7 +617,7 @@ def parse_lte(query):
     return _lte
 
 
-def _in_match(field_walker, query):
+def _in_match(fieldwalker, query):
     """Helper function for $in and $nin
     """
     q_regex = []
@@ -635,11 +635,11 @@ def _in_match(field_walker, query):
             q_value.append(q)
 
     for q in q_value:
-        if _eq_match(field_walker, q):
+        if _eq_match(fieldwalker, q):
             return True
 
     for q in q_regex:
-        for value in field_walker.value:
+        for value in fieldwalker.value:
             if isinstance(value, string_type) and q.search(value):
                 return True
 
@@ -652,8 +652,8 @@ def parse_in(query):
         raise OperationFailure("cannot nest $ under $in")
 
     @keep(query)
-    def _in(field_walker):
-        return _in_match(field_walker, query)
+    def _in(fieldwalker):
+        return _in_match(fieldwalker, query)
 
     return _in
 
@@ -666,8 +666,8 @@ def parse_nin(query):
         raise OperationFailure("cannot nest $ under $nin")
 
     @keep(query)
-    def _nin(field_walker):
-        return not _in_match(field_walker, query)
+    def _nin(fieldwalker):
+        return not _in_match(fieldwalker, query)
 
     return _nin
 
@@ -699,17 +699,17 @@ def parse_all(query):
                 raise OperationFailure("no $ expressions in $all")
 
     @keep(query)
-    def _all(field_walker):
+    def _all(fieldwalker):
         if go_match:
             for q in query:
                 queryfilter = QueryFilter(q["$elemMatch"])
-                for value in field_walker.value.arrays:
+                for value in fieldwalker.value.arrays:
                     if not any(queryfilter(v) for v in value):
                         return False
             return True
         else:
             for q in query:
-                if q not in field_walker.value:
+                if q not in fieldwalker.value:
                     return False
             return True
 
@@ -723,9 +723,9 @@ def parse_elemMatch(query):
     QueryFilter(query)({})
 
     @keep(query)
-    def _elemMatch(field_walker):
+    def _elemMatch(fieldwalker):
         queryfilter = QueryFilter(query)
-        for value in field_walker.value.arrays:
+        for value in fieldwalker.value.arrays:
             for v in value:
                 if queryfilter(v):
                     return True
@@ -740,8 +740,8 @@ def parse_size(query):
         raise OperationFailure("$size needs a number")
 
     @keep(query)
-    def _size(field_walker):
-        for value in field_walker.value.arrays:
+    def _size(fieldwalker):
+        for value in fieldwalker.value.arrays:
             if len(value) == query:
                 return True
 
@@ -756,8 +756,8 @@ Field-level Query Operators
 
 def parse_exists(query):
     @keep(query)
-    def _exists(field_walker):
-        return field_walker.exists == bool(query)
+    def _exists(fieldwalker):
+        return fieldwalker.log.exists == bool(query)
 
     return _exists
 
@@ -872,9 +872,9 @@ def parse_type(query):
     query = set(str_type_to_int(query))
 
     @keep(query)
-    def _type(field_walker):
-        if field_walker.exists:
-            bids = get_bson_type_id_set(field_walker.value)
+    def _type(fieldwalker):
+        if fieldwalker.log.exists:
+            bids = get_bson_type_id_set(fieldwalker.value)
             return bids.intersection(query)
 
     return _type
@@ -903,8 +903,8 @@ def parse_regex(query):
         q = re.compile(query["pattern"], flags)
 
     @keep(query)
-    def _regex(field_walker):
-        for value in field_walker.value:
+    def _regex(fieldwalker):
+        for value in fieldwalker.value:
             if isinstance(value, (string_type, bytes)) and q.search(value):
                 return True
 
@@ -945,8 +945,8 @@ def parse_mod(query):
         return False
 
     @keep(query)
-    def _mod(field_walker):
-        field_value = field_walker.value
+    def _mod(fieldwalker):
+        field_value = fieldwalker.value
         if mod_scan(field_value, query):
             return True
 
@@ -955,7 +955,7 @@ def parse_mod(query):
 
 def parse_jsonSchema(query):
     @keep(query)
-    def _jsonSchema(field_walker):
+    def _jsonSchema(fieldwalker):
         pass
 
     return _jsonSchema

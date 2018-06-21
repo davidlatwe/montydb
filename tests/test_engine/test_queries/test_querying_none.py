@@ -72,11 +72,11 @@ def test_none_query_3(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    field_walker_0 = FieldWalker(docs[0])("a.b.0")
-    assert field_walker_0.value == [None]
+    fieldwalker_0 = FieldWalker(docs[0]).go("a.b.0").get()
+    assert fieldwalker_0.value == [None]
 
-    field_walker_1 = FieldWalker(docs[1])("a.b.0")
-    assert field_walker_1.value == [None]
+    fieldwalker_1 = FieldWalker(docs[1]).go("a.b.0").get()
+    assert fieldwalker_1.value == [None]
 
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
@@ -110,11 +110,11 @@ def test_none_query_4(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    field_walker_0 = FieldWalker(docs[0])("a.b")
-    assert field_walker_0.value == [1]
+    fieldwalker_0 = FieldWalker(docs[0]).go("a.b").get()
+    assert fieldwalker_0.value == [1]
 
-    field_walker_1 = FieldWalker(docs[1])("a.b")
-    assert field_walker_1.value == [None]
+    fieldwalker_1 = FieldWalker(docs[1]).go("a.b").get()
+    assert fieldwalker_1.value == [None]
 
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
@@ -147,8 +147,8 @@ def test_none_query_5(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    field_walker_0 = FieldWalker(docs[0])("a.1")
-    assert field_walker_0.value == [None]
+    fieldwalker_0 = FieldWalker(docs[0]).go("a.1").get()
+    assert fieldwalker_0.value == [None]
 
     assert mongo_c.count() == 0
     assert monty_c.count() == mongo_c.count()
@@ -176,8 +176,8 @@ def test_none_query_6(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    field_walker_0 = FieldWalker(docs[0])("a.b")
-    assert field_walker_0.value == [1]
+    fieldwalker_0 = FieldWalker(docs[0]).go("a.b").get()
+    assert fieldwalker_0.value == [1]
     # not all embedded doc in array has filed "b"
 
     assert mongo_c.count() == 1
@@ -206,8 +206,8 @@ def test_none_query_7(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    field_walker_0 = FieldWalker(docs[0])("a.1")
-    assert field_walker_0.value == [1, {"2": 1}]
+    fieldwalker_0 = FieldWalker(docs[0]).go("a.1").get()
+    assert fieldwalker_0.value == [1, {"2": 1}]
     # not all embedded doc in array has filed "1"
 
     assert mongo_c.count() == 1
@@ -236,8 +236,8 @@ def test_none_query_8(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    field_walker_0 = FieldWalker(docs[0])("a.1")
-    assert field_walker_0.value == [5]
+    fieldwalker_0 = FieldWalker(docs[0]).go("a.1").get()
+    assert fieldwalker_0.value == [5]
     # not all embedded doc in array has filed "1"
 
     assert mongo_c.count() == 1
@@ -266,8 +266,8 @@ def test_none_query_9(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    field_walker_0 = FieldWalker(docs[0])("a.0")
-    assert field_walker_0.value == [1, {"0": 1}]
+    fieldwalker_0 = FieldWalker(docs[0]).go("a.0").get()
+    assert fieldwalker_0.value == [1, {"0": 1}]
 
     assert mongo_c.count() == 0
     assert monty_c.count() == mongo_c.count()
@@ -295,8 +295,8 @@ def test_none_query_10(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    field_walker_0 = FieldWalker(docs[0])("a.b")
-    assert field_walker_0.value == [None]
+    fieldwalker_0 = FieldWalker(docs[0]).go("a.b").get()
+    assert fieldwalker_0.value == [None]
 
     assert mongo_c.count() == 0
     assert monty_c.count() == mongo_c.count()

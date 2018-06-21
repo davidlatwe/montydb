@@ -27,7 +27,7 @@ def test_qop_gt_1(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[1])("a").value == [1]
+    assert FieldWalker(docs[1]).go("a").get().value == [1]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -43,7 +43,7 @@ def test_qop_gt_2(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[1])("a").value == ["y"]
+    assert FieldWalker(docs[1]).go("a").get().value == ["y"]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -59,7 +59,7 @@ def test_qop_gt_3(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[1])("a").value == ["10"]
+    assert FieldWalker(docs[1]).go("a").get().value == ["10"]
     assert mongo_c.count() == 0
     assert monty_c.count() == mongo_c.count()
 
@@ -74,7 +74,7 @@ def test_qop_gt_4(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0])("a").value == [True]
+    assert FieldWalker(docs[0]).go("a").get().value == [True]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -90,7 +90,7 @@ def test_qop_gt_5(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0])("a").value == [1]
+    assert FieldWalker(docs[0]).go("a").get().value == [1]
     assert mongo_c.count() == 0
     assert monty_c.count() == mongo_c.count()
 
@@ -105,7 +105,7 @@ def test_qop_gt_6(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[1])("a").value == [3, 4, [3, 4]]
+    assert FieldWalker(docs[1]).go("a").get().value == [3, 4, [3, 4]]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -121,7 +121,7 @@ def test_qop_gt_7(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[1])("a").value == [{"b": 6}]
+    assert FieldWalker(docs[1]).go("a").get().value == [{"b": 6}]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -137,7 +137,7 @@ def test_qop_gt_8(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[1])("a").value == [{"e": 4}]
+    assert FieldWalker(docs[1]).go("a").get().value == [{"e": 4}]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -155,7 +155,7 @@ def test_qop_gt_9(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[1])("a").value == [oid_1]
+    assert FieldWalker(docs[1]).go("a").get().value == [oid_1]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -173,7 +173,7 @@ def test_qop_gt_10(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[1])("a").value == [dt_1]
+    assert FieldWalker(docs[1]).go("a").get().value == [dt_1]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -191,7 +191,7 @@ def test_qop_gt_11(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[1])("a").value == [ts_1]
+    assert FieldWalker(docs[1]).go("a").get().value == [ts_1]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -209,7 +209,7 @@ def test_qop_gt_12(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[1])("a").value == [max_k]
+    assert FieldWalker(docs[1]).go("a").get().value == [max_k]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -230,7 +230,7 @@ def test_qop_gt_13(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[1])("a").value == [max_k]
+    assert FieldWalker(docs[1]).go("a").get().value == [max_k]
     assert mongo_c.count() == 3
     assert monty_c.count() == mongo_c.count()
     for i in range(3):
@@ -322,7 +322,7 @@ def test_qop_gt_19(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0])("a").value == [None, [None]]
+    assert FieldWalker(docs[0]).go("a").get().value == [None, [None]]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)

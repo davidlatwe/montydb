@@ -30,40 +30,44 @@ class Updator(object):
 
         self.array_filters = self.array_filter_parser(array_filters or [])
         self.operations = OrderedDict(sorted(self.parser(spec).items()))
-        self.__field_walker = None
+        self.__fieldwalker = None
 
     def __repr__(self):
         pass
 
     def __call__(self, fieldwalker):
-        fieldwalker.logger.array_filters = self.array_filters
-        self.__field_walker = fieldwalker
+        self.__fieldwalker = fieldwalker
         for operator in self.operations.values():
             operator(fieldwalker)
         return fieldwalker.doc
 
     @property
-    def field_walker(self):
-        return self.__field_walker
+    def fieldwalker(self):
+        return self.__fieldwalker
 
     def array_filter_parser(self, array_filters):
         filters = {}
         for filter_ in array_filters:
             top = ""
-            for identifier, condition in filter_.items():
-                top_, path = identifier.split(".", 1)
-                if not top and top_ in filters:
+            conds = {}
+            for identifier, cond in filter_.items():
+                id_s = identifier.split(".", 1)
+                if not top and id_s[0] in filters:
                     msg = ("Found multiple array filters with the same "
-                           "top-level field name {}".format(top_))
+                           "top-level field name {}".format(id_s[0]))
                     raise WriteError(msg, code=9)
-                if top and top_ != top:
+                if top and id_s[0] != top:
                     msg = ("Error parsing array filter: Expected a single "
                            "top-level field name, found {0!r} and {1!r}"
-                           "".format(top, top_))
+                           "".format(top, id_s[0]))
                     raise WriteError(msg, code=9)
-                top = top_
-                query_filter = QueryFilter({path: condition})
-                filters.setdefault(top, []).append(query_filter)
+                top = id_s[0]
+                if len(id_s) > 1:
+                    conds.update({"{}.{}".format("{}", id_s[1]): cond})
+                else:
+                    conds.update({"{}": cond})
+            filters[top] = lambda x: QueryFilter(
+                {k.format(x): v for k, v in conds.items()})
 
         return filters
 
@@ -84,7 +88,8 @@ class Updator(object):
                 if field in field_to_update:
                     raise WriteError("Updating the path {0!r} would create a "
                                      "conflict at {0!r}".format(field))
-                field_to_update[field] = self.update_ops[op](field, value)
+                field_to_update[field] = self.update_ops[op](
+                    field, value, self.array_filters)
 
         if idnt_tops:
             msg = ("The array filter for identifier {0!r} was not "
@@ -94,7 +99,7 @@ class Updator(object):
         return field_to_update
 
 
-def parse_inc(field, value):
+def parse_inc(field, value, array_filters):
     if not is_numeric_type(value):
         val_repr_ = "{!r}" if isinstance(value, string_type) else "{}"
         val_repr_ = val_repr_.format(value)
@@ -102,11 +107,11 @@ def parse_inc(field, value):
                "{{{0}: {1}}}".format(field, val_repr_))
         raise WriteError(msg, code=14)
 
-    def _inc(field_walker):
+    def _inc(fieldwalker):
 
         def inc(old_val, inc_val):
             if old_val is not None and not is_numeric_type(old_val):
-                _id = field_walker.doc["_id"]
+                _id = fieldwalker.doc["_id"]
                 value_type = type(old_val).__name__
                 field_name = field.split(".")[-1]
                 msg = ("Cannot apply $inc to a value of non-numeric type. "
@@ -117,7 +122,7 @@ def parse_inc(field, value):
             return (old_val or 0) + inc_val
 
         try:
-            field_walker(field).setval(value, inc)
+            fieldwalker.go(field).set(value, inc, array_filters)
         except FieldSetValueError as err:
             msg = ("Cannot create field {0!r} in element "
                    "{1}".format(*err.details))
@@ -127,56 +132,56 @@ def parse_inc(field, value):
 
 
 def parse_min(field, value):
-    def _min(field_walker):
+    def _min(fieldwalker):
         raise NotImplementedError
 
     return _min
 
 
 def parse_max(field, value):
-    def _max(field_walker):
+    def _max(fieldwalker):
         raise NotImplementedError
 
     return _max
 
 
 def parse_mul(field, value):
-    def _mul(field_walker):
+    def _mul(fieldwalker):
         raise NotImplementedError
 
     return _mul
 
 
 def parse_rename(field, value):
-    def _rename(field_walker):
+    def _rename(fieldwalker):
         raise NotImplementedError
 
     return _rename
 
 
 def parse_set(field, value):
-    def _set(field_walker):
+    def _set(fieldwalker):
         raise NotImplementedError
 
     return _set
 
 
 def parse_setOnInsert(field, value):
-    def _setOnInsert(field_walker):
+    def _setOnInsert(fieldwalker):
         raise NotImplementedError
 
     return _setOnInsert
 
 
 def parse_unset(field, value):
-    def _unset(field_walker):
+    def _unset(fieldwalker):
         raise NotImplementedError
 
     return _unset
 
 
 def parse_currentDate(field, value):
-    def _currentDate(field_walker):
+    def _currentDate(fieldwalker):
         raise NotImplementedError
 
     return _currentDate

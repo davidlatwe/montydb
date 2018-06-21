@@ -68,20 +68,20 @@ class Projector(object):
 
         self.parser(spec, qfilter)
 
-    def __call__(self, field_walker):
+    def __call__(self, fieldwalker):
         """
         """
         if not self.proj_with_id:
-            del field_walker.doc["_id"]
+            del fieldwalker.doc["_id"]
 
         for field_path in self.array_field:
-            self.array_field[field_path](field_walker)
+            self.array_field[field_path](fieldwalker)
 
         if self.include_flag:
             self.regular_field += list(self.array_field.keys())
-            self.inclusion(field_walker, self.regular_field)
+            self.inclusion(fieldwalker, self.regular_field)
         else:
-            self.exclusion(field_walker, self.regular_field)
+            self.exclusion(fieldwalker, self.regular_field)
 
     def parser(self, spec, qfilter):
         """
@@ -195,20 +195,20 @@ class Projector(object):
             self.include_flag = False
 
     def parse_slice(self, field_path, slicing):
-        def _slice(field_walker):
+        def _slice(fieldwalker):
             if "$" in field_path:
                 return
 
             if "." in field_path:
                 fore_path, key = field_path.rsplit(".", 1)
-                if field_walker(fore_path).exists:
-                    for emb_doc in field_walker.value:
+                if fieldwalker.go(fore_path).get().log.exists:
+                    for emb_doc in fieldwalker.value:
                         if key not in emb_doc:
                             continue
                         if is_array_type(emb_doc[key]):
                             emb_doc[key] = emb_doc[key][slicing]
             else:
-                doc = field_walker.doc
+                doc = fieldwalker.doc
                 if field_path in doc:
                     if is_array_type(doc[field_path]):
                         doc[field_path] = doc[field_path][slicing]
@@ -218,8 +218,8 @@ class Projector(object):
     def parse_elemMatch(self, field_path, sub_v):
         qfilter_ = QueryFilter(sub_v)
 
-        def _elemMatch(field_walker):
-            doc = field_walker.doc
+        def _elemMatch(fieldwalker):
+            doc = fieldwalker.doc
             has_match = False
             if field_path in doc and is_array_type(doc[field_path]):
                 for emb_doc in doc[field_path]:
@@ -228,23 +228,23 @@ class Projector(object):
                         has_match = True
                         break
             if not has_match:
-                del field_walker.doc[field_path]
+                del fieldwalker.doc[field_path]
 
             if not self.include_flag:
-                self.inclusion(field_walker, [field_path])
+                self.inclusion(fieldwalker, [field_path])
 
         return _elemMatch
 
     def parse_positional(self, field_path):
-        def _positional(field_walker):
-            matched_index = field_walker.matched_index(field_path)
+        def _positional(fieldwalker):
+            matched_index = fieldwalker.log.matched_index(field_path)
             value = {}
-            field_walker = field_walker(field_path)
-            elements = field_walker.value.elements
+            fieldwalker.go(field_path).get()
+            elements = fieldwalker.value.elements
             match = True
             paths = field_path.split(".")
             paths.reverse()
-            doc = field_walker.doc
+            doc = fieldwalker.doc
             path = ""
             while paths:
                 path = paths.pop()
@@ -273,21 +273,21 @@ class Projector(object):
 
         return _positional
 
-    def drop_doc(self, field_walker, key):
-        if field_walker.exists:
-            for emb_doc in field_walker.value:
+    def drop_doc(self, fieldwalker, key):
+        if fieldwalker.log.exists:
+            for emb_doc in fieldwalker.value:
                 if key in emb_doc:
                     del emb_doc[key]
 
-    def inclusion(self, field_walker, include_field, fore_path=""):
+    def inclusion(self, fieldwalker, include_field, fore_path=""):
         if fore_path:
             key_list = []
-            for val in field_walker.value:
+            for val in fieldwalker.value:
                 if is_mapping_type(val):
                     key_list += list(val.keys())
             key_list = list(set(key_list))
         else:
-            key_list = list(field_walker.doc.keys())
+            key_list = list(fieldwalker.doc.keys())
 
         if "_id" in key_list:
             key_list.remove("_id")
@@ -307,22 +307,22 @@ class Projector(object):
 
             if drop:
                 if fore_path:
-                    field_walker(fore_path[:-1])
-                    self.drop_doc(field_walker, key)
+                    fieldwalker.go(fore_path[:-1]).get()
+                    self.drop_doc(fieldwalker, key)
                 else:
-                    if key in field_walker.doc:
-                        del field_walker.doc[key]
+                    if key in fieldwalker.doc:
+                        del fieldwalker.doc[key]
             else:
                 fore_path = current_path + "."
-                field_walker(current_path)
-                self.inclusion(field_walker, include_field, fore_path)
+                fieldwalker.go(current_path).get()
+                self.inclusion(fieldwalker, include_field, fore_path)
 
-    def exclusion(self, field_walker, exclude_field):
+    def exclusion(self, fieldwalker, exclude_field):
         for field_path in exclude_field:
             if "." in field_path:
                 fore_path, key = field_path.rsplit(".", 1)
-                field_walker(fore_path)
-                self.drop_doc(field_walker, key)
+                fieldwalker.go(fore_path).get()
+                self.drop_doc(fieldwalker, key)
             else:
-                if field_path in field_walker.doc:
-                    del field_walker.doc[field_path]
+                if field_path in fieldwalker.doc:
+                    del fieldwalker.doc[field_path]

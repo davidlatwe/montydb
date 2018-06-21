@@ -28,7 +28,7 @@ def _internal_scan_query(query_spec, collection):
                               0)
     for doc in documents:
         if queryfilter(doc):
-            yield queryfilter.field_walker
+            yield queryfilter.fieldwalker
 
 
 class MontyCollection(BaseObject):
@@ -172,7 +172,7 @@ class MontyCollection(BaseObject):
                 self._name,
                 self.write_concern,
                 self.codec_options,
-                updator.field_walker.doc
+                updator.fieldwalker.doc
             )
 
         return UpdateResult({
@@ -204,7 +204,7 @@ class MontyCollection(BaseObject):
                     self._name,
                     self.write_concern,
                     self.codec_options,
-                    updator.field_walker.doc
+                    updator.fieldwalker.doc
                 )
 
         return UpdateResult({

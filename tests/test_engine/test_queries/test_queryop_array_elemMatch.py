@@ -14,7 +14,7 @@ def test_qop_elemMatch_1(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0])("a").value == [3, 2, 1, [3, 2, 1]]
+    assert FieldWalker(docs[0]).go("a").get().value == [3, 2, 1, [3, 2, 1]]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -30,7 +30,7 @@ def test_qop_elemMatch_2(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0])("a").value == [
+    assert FieldWalker(docs[0]).go("a").get().value == [
         {"b": 1}, {"b": 2}, [{"b": 1}, {"b": 2}], ]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
@@ -47,8 +47,8 @@ def test_qop_elemMatch_3(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0])("a.0").value == [{"b": [10, 11]}]
-    assert FieldWalker(docs[1])("a.0").value == [{"b": [20, 21]}]
+    assert FieldWalker(docs[0]).go("a.0").get().value == [{"b": [10, 11]}]
+    assert FieldWalker(docs[1]).go("a.0").get().value == [{"b": [20, 21]}]
     assert mongo_c.count() == 0
     assert monty_c.count() == mongo_c.count()
 
@@ -63,8 +63,8 @@ def test_qop_elemMatch_4(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0])("a.0.b").value == [1]
-    assert FieldWalker(docs[1])("a.0.b").value == [3]
+    assert FieldWalker(docs[0]).go("a.0.b").get().value == [1]
+    assert FieldWalker(docs[1]).go("a.0.b").get().value == [3]
     assert mongo_c.count() == 0
     assert monty_c.count() == mongo_c.count()
 
@@ -79,8 +79,8 @@ def test_qop_elemMatch_5(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0])("a.0.b").value == [1, [1]]
-    assert FieldWalker(docs[1])("a.0.b").value == [3]
+    assert FieldWalker(docs[0]).go("a.0.b").get().value == [1, [1]]
+    assert FieldWalker(docs[1]).go("a.0.b").get().value == [3]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -96,8 +96,8 @@ def test_qop_elemMatch_6(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0])("a").value == [75, 82, [75, 82]]
-    assert FieldWalker(docs[1])("a").value == [75, 88, [75, 88]]
+    assert FieldWalker(docs[0]).go("a").get().value == [75, 82, [75, 82]]
+    assert FieldWalker(docs[1]).go("a").get().value == [75, 88, [75, 88]]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)

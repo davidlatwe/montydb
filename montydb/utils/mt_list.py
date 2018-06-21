@@ -95,20 +95,20 @@ class MontyList(list):
         qf = QueryFilter(spec)
         pj = Projector(proj, qf) if proj is not None else None
 
-        field_walkers = [qf.field_walker for doc in self[:] if qf(doc)]
+        fieldwalkers = [qf.fieldwalker for doc in self[:] if qf(doc)]
         if sort:
-            field_walkers = ordering(field_walkers, sort)
+            fieldwalkers = ordering(fieldwalkers, sort)
         if pj is not None:
-            for fw in field_walkers:
+            for fw in fieldwalkers:
                 pj(fw)
 
-        return MontyList([fw.doc for fw in field_walkers])
+        return MontyList([fw.doc for fw in fieldwalkers])
 
     def sort(self, key_or_list, direction=None):
         keys = _index_list(key_or_list, direction)
         sort = _index_document(keys)
-        field_walkers = [FieldWalker(doc) for doc in self[:]]
-        self[:] = [fw.doc for fw in ordering(field_walkers, sort)]
+        fieldwalkers = [FieldWalker(doc) for doc in self[:]]
+        self[:] = [fw.doc for fw in ordering(fieldwalkers, sort)]
         return self
 
     def replace_one(self):
