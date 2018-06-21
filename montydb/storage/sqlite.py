@@ -100,8 +100,9 @@ CREATE_TABLE = """
 """
 
 INSERT_RECORD = """
-    INSERT INTO [{}](k, v) VALUES (?, ?)
+    INSERT OR REPLACE INTO [{}](k, v) VALUES (?, ?)
 """
+# (TODO) REPLACE will messed up the documents' nature order
 
 SELECT_ALL_RECORD = """
     SELECT v FROM [{}]
