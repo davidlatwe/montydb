@@ -517,9 +517,7 @@ def _eq_match(fieldwalker, query):
                     return True
     else:
         if query is None:
-            missing = fieldwalker.log.missing
-            if missing is not None:
-                return missing
+            return fieldwalker.log.null_or_missing
 
         if isinstance(query, Decimal128):
             query = _cmp_decimal(query)

@@ -37,7 +37,7 @@ class LoggerMixin(object):
 class GetterLogger(LoggerMixin):
     __slots__ = (
         "exists",
-        "missing",
+        "null_or_missing",
         "elem_iter_map",
     )
 
@@ -45,7 +45,7 @@ class GetterLogger(LoggerMixin):
         self.field_levels = fieldwalker.log.field_levels
         self.matched_indexes = fieldwalker.log.matched_indexes
         self.exists = None
-        self.missing = None
+        self.null_or_missing = None
         self.elem_iter_map = []
 
 
@@ -128,9 +128,11 @@ class ValueGetter(object):
             self.F_MISSING_IN_ARRAY = False
 
         if self.F_MISSING_IN_ARRAY:
-            fieldwalker.log.missing = True
+            fieldwalker.log.null_or_missing = True
         elif self.F_INDEX_ERROR or self.F_ARRAY_NO_DOC:
-            fieldwalker.log.missing = False
+            fieldwalker.log.null_or_missing = False
+        elif None in value:
+            fieldwalker.log.null_or_missing = True
 
     def preview_array(self, doc, doc_type):
         """Internal method"""
