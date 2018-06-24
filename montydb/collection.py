@@ -9,6 +9,7 @@ from .base import (
 )
 
 from .cursor import MontyCursor
+from .engine.core import FieldWalker
 from .engine.queries import QueryFilter
 from .engine.update import Updator
 from .results import (BulkWriteResult,
@@ -21,11 +22,7 @@ from .results import (BulkWriteResult,
 def _internal_scan_query(query_spec, collection):
     queryfilter = QueryFilter(query_spec)
     storage = collection.database.client._storage
-    documents = storage.query(collection.database.name,
-                              collection.name,
-                              collection.write_concern,
-                              collection.codec_options,
-                              0)
+    documents = storage.query(MontyCursor(collection), 0)
     for doc in documents:
         if queryfilter(doc):
             yield queryfilter.fieldwalker
@@ -43,6 +40,7 @@ class MontyCollection(BaseObject):
 
         self._database = database
         self._name = name
+        self._components = (database,)
 
     def __repr__(self):
         return "MontyCollection({!r}, {!r})".format(self._database, self._name)
@@ -103,13 +101,7 @@ class MontyCollection(BaseObject):
             document["_id"] = ObjectId()
 
         return InsertOneResult(
-            self.database.client._storage.write_one(
-                self.database.name,
-                self._name,
-                self.write_concern,
-                self.codec_options,
-                document
-            ))
+            self.database.client._storage.write_one(self, document))
 
     def insert_many(self,
                     documents,
@@ -128,14 +120,7 @@ class MontyCollection(BaseObject):
                 doc["_id"] = ObjectId()
 
         return InsertManyResult(
-            self.database.client._storage.write_many(
-                self.database.name,
-                self._name,
-                self.write_concern,
-                self.codec_options,
-                documents,
-                ordered
-            ))
+            self.database.client._storage.write_many(self, documents, ordered))
 
     def replace_one(self,
                     filter,
@@ -168,11 +153,7 @@ class MontyCollection(BaseObject):
         fw = next(_internal_scan_query(filter, self))
         if updator(fw):
             self.database.client._storage.write_one(
-                self.database.name,
-                self._name,
-                self.write_concern,
-                self.codec_options,
-                updator.fieldwalker.doc
+                self, updator.fieldwalker.doc
             )
 
         return UpdateResult({
@@ -200,11 +181,7 @@ class MontyCollection(BaseObject):
         for fw in _internal_scan_query(filter, self):
             if updator(fw):
                 self.database.client._storage.write_one(
-                    self.database.name,
-                    self._name,
-                    self.write_concern,
-                    self.codec_options,
-                    updator.fieldwalker.doc
+                    self, updator.fieldwalker.doc
                 )
 
         return UpdateResult({

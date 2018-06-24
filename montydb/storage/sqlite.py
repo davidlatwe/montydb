@@ -249,8 +249,8 @@ class SQLiteStorage(AbstractStorage):
 
 class SQLiteDatabase(AbstractDatabase):
 
-    def __init__(self, name, storage):
-        super(SQLiteDatabase, self).__init__(name, storage)
+    def __init__(self, storage, subject):
+        super(SQLiteDatabase, self).__init__(storage, subject)
         self._db_path = storage._db_path(self._name)
 
     def _col_path(self, col_name):
@@ -285,16 +285,13 @@ class SQLiteDatabase(AbstractDatabase):
                 for name in os.listdir(_unicode(self._db_path))]
 
 
-SQLiteStorage.db_cls = SQLiteDatabase
+SQLiteStorage.contractor_cls = SQLiteDatabase
 
 
 class SQLiteCollection(AbstractCollection):
 
-    def __init__(self, name, database, write_concern, codec_options):
-        super(SQLiteCollection, self).__init__(name,
-                                               database,
-                                               write_concern,
-                                               codec_options)
+    def __init__(self, database, subject):
+        super(SQLiteCollection, self).__init__(database, subject)
 
         self._col_path = self._database._col_path(self._name)
 
@@ -339,13 +336,13 @@ class SQLiteCollection(AbstractCollection):
         return [doc["_id"] for doc in docs]
 
 
-SQLiteDatabase.col_cls = SQLiteCollection
+SQLiteDatabase.contractor_cls = SQLiteCollection
 
 
 class SQLiteCursor(AbstractCursor):
 
-    def __init__(self, collection):
-        super(SQLiteCursor, self).__init__(collection)
+    def __init__(self, collection, subject):
+        super(SQLiteCursor, self).__init__(collection, subject)
 
     @property
     def _conn(self):
@@ -364,4 +361,4 @@ class SQLiteCursor(AbstractCursor):
         return [self._decode_doc(doc) for doc in docs]
 
 
-SQLiteCollection.cursor_cls = SQLiteCursor
+SQLiteCollection.contractor_cls = SQLiteCursor

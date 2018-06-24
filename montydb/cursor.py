@@ -92,6 +92,7 @@ class MontyCursor(object):
 
         self._address = collection.database.client.address
         self._collection = collection
+        self._components = (collection.database, collection)
         self._codec_options = collection.codec_options
 
         self._spec = _bson_touch(spec, self._codec_options)
@@ -270,12 +271,7 @@ class MontyCursor(object):
         # Fetch from storage
         # (NOTE) Documents return from storage should be decoded.
         storage = self._collection.database.client._storage
-        documents = storage.query(self._collection.database.name,
-                                  self._collection.name,
-                                  self._collection.write_concern,
-                                  self._codec_options,
-                                  max_scan,
-                                  )
+        documents = storage.query(self, max_scan)
         # Filtering
         fieldwalkers = []
         for doc in documents:

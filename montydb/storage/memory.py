@@ -80,7 +80,7 @@ class MemoryDatabase(AbstractDatabase):
         return list(self._db.keys())
 
 
-MemoryStorage.db_cls = MemoryDatabase
+MemoryStorage.contractor_cls = MemoryDatabase
 
 
 class MemoryCollection(AbstractCollection):
@@ -109,7 +109,7 @@ class MemoryCollection(AbstractCollection):
         return [doc["_id"] for doc in docs]
 
 
-MemoryDatabase.col_cls = MemoryCollection
+MemoryDatabase.contractor_cls = MemoryCollection
 
 
 class MemoryCursor(AbstractCursor):
@@ -133,4 +133,4 @@ class MemoryCursor(AbstractCursor):
             return docs[:max_scan]
 
 
-MemoryCollection.cursor_cls = MemoryCursor
+MemoryCollection.contractor_cls = MemoryCursor

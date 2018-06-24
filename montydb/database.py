@@ -18,6 +18,7 @@ class MontyDatabase(BaseObject):
 
         self._client = client
         self._name = name
+        self._components = ()
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -55,7 +56,7 @@ class MontyDatabase(BaseObject):
         return self._client
 
     def collection_names(self):
-        return self.client._storage.collection_list(self._name)
+        return self.client._storage.collection_list(self)
 
     def create_collection(self,
                           name,
@@ -66,7 +67,7 @@ class MontyDatabase(BaseObject):
         Create a collection, before any insertion,
         raise error if exists.
         """
-        if self.client._storage.collection_exists(self._name, name):
+        if self.client._storage.collection_exists(self, name):
             error_msg = "collection {} already exists".format(encode_(name))
             raise errors.CollectionInvalid(error_msg)
         else:
@@ -74,7 +75,7 @@ class MontyDatabase(BaseObject):
                                              codec_options,
                                              write_concern,
                                              **kwargs)
-            self.client._storage.collection_create(self._name, name)
+            self.client._storage.collection_create(self, name)
             return collection
 
     def drop_collection(self, name_or_collection):
@@ -86,7 +87,7 @@ class MontyDatabase(BaseObject):
         elif not isinstance(name_or_collection, string_type):
             raise TypeError("name_or_collection must be an instance of "
                             "basestring")
-        self.client._storage.collection_drop(self._name, name)
+        self.client._storage.collection_drop(self, name)
 
     def get_collection(self,
                        name,

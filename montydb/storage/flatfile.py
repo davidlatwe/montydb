@@ -172,10 +172,10 @@ class FlatFileDatabase(AbstractDatabase):
     """
     """
 
-    def __init__(self, name, storage):
-        super(FlatFileDatabase, self).__init__(name, storage)
-        if name not in storage._cache_manager:
-            storage._cache_manager[name] = {}
+    def __init__(self, storage, subject):
+        super(FlatFileDatabase, self).__init__(storage, subject)
+        if self._name not in storage._cache_manager:
+            storage._cache_manager[self._name] = {}
         self._db_path = storage._db_path(self._name)
 
     @property
@@ -212,19 +212,16 @@ class FlatFileDatabase(AbstractDatabase):
                 for name in os.listdir(_unicode(self._db_path))]
 
 
-FlatFileStorage.db_cls = FlatFileDatabase
+FlatFileStorage.contractor_cls = FlatFileDatabase
 
 
 class FlatFileCollection(AbstractCollection):
     """
     """
 
-    def __init__(self, name, database, write_concern, codec_options):
+    def __init__(self, database, subject):
         config = database._storage._config
-        super(FlatFileCollection, self).__init__(name,
-                                                 database,
-                                                 write_concern,
-                                                 codec_options)
+        super(FlatFileCollection, self).__init__(database, subject)
 
         self._col_path = self._database._col_path(self._name)
         if self._name not in database._cache_manager:
@@ -264,15 +261,15 @@ class FlatFileCollection(AbstractCollection):
         return [doc["_id"] for doc in docs]
 
 
-FlatFileDatabase.col_cls = FlatFileCollection
+FlatFileDatabase.contractor_cls = FlatFileCollection
 
 
 class FlatFileCursor(AbstractCursor):
     """
     """
 
-    def __init__(self, collection):
-        super(FlatFileCursor, self).__init__(collection)
+    def __init__(self, collection, subject):
+        super(FlatFileCursor, self).__init__(collection, subject)
 
     @property
     def _flatfile(self):
@@ -291,4 +288,4 @@ class FlatFileCursor(AbstractCursor):
             return docs[:max_scan]
 
 
-FlatFileCollection.cursor_cls = FlatFileCursor
+FlatFileCollection.contractor_cls = FlatFileCursor

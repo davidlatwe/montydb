@@ -32,13 +32,12 @@ class AbstractStorage(with_metaclass(ABCMeta, object)):
         return obj_attr(attr)
 
     def __getattr__(self, attr):
-        return self._delegate(attr)
-
-    def _delegate(self, attr):
-        def to_db_level(db_name, *args, **kwargs):
-            db = self.db_cls(db_name, self)
-            return getattr(db, attr)(*args, **kwargs)
-        return to_db_level
+        def delegate(subject, *args, **kwargs):
+            delegator = self
+            for inst in (*subject._components, subject):
+                delegator = delegator.contractor_cls(delegator, inst)
+            return getattr(delegator, attr)(*args, **kwargs)
+        return delegate
 
     def _re_open(self):
         """Auto re-open"""
@@ -64,7 +63,7 @@ class AbstractStorage(with_metaclass(ABCMeta, object)):
         return self._repository
 
     @property
-    def db_cls(self):
+    def contractor_cls(self):
         raise NotImplementedError("")
 
     @abstractmethod
@@ -82,28 +81,12 @@ class AbstractStorage(with_metaclass(ABCMeta, object)):
 
 class AbstractDatabase(with_metaclass(ABCMeta, object)):
 
-    def __init__(self, name, storage):
-        self._name = name
+    def __init__(self, storage, subject):
+        self._name = subject._name
         self._storage = storage
 
-    def __getattr__(self, attr):
-        return self._delegate(attr)
-
-    def _delegate(self, attr):
-        def to_collection_level(collection_name,
-                                write_concern,
-                                codec_options,
-                                *args,
-                                **kwargs):
-            collection = self.col_cls(collection_name,
-                                      self,
-                                      write_concern,
-                                      codec_options)
-            return getattr(collection, attr)(*args, **kwargs)
-        return to_collection_level
-
     @property
-    def col_cls(self):
+    def contractor_cls(self):
         raise NotImplementedError("")
 
     @abstractmethod
@@ -125,23 +108,14 @@ class AbstractDatabase(with_metaclass(ABCMeta, object)):
 
 class AbstractCollection(with_metaclass(ABCMeta, object)):
 
-    def __init__(self, name, database, write_concern, codec_options):
-        self._name = name
+    def __init__(self, database, subject):
+        self._name = subject._name
         self._database = database
-        self.wconcern = write_concern
-        self.coptions = codec_options
-
-    def __getattr__(self, attr):
-        return self._delegate(attr)
-
-    def _delegate(self, attr):
-        def to_cursor_level(*args, **kwargs):
-            cursor = self.cursor_cls(self)
-            return getattr(cursor, attr)(*args, **kwargs)
-        return to_cursor_level
+        self.wconcern = subject.write_concern
+        self.coptions = subject.codec_options
 
     @property
-    def cursor_cls(self):
+    def contractor_cls(self):
         raise NotImplementedError("")
 
     @abstractmethod
@@ -155,7 +129,7 @@ class AbstractCollection(with_metaclass(ABCMeta, object)):
 
 class AbstractCursor(with_metaclass(ABCMeta, object)):
 
-    def __init__(self, collection):
+    def __init__(self, collection, subject):
         self._collection = collection
 
     @abstractmethod
