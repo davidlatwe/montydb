@@ -18,7 +18,7 @@ class MontyDatabase(BaseObject):
 
         self._client = client
         self._name = name
-        self._components = ()
+        self._components = (self,)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):

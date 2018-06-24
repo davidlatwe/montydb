@@ -92,7 +92,7 @@ class MontyCursor(object):
 
         self._address = collection.database.client.address
         self._collection = collection
-        self._components = (collection.database, collection)
+        self._components = (collection.database, collection, self)
         self._codec_options = collection.codec_options
 
         self._spec = _bson_touch(spec, self._codec_options)

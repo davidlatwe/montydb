@@ -40,7 +40,7 @@ class MontyCollection(BaseObject):
 
         self._database = database
         self._name = name
-        self._components = (database,)
+        self._components = (database, self)
 
     def __repr__(self):
         return "MontyCollection({!r}, {!r})".format(self._database, self._name)

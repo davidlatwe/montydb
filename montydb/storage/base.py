@@ -34,7 +34,7 @@ class AbstractStorage(with_metaclass(ABCMeta, object)):
     def __getattr__(self, attr):
         def delegate(subject, *args, **kwargs):
             delegator = self
-            for inst in (*subject._components, subject):
+            for inst in subject._components:
                 delegator = delegator.contractor_cls(delegator, inst)
             return getattr(delegator, attr)(*args, **kwargs)
         return delegate
