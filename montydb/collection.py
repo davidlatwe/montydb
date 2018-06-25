@@ -39,6 +39,21 @@ def _internal_scan_query(query_spec, collection):
                 yield queryfilter.fieldwalker
 
 
+def _remove_dollar_key(doc, doc_type):
+    if isinstance(doc, doc_type):
+        new_doc = doc_type()
+        fields = list(doc.keys())
+        for field in fields:
+            if field.startswith("$"):
+                continue
+            elem = _remove_dollar_key(doc[field], doc_type)
+            if elem:
+                new_doc[field] = elem
+        return new_doc
+    else:
+        return doc
+
+
 class MontyCollection(BaseObject):
 
     def __init__(self, database, name, create=False,
@@ -145,6 +160,19 @@ class MontyCollection(BaseObject):
 
         raise NotImplementedError("Not implemented.")
 
+    def _internal_upsert(self, query_spec, updator, raw_result):
+        document = _remove_dollar_key(query_spec, type(query_spec))
+        if "_id" not in document:
+            document["_id"] = ObjectId()
+        raw_result["upserted"] = document["_id"]
+        raw_result["n"] = 1
+
+        fieldwalker = FieldWalker(document)
+        updator(fieldwalker)
+        self.database.client._storage.write_one(
+            self, fieldwalker.doc
+        )
+
     def update_one(self,
                    filter,
                    update,
@@ -160,27 +188,18 @@ class MontyCollection(BaseObject):
         if bypass_document_validation:
             pass
 
-        raw_result = {}
+        raw_result = {"n": 0, "nModified": 0}
         updator = Updator(update, array_filters)
         try:
             fw = next(_internal_scan_query(filter, self))
         except StopIteration:
-            fw = None
             if upsert:
-                document = filter
-                if "_id" not in document:
-                    document["_id"] = ObjectId()
-
-                raw_result["upserted"] = document["_id"]
-                fw = FieldWalker(filter)
+                self._internal_upsert(filter, updator, raw_result)
         else:
             raw_result["n"] = 1
-
-        if updator(fw):
-            self.database.client._storage.update_one(
-                self, fw.doc, upsert
-            )
-            raw_result["nModified"] = 1
+            if updator(fw):
+                self.database.client._storage.update_one(self, fw.doc)
+                raw_result["nModified"] = 1
 
         return UpdateResult(raw_result)
 
@@ -199,33 +218,26 @@ class MontyCollection(BaseObject):
         if bypass_document_validation:
             pass
 
-        raw_result = {}
+        raw_result = {"n": 0, "nModified": 0}
         updator = Updator(update, array_filters)
         scanner = _internal_scan_query(filter, self)
         try:
             next(scanner)
         except StopIteration:
-            scanner = ()
             if upsert:
-                document = filter
-                if "_id" not in document:
-                    document["_id"] = ObjectId()
+                self._internal_upsert(filter, updator, raw_result)
+        else:
+            def update_docs():
+                n, m = 0, 0
+                for fieldwalker in scanner:
+                    n += 1
+                    if updator(fieldwalker):
+                        m += 1
+                        yield fieldwalker.doc
+                raw_result["n"] = n
+                raw_result["nModified"] = m
 
-                raw_result["upserted"] = document["_id"]
-                scanner = (FieldWalker(filter),)
-
-        def update_docs():
-            raw_result["n"] = 0
-            raw_result["nModified"] = 0
-            for fw in scanner:
-                raw_result["n"] += 1
-                if updator(fw):
-                    raw_result["nModified"] += 1
-                    yield fw.doc
-
-        self.database.client._storage.update_many(
-            self, update_docs(), upsert
-        )
+            self.database.client._storage.update_many(self, update_docs())
 
         return UpdateResult(raw_result)
 

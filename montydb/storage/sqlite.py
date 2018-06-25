@@ -179,38 +179,16 @@ class SQLiteKVEngine(object):
                 sql = INSERT_RECORD.format(SQLITE_RECORD_TABLE)
                 conn.executemany(sql, seq_params)
 
-    def update_one(self, db_file, params, upsert=False, wconcern=None):
+    def update_one(self, db_file, params, wconcern=None):
         with self._connect(db_file, wconcern) as conn:
             with conn:
-                if upsert and not sqlite_324:
-                    sql = UPDATE_RECORD.format(SQLITE_RECORD_TABLE)
-                    conn.execute(sql, params)
-                    if conn.total_changes == 0:
-                        sql = INSORE_RECORD.format(SQLITE_RECORD_TABLE)
-                        conn.execute(sql, params)
-                    return
-
-                if upsert:
-                    sql = UPSERT_RECORD.format(SQLITE_RECORD_TABLE)
-                else:
-                    sql = UPDATE_RECORD.format(SQLITE_RECORD_TABLE)
+                sql = UPDATE_RECORD.format(SQLITE_RECORD_TABLE)
                 conn.execute(sql, params)
 
-    def update_many(self, db_file, seq_params, upsert=False, wconcern=None):
+    def update_many(self, db_file, seq_params, wconcern=None):
         with self._connect(db_file, wconcern) as conn:
             with conn:
-                if upsert and not sqlite_324:
-                    sql = UPDATE_RECORD.format(SQLITE_RECORD_TABLE)
-                    conn.executemany(sql, seq_params)
-                    if conn.total_changes < len(seq_params):
-                        sql = INSORE_RECORD.format(SQLITE_RECORD_TABLE)
-                        conn.executemany(sql, seq_params)
-                    return
-
-                if upsert:
-                    sql = UPSERT_RECORD.format(SQLITE_RECORD_TABLE)
-                else:
-                    sql = UPDATE_RECORD.format(SQLITE_RECORD_TABLE)
+                sql = UPDATE_RECORD.format(SQLITE_RECORD_TABLE)
                 conn.executemany(sql, seq_params)
 
     def read_all(self, db_file, limit):
@@ -384,7 +362,7 @@ class SQLiteCollection(AbstractCollection):
 
         return [doc["_id"] for doc in docs]
 
-    def update_one(self, doc, upsert=False):
+    def update_one(self, doc):
         """
         """
         self._conn.update_one(
@@ -393,7 +371,7 @@ class SQLiteCollection(AbstractCollection):
             self.wconcern
         )
 
-    def update_many(self, docs, upsert=False):
+    def update_many(self, docs):
         """
         """
         self._conn.update_many(

@@ -264,7 +264,7 @@ class FlatFileCollection(AbstractCollection):
     def update_one(self, doc):
         self.write_one(doc)
 
-    def update_many(self, docs, upsert):
+    def update_many(self, docs):
         self.write_many(docs)
 
 
