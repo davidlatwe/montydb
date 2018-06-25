@@ -1,5 +1,4 @@
 
-import re
 from collections import deque
 
 
@@ -225,12 +224,27 @@ def get_matched_index(fieldwalker):
 
 class ValueSetter(object):
 
+    def __init__(self):
+        self.value = None
+        self.modifier = None
+        self.log = None
+        self.doc_type = None
+
+        self.POSITIONERS = (
+            self.positional_operator,
+            self.all_positional_operator,
+            self.filtered_positional_operator,
+        )
+
     def set(self, fieldwalker, value, operator=None, array_filter=None):
-        logger = fieldwalker.log
+        self.value = value
+        self.modifier = operator or (lambda _, val: val)
+        self.log = fieldwalker.log
+        self.doc_type = fieldwalker.doc_type
+
         doc = fieldwalker.doc
-        doc_type = fieldwalker.doc_type
-        fields = deque(logger.field_levels[:])
-        func = operator or (lambda _, val: val)
+        fields = deque(self.log.field_levels[:])
+
         position_type = None
         positioner = None
         identifier = None
@@ -240,38 +254,45 @@ class ValueSetter(object):
             field = fields.popleft()
             is_list = isinstance(doc, list)
             if field[:1] == "$":
+                field_is_digit = False
+
                 if not is_list:
                     raise FieldSetValueError
+
                 if field == "$":
                     position_type = 0
                 else:
-                    identifier = re.split(r"([\[\]])", field)[2]
+                    identifier = field[2:-1]  # $[identifier]
                     position_type = 2 if identifier else 1
-                positioner = POSITIONERS[position_type]
+                positioner = self.POSITIONERS[position_type]
 
-            if is_list and (field.isdigit() or positioner):
-                if field.isdigit():
+            else:
+                field_is_digit = field.isdigit()
+
+            if is_list and (field_is_digit or positioner):
+                if field_is_digit:
                     index, length = int(field), len(doc)
                     if index >= length:
                         fill_none = [None for _ in range(index - length)]
-                        doc += fill_none + [doc_type()]
+                        doc += fill_none + [self.doc_type()]
                     if len(fields):
                         doc = doc[index]
                     else:
-                        doc[index] = func(doc[index], value)
+                        return self.modify(doc, index, doc[index])
+
                 elif positioner:
                     path = ".".join(fields)
-                    positioner(fieldwalker, doc, pre_field, field, path, value,
-                               operator, array_filter, identifier)
+                    return positioner(doc, pre_field, field, path, value,
+                                      operator, array_filter, identifier)
                     fields.clear()
 
-            elif isinstance(doc, doc_type):
+            elif isinstance(doc, self.doc_type):
                 if len(fields):
                     if field not in doc:
-                        doc[field] = doc_type()
+                        doc[field] = self.doc_type()
                     doc = doc[field]
                 else:
-                    doc[field] = func(doc.get(field), value)
+                    return self.modify(doc, field, doc.get(field))
 
             else:
                 element = {field: doc}
@@ -280,49 +301,51 @@ class ValueSetter(object):
 
             pre_field = field
 
+    def modify(self, doc, field_or_index, old_val):
+        new_val = self.modifier(old_val, self.value)
+        if old_val != new_val:
+            doc[field_or_index] = new_val
+            return True
+        return False
 
-def positional_operator(fw, doc, pre_field, field, path, value,
-                        operator, array_filter, identifier):
-    root = fw.log.field_levels[0]
-    index = fw.log.matched_index(root)
-    if path:
-        fieldwalker = FieldWalker(doc[index], fw.doc_type)
-        fieldwalker.go(path).set(value, operator, array_filter)
-    else:
-        func = operator or (lambda _, val: val)
-        doc[index] = func(doc[index], value)
-
-
-def all_positional_operator(fw, doc, pre_field, field, path, value,
+    def positional_operator(self, doc, pre_field, field, path, value,
                             operator, array_filter, identifier):
-    if path:
-        for d in doc:
-            fieldwalker = FieldWalker(d, fw.doc_type)
-            fieldwalker.go(path).set(value, operator, array_filter)
-    else:
-        func = operator or (lambda _, val: val)
+        root = self.log.field_levels[0]
+        index = self.log.matched_index(root)
+        if path:
+            fieldwalker = FieldWalker(doc[index], self.doc_type)
+            return fieldwalker.go(path).set(value, operator, array_filter)
+        else:
+            return self.modify(doc, index, doc[index])
+
+    def all_positional_operator(self, doc, pre_field, field, path, value,
+                                operator, array_filter, identifier):
+        results = []
+        if path:
+            for d in doc:
+                fieldwalker = FieldWalker(d, self.doc_type)
+                r = fieldwalker.go(path).set(value, operator, array_filter)
+                results.append(r)
+        else:
+            for i, d in enumerate(doc):
+                r = self.modify(doc, i, d)
+                results.append(r)
+        return any(results)
+
+    def filtered_positional_operator(self, doc, pre_field, field, path,
+                                     value, operator, array_filter,
+                                     identifier):
+        results = []
+        picker = array_filter[identifier](pre_field)
         for i, d in enumerate(doc):
-            doc[i] = func(d, value)
-
-
-def filtered_positional_operator(fw, doc, pre_field, field, path, value,
-                                 operator, array_filter, identifier):
-    picker = array_filter[identifier](pre_field)
-    for i, d in enumerate(doc):
-        if picker({pre_field: d}):
-            if path:
-                fieldwalker = FieldWalker(d, fw.doc_type)
-                fieldwalker.go(path).set(value, operator, array_filter)
-            else:
-                func = operator or (lambda _, val: val)
-                doc[i] = func(d, value)
-
-
-POSITIONERS = (
-    positional_operator,
-    all_positional_operator,
-    filtered_positional_operator,
-)
+            if picker({pre_field: d}):
+                if path:
+                    fieldwalker = FieldWalker(d, self.doc_type)
+                    r = fieldwalker.go(path).set(value, operator, array_filter)
+                else:
+                    r = self.modify(doc, i, d)
+                results.append(r)
+        return any(results)
 
 
 class FieldWalker(object):
@@ -357,7 +380,7 @@ class FieldWalker(object):
 
     def set(self, value, by_func=None, pick_with=None):
         self.log = SetterLogger(self)
-        ValueSetter().set(self, value, by_func, pick_with)
+        return ValueSetter().set(self, value, by_func, pick_with)
 
     def __enter__(self):
         return self

@@ -16,6 +16,8 @@ from .base import (
     AbstractCursor,
 )
 
+sqlite_324 = sqlite3.sqlite_version_info >= (3, 24, 0)
+
 
 """
 (NOTE) SQLite3 pragmas DEFAULT value:
@@ -100,16 +102,29 @@ CREATE_TABLE = """
 """
 
 INSERT_RECORD = """
-    INSERT OR REPLACE INTO [{}](k, v) VALUES (?, ?)
+    INSERT INTO [{}](k, v) VALUES (?, ?);
 """
-# (TODO) REPLACE will messed up the documents' nature order
+
+UPSERT_RECORD = """
+    INSERT INTO [{}] (v, k) VALUES(?, ?)
+        ON CONFLICT(k)
+        DO UPDATE SET v=excluded.v;
+"""  # need sqlite_version >= 3.24.0
+
+UPDATE_RECORD = """
+    UPDATE [{}] SET v = (?) WHERE k = (?);
+"""
+
+INSORE_RECORD = """
+    INSERT OR IGNORE INTO [{}](v, k) VALUES (?, ?);
+"""  # for sqlite_version < 3.24, UPDATE + INSERT_IGNORE = UPSERT SCRIPT
 
 SELECT_ALL_RECORD = """
-    SELECT v FROM [{}]
+    SELECT v FROM [{}];
 """
 
 SELECT_LIMIT_RECORD = """
-    SELECT v FROM [{0}] LIMIT {1}
+    SELECT v FROM [{0}] LIMIT {1};
 """
 
 
@@ -162,6 +177,40 @@ class SQLiteKVEngine(object):
         with self._connect(db_file, wconcern) as conn:
             with conn:
                 sql = INSERT_RECORD.format(SQLITE_RECORD_TABLE)
+                conn.executemany(sql, seq_params)
+
+    def update_one(self, db_file, params, upsert=False, wconcern=None):
+        with self._connect(db_file, wconcern) as conn:
+            with conn:
+                if upsert and not sqlite_324:
+                    sql = UPDATE_RECORD.format(SQLITE_RECORD_TABLE)
+                    conn.execute(sql, params)
+                    if conn.total_changes == 0:
+                        sql = INSORE_RECORD.format(SQLITE_RECORD_TABLE)
+                        conn.execute(sql, params)
+                    return
+
+                if upsert:
+                    sql = UPSERT_RECORD.format(SQLITE_RECORD_TABLE)
+                else:
+                    sql = UPDATE_RECORD.format(SQLITE_RECORD_TABLE)
+                conn.execute(sql, params)
+
+    def update_many(self, db_file, seq_params, upsert=False, wconcern=None):
+        with self._connect(db_file, wconcern) as conn:
+            with conn:
+                if upsert and not sqlite_324:
+                    sql = UPDATE_RECORD.format(SQLITE_RECORD_TABLE)
+                    conn.executemany(sql, seq_params)
+                    if conn.total_changes < len(seq_params):
+                        sql = INSORE_RECORD.format(SQLITE_RECORD_TABLE)
+                        conn.executemany(sql, seq_params)
+                    return
+
+                if upsert:
+                    sql = UPSERT_RECORD.format(SQLITE_RECORD_TABLE)
+                else:
+                    sql = UPDATE_RECORD.format(SQLITE_RECORD_TABLE)
                 conn.executemany(sql, seq_params)
 
     def read_all(self, db_file, limit):
@@ -335,6 +384,24 @@ class SQLiteCollection(AbstractCollection):
 
         return [doc["_id"] for doc in docs]
 
+    def update_one(self, doc, upsert=False):
+        """
+        """
+        self._conn.update_one(
+            self._col_path,
+            (self._encode_doc(doc), str(doc["_id"])),
+            self.wconcern
+        )
+
+    def update_many(self, docs, upsert=False):
+        """
+        """
+        self._conn.update_many(
+            self._col_path,
+            [(self._encode_doc(doc), str(doc["_id"])) for doc in docs],
+            self.wconcern
+        )
+
 
 SQLiteDatabase.contractor_cls = SQLiteCollection
 
@@ -358,7 +425,7 @@ class SQLiteCursor(AbstractCursor):
 
     def query(self, max_scan):
         docs = self._conn.read_all(self._col_path, max_scan)
-        return [self._decode_doc(doc) for doc in docs]
+        return (self._decode_doc(doc) for doc in docs)
 
 
 SQLiteCollection.contractor_cls = SQLiteCursor

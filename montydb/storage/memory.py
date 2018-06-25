@@ -1,4 +1,5 @@
 
+from itertools import islice
 from bson import SON, BSON
 
 from .base import (
@@ -108,6 +109,12 @@ class MemoryCollection(AbstractCollection):
             self._col[str(doc["_id"])] = self._encode_doc(doc)
         return [doc["_id"] for doc in docs]
 
+    def update_one(self, doc, upsert):
+        self.write_one(doc)
+
+    def update_many(self, docs, upsert):
+        self.write_many(docs)
+
 
 MemoryDatabase.contractor_cls = MemoryCollection
 
@@ -126,11 +133,11 @@ class MemoryCursor(AbstractCursor):
         return BSON(doc).decode(self._collection.coptions)
 
     def query(self, max_scan):
-        docs = [self._decode_doc(doc) for doc in self._col.values()]
+        docs = (self._decode_doc(doc) for doc in self._col.values())
         if not max_scan:
             return docs
         else:
-            return docs[:max_scan]
+            return islice(docs, max_scan)
 
 
 MemoryCollection.contractor_cls = MemoryCursor

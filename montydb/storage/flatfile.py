@@ -1,6 +1,7 @@
 
 import os
 import shutil
+from itertools import islice
 from bson import BSON, SON
 from bson.py3compat import _unicode
 from bson.json_util import (
@@ -260,6 +261,12 @@ class FlatFileCollection(AbstractCollection):
 
         return [doc["_id"] for doc in docs]
 
+    def update_one(self, doc):
+        self.write_one(doc)
+
+    def update_many(self, docs, upsert):
+        self.write_many(docs)
+
 
 FlatFileDatabase.contractor_cls = FlatFileCollection
 
@@ -281,11 +288,11 @@ class FlatFileCursor(AbstractCursor):
 
     def query(self, max_scan):
         cache = self._flatfile.read()
-        docs = [self._decode_doc(doc) for doc in cache.values()]
+        docs = (self._decode_doc(doc) for doc in cache.values())
         if not max_scan:
             return docs
         else:
-            return docs[:max_scan]
+            return islice(docs, max_scan)
 
 
 FlatFileCollection.contractor_cls = FlatFileCursor

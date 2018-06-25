@@ -23,9 +23,20 @@ def _internal_scan_query(query_spec, collection):
     queryfilter = QueryFilter(query_spec)
     storage = collection.database.client._storage
     documents = storage.query(MontyCursor(collection), 0)
+
+    first_matched = None
     for doc in documents:
         if queryfilter(doc):
-            yield queryfilter.fieldwalker
+            first_matched = queryfilter.fieldwalker
+            break
+
+    if first_matched:
+        yield first_matched  # for testing empty
+        yield first_matched  # yield again
+        # continue iter documents(generator)
+        for doc in documents:
+            if queryfilter(doc):
+                yield queryfilter.fieldwalker
 
 
 class MontyCollection(BaseObject):
@@ -149,18 +160,29 @@ class MontyCollection(BaseObject):
         if bypass_document_validation:
             pass
 
+        raw_result = {}
         updator = Updator(update, array_filters)
-        fw = next(_internal_scan_query(filter, self))
-        if updator(fw):
-            self.database.client._storage.write_one(
-                self, updator.fieldwalker.doc
-            )
+        try:
+            fw = next(_internal_scan_query(filter, self))
+        except StopIteration:
+            fw = None
+            if upsert:
+                document = filter
+                if "_id" not in document:
+                    document["_id"] = ObjectId()
 
-        return UpdateResult({
-            "n": None,
-            "nModified": None,
-            "upserted": None,
-        })
+                raw_result["upserted"] = document["_id"]
+                fw = FieldWalker(filter)
+        else:
+            raw_result["n"] = 1
+
+        if updator(fw):
+            self.database.client._storage.update_one(
+                self, fw.doc, upsert
+            )
+            raw_result["nModified"] = 1
+
+        return UpdateResult(raw_result)
 
     def update_many(self,
                     filter,
@@ -177,18 +199,35 @@ class MontyCollection(BaseObject):
         if bypass_document_validation:
             pass
 
+        raw_result = {}
         updator = Updator(update, array_filters)
-        for fw in _internal_scan_query(filter, self):
-            if updator(fw):
-                self.database.client._storage.write_one(
-                    self, updator.fieldwalker.doc
-                )
+        scanner = _internal_scan_query(filter, self)
+        try:
+            next(scanner)
+        except StopIteration:
+            scanner = ()
+            if upsert:
+                document = filter
+                if "_id" not in document:
+                    document["_id"] = ObjectId()
 
-        return UpdateResult({
-            "n": None,
-            "nModified": None,
-            "upserted": None,
-        })
+                raw_result["upserted"] = document["_id"]
+                scanner = (FieldWalker(filter),)
+
+        def update_docs():
+            raw_result["n"] = 0
+            raw_result["nModified"] = 0
+            for fw in scanner:
+                raw_result["n"] += 1
+                if updator(fw):
+                    raw_result["nModified"] += 1
+                    yield fw.doc
+
+        self.database.client._storage.update_many(
+            self, update_docs(), upsert
+        )
+
+        return UpdateResult(raw_result)
 
     def delete_one(self, filter):
         raise NotImplementedError("Not implemented.")

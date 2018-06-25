@@ -36,10 +36,14 @@ class Updator(object):
         pass
 
     def __call__(self, fieldwalker):
+        if fieldwalker is None:
+            return None
+
         self.__fieldwalker = fieldwalker
+        results = []
         for operator in self.operations.values():
-            operator(fieldwalker)
-        return fieldwalker.doc
+            results.append(operator(fieldwalker))
+        return any(results)
 
     @property
     def fieldwalker(self):
@@ -122,7 +126,7 @@ def parse_inc(field, value, array_filters):
             return (old_val or 0) + inc_val
 
         try:
-            fieldwalker.go(field).set(value, inc, array_filters)
+            return fieldwalker.go(field).set(value, inc, array_filters)
         except FieldSetValueError as err:
             msg = ("Cannot create field {0!r} in element "
                    "{1}".format(*err.details))
