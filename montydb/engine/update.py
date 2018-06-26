@@ -22,7 +22,7 @@ class Updator(object):
             "$max": parse_max,
             "$mul": parse_mul,
             "$rename": None,
-            "$set": None,
+            "$set": parse_set,
             "$setOnInsert": None,
             "$unset": None,
             "$currentDate": None,
@@ -233,9 +233,13 @@ def parse_rename(field, value):
     return _rename
 
 
-def parse_set(field, value):
+def parse_set(field, value, array_filters):
     def _set(fieldwalker):
-        raise NotImplementedError
+        try:
+            return fieldwalker.go(field).set(value, None, array_filters)
+        except FieldSetValueError as err:
+            msg = err.message if hasattr(err, 'message') else str(err)
+            raise WriteError(msg, code=err.code)
 
     return _set
 
