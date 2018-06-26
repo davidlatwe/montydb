@@ -1,4 +1,5 @@
 import collections
+from copy import deepcopy
 from bson import ObjectId
 
 from .base import (
@@ -44,11 +45,9 @@ def _remove_dollar_key(doc, doc_type):
         new_doc = doc_type()
         fields = list(doc.keys())
         for field in fields:
-            if field.startswith("$"):
+            if field[:1] == "$" or "." in field:
                 continue
-            elem = _remove_dollar_key(doc[field], doc_type)
-            if elem:
-                new_doc[field] = elem
+            new_doc[field] = _remove_dollar_key(doc[field], doc_type)
         return new_doc
     else:
         return doc
@@ -161,7 +160,7 @@ class MontyCollection(BaseObject):
         raise NotImplementedError("Not implemented.")
 
     def _internal_upsert(self, query_spec, updator, raw_result):
-        document = _remove_dollar_key(query_spec, type(query_spec))
+        document = _remove_dollar_key(deepcopy(query_spec), type(query_spec))
         if "_id" not in document:
             document["_id"] = ObjectId()
         raw_result["upserted"] = document["_id"]
