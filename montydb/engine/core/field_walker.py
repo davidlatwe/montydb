@@ -276,10 +276,11 @@ class ValueSetter(object):
             if is_list and (field_is_digit or positioner):
                 if field_is_digit:
                     index = int(field)
-                    doc = self.extend_array(doc, index, self.doc_type())
                     if len(fields):
+                        doc = self.extend_array(doc, index, self.doc_type())
                         doc = doc[index]
                     else:
+                        doc = self.extend_array(doc, index, None)
                         return self.setval(doc, index, doc[index])
 
                 elif positioner:

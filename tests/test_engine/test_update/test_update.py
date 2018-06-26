@@ -314,3 +314,17 @@ def test_update_complex_position_3(monty_update, mongo_update):
         monty_update(docs, spec, find)
 
     assert mongo_err.value.code == monty_err.value.code
+
+
+def test_update_empty_array(monty_update, mongo_update):
+    docs = [
+        {"a": []}
+    ]
+    spec = {"$inc": {"a.0": 10}}
+
+    monty_c = monty_update(docs, spec)
+    mongo_c = mongo_update(docs, spec)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {"a": [10]}
