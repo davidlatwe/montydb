@@ -2,6 +2,7 @@
 from collections import OrderedDict
 
 from bson.py3compat import string_type
+from bson.decimal128 import Decimal128
 
 from ..errors import WriteError
 from .core import FieldSetValueError
@@ -125,7 +126,18 @@ def parse_inc(field, value, array_filters):
                        "{2}".format(_id, field_name, value_type))
                 raise WriteError(msg, code=14)
 
-            return (old_val or 0) + inc_val
+            is_decimal128 = False
+            if isinstance(old_val, Decimal128):
+                is_decimal128 = True
+                old_val = old_val.to_decimal()
+            if isinstance(inc_val, Decimal128):
+                is_decimal128 = True
+                inc_val = inc_val.to_decimal()
+
+            if is_decimal128:
+                return Decimal128((old_val or 0) + inc_val)
+            else:
+                return (old_val or 0) + inc_val
 
         try:
             return fieldwalker.go(field).set(value, inc, array_filters)

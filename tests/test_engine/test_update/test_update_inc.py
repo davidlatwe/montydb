@@ -1,5 +1,7 @@
 
 import pytest
+from bson.int64 import Int64
+from bson.decimal128 import Decimal128
 
 from pymongo.errors import WriteError as mongo_write_err
 from montydb.errors import WriteError as monty_write_err
@@ -221,3 +223,45 @@ def test_update_inc_positional_filtered_3(monty_update, mongo_update):
     assert next(mongo_c) == next(monty_c)
     monty_c.rewind()
     assert next(monty_c) == {"a": [5, 12]}
+
+
+def test_update_inc_float(monty_update, mongo_update):
+    docs = [
+        {"a": 1}
+    ]
+    spec = {"$inc": {"a": 1.5}}
+
+    monty_c = monty_update(docs, spec)
+    mongo_c = mongo_update(docs, spec)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {"a": 2.5}
+
+
+def test_update_inc_int64(monty_update, mongo_update):
+    docs = [
+        {"a": Int64(1)}
+    ]
+    spec = {"$inc": {"a": 1.5}}
+
+    monty_c = monty_update(docs, spec)
+    mongo_c = mongo_update(docs, spec)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {"a": 2.5}
+
+
+def test_update_inc_decimal128(monty_update, mongo_update):
+    docs = [
+        {"a": Decimal128("1.5")}
+    ]
+    spec = {"$inc": {"a": 1}}
+
+    monty_c = monty_update(docs, spec)
+    mongo_c = mongo_update(docs, spec)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {"a": Decimal128("2.5")}
