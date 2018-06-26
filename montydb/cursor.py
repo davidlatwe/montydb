@@ -226,7 +226,7 @@ class MontyCursor(object):
                            # "collation"
                            )
         data = dict((k, v) for k, v in iteritems(self.__dict__)
-                    if k.startswith('_Cursor_') and k[8:] in values_to_clone)
+                    if k.startswith('_') and k[1:] in values_to_clone)
         if deepcopy:
             data = self._deepcopy(data)
         base.__dict__.update(data)
