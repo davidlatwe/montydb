@@ -98,9 +98,11 @@ class _cmp_decimal(object):
 class Weighted(tuple):
     """
     """
-
     def __new__(cls, value):
         return super(Weighted, cls).__new__(cls, gravity(value))
+
+    def __init__(self, value):
+        self.value = value
 
 
 def gravity(value, weight_only=None):

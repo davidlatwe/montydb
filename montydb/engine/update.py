@@ -5,7 +5,7 @@ from bson.py3compat import string_type
 from bson.decimal128 import Decimal128
 
 from ..errors import WriteError
-from .core import FieldSetValueError
+from .core import FieldSetValueError, Weighted
 from .queries import QueryFilter
 from .helpers import is_numeric_type
 
@@ -19,7 +19,7 @@ class Updator(object):
             # field update ops
             "$inc": parse_inc,
             "$min": parse_min,
-            "$max": None,
+            "$max": parse_max,
             "$mul": None,
             "$rename": None,
             "$set": None,
@@ -155,14 +155,32 @@ def parse_inc(field, value, array_filters):
 
 def parse_min(field, value, array_filters):
     def _min(fieldwalker):
-        raise NotImplementedError
+        def min(old_val, min_val):
+            old_val = Weighted(old_val)
+            min_val = Weighted(min_val)
+            return min_val.value if min_val < old_val else old_val.value
+
+        try:
+            return fieldwalker.go(field).set(value, min, array_filters)
+        except FieldSetValueError as err:
+            msg = err.message if hasattr(err, 'message') else str(err)
+            raise WriteError(msg, code=err.code)
 
     return _min
 
 
-def parse_max(field, value):
+def parse_max(field, value, array_filters):
     def _max(fieldwalker):
-        raise NotImplementedError
+        def max(old_val, max_val):
+            old_val = Weighted(old_val)
+            max_val = Weighted(max_val)
+            return max_val.value if max_val > old_val else old_val.value
+
+        try:
+            return fieldwalker.go(field).set(value, max, array_filters)
+        except FieldSetValueError as err:
+            msg = err.message if hasattr(err, 'message') else str(err)
+            raise WriteError(msg, code=err.code)
 
     return _max
 
