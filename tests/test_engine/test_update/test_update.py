@@ -328,3 +328,18 @@ def test_update_empty_array(monty_update, mongo_update):
     assert next(mongo_c) == next(monty_c)
     monty_c.rewind()
     assert next(monty_c) == {"a": [10]}
+
+
+def test_update_with_bad_spec(monty_update, mongo_update):
+    docs = [
+        {"a": 1}
+    ]
+    spec = {"$inc": 5}
+
+    with pytest.raises(mongo_write_err) as mongo_err:
+        mongo_update(docs, spec)
+
+    with pytest.raises(monty_write_err) as monty_err:
+        monty_update(docs, spec)
+
+    assert mongo_err.value.code == monty_err.value.code

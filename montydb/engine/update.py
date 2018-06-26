@@ -1,5 +1,5 @@
 
-from collections import OrderedDict
+from collections import OrderedDict, MutableMapping
 
 from bson.py3compat import string_type
 from bson.decimal128 import Decimal128
@@ -86,6 +86,11 @@ class Updator(object):
         for op, cmd_doc in spec.items():
             if op not in self.update_ops:
                 raise WriteError("Unknown modifier: {}".format(op))
+            if not isinstance(cmd_doc, MutableMapping):
+                msg = ("Modifiers operate on fields but we found type {0} "
+                       "instead. For example: {{$mod: {{<field>: ...}}}} "
+                       "not {1}".format(type(cmd_doc).__name__, spec))
+                raise WriteError(msg, code=9)
             for field, value in cmd_doc.items():
                 for top in idnt_tops:
                     if "$[{}]".format(top) in field:
