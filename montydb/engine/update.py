@@ -20,7 +20,7 @@ class Updator(object):
             "$inc": parse_inc,
             "$min": parse_min,
             "$max": parse_max,
-            "$mul": None,
+            "$mul": parse_mul,
             "$rename": None,
             "$set": None,
             "$setOnInsert": None,
@@ -185,9 +185,43 @@ def parse_max(field, value, array_filters):
     return _max
 
 
-def parse_mul(field, value):
+def parse_mul(field, value, array_filters):
+    if not is_numeric_type(value):
+        val_repr_ = "{!r}" if isinstance(value, string_type) else "{}"
+        val_repr_ = val_repr_.format(value)
+        msg = ("Cannot multiply with non-numeric argument: "
+               "{{{0}: {1}}}".format(field, val_repr_))
+        raise WriteError(msg, code=14)
+
     def _mul(fieldwalker):
-        raise NotImplementedError
+        def mul(old_val, mul_val):
+            if old_val is not None and not is_numeric_type(old_val):
+                _id = fieldwalker.doc["_id"]
+                value_type = type(old_val).__name__
+                field_name = field.split(".")[-1]
+                msg = ("Cannot apply $mul to a value of non-numeric type. "
+                       "{{_id: {0}}} has the field {1!r} of non-numeric type "
+                       "{2}".format(_id, field_name, value_type))
+                raise WriteError(msg, code=14)
+
+            is_decimal128 = False
+            if isinstance(old_val, Decimal128):
+                is_decimal128 = True
+                old_val = old_val.to_decimal()
+            if isinstance(mul_val, Decimal128):
+                is_decimal128 = True
+                mul_val = mul_val.to_decimal()
+
+            if is_decimal128:
+                return Decimal128((old_val or 0) * mul_val)
+            else:
+                return (old_val or 0.0) * mul_val
+
+        try:
+            return fieldwalker.go(field).set(value, mul, array_filters)
+        except FieldSetValueError as err:
+            msg = err.message if hasattr(err, 'message') else str(err)
+            raise WriteError(msg, code=err.code)
 
     return _mul
 
