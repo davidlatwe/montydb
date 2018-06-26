@@ -51,7 +51,7 @@ class Updator(object):
 
     def array_filter_parser(self, array_filters):
         filters = {}
-        for filter_ in array_filters:
+        for i, filter_ in enumerate(array_filters):
             top = ""
             conds = {}
             for identifier, cond in filter_.items():
@@ -70,8 +70,9 @@ class Updator(object):
                     conds.update({"{}.{}".format("{}", id_s[1]): cond})
                 else:
                     conds.update({"{}": cond})
-            filters[top] = lambda x: QueryFilter(
-                {k.format(x): v for k, v in conds.items()})
+
+            filters[top] = lambda x, c=conds: QueryFilter(
+                {k.format(x): v for k, v in c.items()})
 
         return filters
 
@@ -90,8 +91,9 @@ class Updator(object):
                         idnt_tops.remove(top)
                         break
                 if field in field_to_update:
-                    raise WriteError("Updating the path {0!r} would create a "
-                                     "conflict at {0!r}".format(field))
+                    msg = ("Updating the path {0!r} would create a "
+                           "conflict at {0!r}".format(field))
+                    raise WriteError(msg, code=40)
                 field_to_update[field] = self.update_ops[op](
                     field, value, self.array_filters)
 
@@ -128,14 +130,13 @@ def parse_inc(field, value, array_filters):
         try:
             return fieldwalker.go(field).set(value, inc, array_filters)
         except FieldSetValueError as err:
-            msg = ("Cannot create field {0!r} in element "
-                   "{1}".format(*err.details))
-            raise WriteError(msg, code=28)
+            msg = err.message if hasattr(err, 'message') else str(err)
+            raise WriteError(msg, code=err.code)
 
     return _inc
 
 
-def parse_min(field, value):
+def parse_min(field, value, array_filters):
     def _min(fieldwalker):
         raise NotImplementedError
 

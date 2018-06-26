@@ -68,23 +68,23 @@ def mongo_sort(mongo_database):
     return _insert_and_sort
 
 
-def insert_and_update(db, docs, spec, find, array_filters):
+def insert_and_update(db, docs, spec, find, upsert, array_filters):
     col = insert(db, docs)
-    col.update_many(find or {}, spec, array_filters=array_filters)
+    col.update_many(find or {}, spec, upsert, array_filters=array_filters)
     return col.find({}, {"_id": 0})
 
 
 @pytest.fixture
 def monty_update(monty_database):
-    def _insert_and_update(docs, spec, find=None,
+    def _insert_and_update(docs, spec, find=None, upsert=False,
                            array_filters=None, db=monty_database):
-        return insert_and_update(db, docs, spec, find, array_filters)
+        return insert_and_update(db, docs, spec, find, upsert, array_filters)
     return _insert_and_update
 
 
 @pytest.fixture
 def mongo_update(mongo_database):
-    def _insert_and_update(docs, spec, find=None,
+    def _insert_and_update(docs, spec, find=None, upsert=False,
                            array_filters=None, db=mongo_database):
-        return insert_and_update(db, docs, spec, find, array_filters)
+        return insert_and_update(db, docs, spec, find, upsert, array_filters)
     return _insert_and_update

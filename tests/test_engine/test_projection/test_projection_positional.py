@@ -109,3 +109,33 @@ def test_projection_positional_7(monty_proj, mongo_proj):
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
+
+
+def test_projection_positional_8(monty_proj, mongo_proj):
+    docs = [
+        {"a": [{"b": [1, 5]}, {"b": [2, 4]}, {"b": [3, 6]}]},
+    ]
+    spec = {"a.b.1": {"$eq": 6}}
+    proj = {"a.b.$": 1}
+
+    monty_c = monty_proj(docs, spec, proj)
+    mongo_c = mongo_proj(docs, spec, proj)
+
+    assert mongo_c.count() == 1
+    assert monty_c.count() == mongo_c.count()
+    assert next(mongo_c) == next(monty_c)
+
+
+def test_projection_positional_9(monty_proj, mongo_proj):
+    docs = [
+        {"a": [{"b": [1, 5]}, {"b": 2}, {"b": [3]}]},
+    ]
+    spec = {"a.b.1": 5}
+    proj = {"a.b.$": 1}
+
+    monty_c = monty_proj(docs, spec, proj)
+    mongo_c = mongo_proj(docs, spec, proj)
+
+    assert mongo_c.count() == 1
+    assert monty_c.count() == mongo_c.count()
+    assert next(mongo_c) == next(monty_c)

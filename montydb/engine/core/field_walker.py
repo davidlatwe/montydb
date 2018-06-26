@@ -8,24 +8,20 @@ def _is_array_type(obj):
 
 class FieldSetValueError(TypeError):
 
-    def __init__(self, error, code=None, details=None):
+    def __init__(self, error, code=None):
         self.__code = code
-        self.__details = details
         super(FieldSetValueError, self).__init__(error)
 
     @property
     def code(self):
         return self.__code
 
-    @property
-    def details(self):
-        return self.__details
-
 
 class LoggerMixin(object):
     __slots__ = (
         "field_levels",
         "matched_indexes",
+        "path_root",
     )
 
     def matched_index(self, path):
@@ -43,6 +39,7 @@ class GetterLogger(LoggerMixin):
     def __init__(self, fieldwalker):
         self.field_levels = fieldwalker.log.field_levels
         self.matched_indexes = fieldwalker.log.matched_indexes
+        self.path_root = self.field_levels[0]
         self.exists = None
         self.null_or_missing = None
         self.elem_iter_map = []
@@ -50,12 +47,26 @@ class GetterLogger(LoggerMixin):
 
 class SetterLogger(LoggerMixin):
     __slots__ = (
+        "itered_path",
+        "modified_path",
     )
 
-    def __init__(self, fieldwalker):
+    def __init__(self, fieldwalker=None):
+        if fieldwalker is None:
+            return
         log_ = fieldwalker.log
         for attr in LoggerMixin.__slots__:
-            setattr(self, attr, getattr(log_, attr))
+            setattr(self, attr, getattr(log_, attr, None))
+        self.modified_path = getattr(log_, "modified_path", [])
+        self.itered_path = getattr(log_, "itered_path", [])
+
+    def copy(self):
+        logger = SetterLogger()
+        logger.matched_indexes = self.matched_indexes
+        logger.path_root = self.field_levels[0]
+        logger.modified_path = self.modified_path
+        logger.itered_path = self.itered_path[:]
+        return logger
 
 
 class ValueGetter(object):
@@ -70,13 +81,12 @@ class ValueGetter(object):
         self.F_ARRAY_NO_DOC = False
 
     def get(self, fieldwalker):
-        logger = fieldwalker.log
-        field_levels = logger.field_levels
+        self.logger = fieldwalker.log
+        field_levels = self.logger.field_levels
         doc = fieldwalker.doc
         doc_type = fieldwalker.doc_type
 
         fieldwalker.value = FieldValues()
-        self.elem_iter_map = logger.elem_iter_map
         # Begin the walk
         for field in field_levels:
             self.field_is_digit = False
@@ -84,7 +94,7 @@ class ValueGetter(object):
 
             if _is_array_type(doc):
                 if len(doc) == 0:
-                    logger.exists = False
+                    self.logger.exists = False
                     break
 
                 self.field_is_digit = field.isdigit()
@@ -99,12 +109,12 @@ class ValueGetter(object):
                 doc = doc[key]
             except (KeyError, IndexError, TypeError) as err:
                 doc = None
-                logger.exists = False
+                self.logger.exists = False
                 fieldwalker.value = FieldValues()
                 self.error_handler(err.__class__)
                 break
             else:
-                logger.exists = True
+                self.logger.exists = True
         # End of walk
         self.commit(fieldwalker, doc)
 
@@ -156,20 +166,19 @@ class ValueGetter(object):
         Walk in to array for embedded documents.
         """
         field_values = FieldValues()
-        elem_iter_map_field = []
 
         for i, emb_fw in self.element_walkers:
             emb_fw.go(field).get()
             if emb_fw.log.exists:
-                elem_iter_map_field.append((i, len(emb_fw.value.elements)))
+                len_ = len(emb_fw.value.elements)
+                is_list = bool(emb_fw.value.arrays)
+                self.logger.elem_iter_map.append((i, len_, is_list))
                 field_values += emb_fw.value
             else:
                 self.F_FIELD_NOT_EXISTS = True
 
         if len(field_values.arrays) != self.num_of_emb_doc:
             self.F_MISSING_IN_ARRAY = True
-
-        self.elem_iter_map.append(elem_iter_map_field)
 
         if field_values:
             self.F_EMBEDDED_IN_ARRAY = True
@@ -187,7 +196,15 @@ class ValueGetter(object):
                 return doc_
 
         if self.F_EMBEDDED_IN_ARRAY:
-            field_values = doc._positional(int(field))
+            index = int(field)
+            field_values = doc._positional(index)
+
+            positioned_map = []
+            for ind, len_, is_list in self.logger.elem_iter_map:
+                if is_list and len_ > index:
+                    positioned_map.append((ind, 1, is_list))
+
+            self.logger.elem_iter_map = positioned_map
             self.field_is_digit = False
             return {field: field_values} if field_values else None
 
@@ -212,13 +229,12 @@ def get_matched_index(fieldwalker):
     if len(elem_iter_map) == 0:
         return None if len(value.elements) == 0 else (times - 1)
     else:
-        while elem_iter_map:
-            for ind, len_ in elem_iter_map.pop():
-                if times > len_:
-                    times -= len_
-                else:
-                    times = ind + 1
-                    break
+        for ind, len_, _ in elem_iter_map:
+            if times > len_:
+                times -= len_
+            else:
+                times = ind + 1
+                break
         return times - 1
 
 
@@ -230,122 +246,156 @@ class ValueSetter(object):
         self.log = None
         self.doc_type = None
 
-        self.POSITIONERS = (
-            self.positional_operator,
-            self.all_positional_operator,
-            self.filtered_positional_operator,
-        )
-
     def set(self, fieldwalker, value, operator=None, array_filter=None):
         self.value = value
         self.modifier = operator or (lambda _, val: val)
+        self.array_filter = array_filter
         self.log = fieldwalker.log
         self.doc_type = fieldwalker.doc_type
 
         doc = fieldwalker.doc
         fields = deque(self.log.field_levels[:])
-
-        position_type = None
-        positioner = None
-        identifier = None
-        pre_field = None
+        positioner = identifier = pre_field = None
 
         while fields:
             field = fields.popleft()
             is_list = isinstance(doc, list)
-            if field[:1] == "$":
-                field_is_digit = False
-
-                if not is_list:
-                    raise FieldSetValueError
-
-                if field == "$":
-                    position_type = 0
-                else:
-                    identifier = field[2:-1]  # $[identifier]
-                    position_type = 2 if identifier else 1
-                positioner = self.POSITIONERS[position_type]
-
+            if field == "$":
+                positioner = self.walk_aray_positional
+            elif field[:2] == "$[":
+                identifier = field[2:-1]  # $[identifier]
+                self.check_filter_exists(identifier)
+                positioner = self.walk_array_filtered
             else:
                 field_is_digit = field.isdigit()
 
+            if positioner is not None:
+                field_is_digit = False
+                self.check_array_status(field, is_list, pre_field, doc)
+
             if is_list and (field_is_digit or positioner):
                 if field_is_digit:
-                    index, length = int(field), len(doc)
-                    if index >= length:
-                        fill_none = [None for _ in range(index - length)]
-                        doc += fill_none + [self.doc_type()]
+                    index = int(field)
+                    doc = self.extend_array(doc, index, self.doc_type())
                     if len(fields):
                         doc = doc[index]
                     else:
-                        return self.modify(doc, index, doc[index])
+                        return self.setval(doc, index, doc[index])
 
                 elif positioner:
                     path = ".".join(fields)
-                    return positioner(doc, pre_field, field, path, value,
-                                      operator, array_filter, identifier)
-                    fields.clear()
+                    return positioner(doc, path, pre_field, identifier)
 
             elif isinstance(doc, self.doc_type):
+                if field == "$":
+                    field = str(self.find_matched_index())
+                self.check_dollar_prefixed_field(field)
                 if len(fields):
                     if field not in doc:
                         doc[field] = self.doc_type()
                     doc = doc[field]
                 else:
-                    return self.modify(doc, field, doc.get(field))
+                    return self.setval(doc, field, doc.get(field))
 
             else:
-                element = {field: doc}
-                raise FieldSetValueError("ERROR",
-                                         details=(field, element))
+                element = {pre_field: doc}
+                msg = ("Cannot create field {0!r} in element "
+                       "{1}".format(field, element))
+                raise FieldSetValueError(msg, code=28)
 
             pre_field = field
+            self.log.itered_path.append(field)
 
-    def modify(self, doc, field_or_index, old_val):
+    def setval(self, doc, field_or_index, old_val):
         new_val = self.modifier(old_val, self.value)
+        path = ".".join(self.log.itered_path + [str(field_or_index)])
+        self.log.itered_path = []
         if old_val != new_val:
+            if field_or_index == "_id":
+                msg = ("Performing an update on the path '_id' would modify "
+                       "the immutable field '_id'")
+                raise FieldSetValueError(msg, code=66)
+
+            if path in self.log.modified_path:
+                msg = "Update created a conflict at {0!r}".format(path)
+                raise FieldSetValueError(msg, code=40)
+
+            self.log.modified_path.append(path)
             doc[field_or_index] = new_val
             return True
         return False
 
-    def positional_operator(self, doc, pre_field, field, path, value,
-                            operator, array_filter, identifier):
-        root = self.log.field_levels[0]
-        index = self.log.matched_index(root)
-        if path:
-            fieldwalker = FieldWalker(doc[index], self.doc_type)
-            return fieldwalker.go(path).set(value, operator, array_filter)
-        else:
-            return self.modify(doc, index, doc[index])
+    def check_dollar_prefixed_field(self, field):
+        if field[:1] == "$":
+            full_path = ".".join(self.log.field_levels)
+            msg = ("The dollar ($) prefixed field {0!r} in {1!r} is not "
+                   "valid for storage.".format(field, full_path))
+            raise FieldSetValueError(msg, code=52)
 
-    def all_positional_operator(self, doc, pre_field, field, path, value,
-                                operator, array_filter, identifier):
-        results = []
-        if path:
-            for d in doc:
-                fieldwalker = FieldWalker(d, self.doc_type)
-                r = fieldwalker.go(path).set(value, operator, array_filter)
-                results.append(r)
-        else:
-            for i, d in enumerate(doc):
-                r = self.modify(doc, i, d)
-                results.append(r)
-        return any(results)
+    def extend_array(self, doc, index, end_element):
+        length = len(doc)
+        if index >= length:
+            fill_none = [None for _ in range(index - length)]
+            doc += fill_none + [end_element]
+        return doc
 
-    def filtered_positional_operator(self, doc, pre_field, field, path,
-                                     value, operator, array_filter,
-                                     identifier):
+    def check_filter_exists(self, identifier):
+        if identifier and identifier not in self.array_filter:
+            full_path = ".".join(self.log.field_levels)
+            msg = ("No array filter found for identifier {0!r} "
+                   "in path {1!r}".format(identifier, full_path))
+            raise FieldSetValueError(msg, code=2)
+
+    def check_array_status(self, field, is_list, pre_field, doc):
+        if field != "$" and not is_list:
+            if doc:
+                msg = ("Cannot apply array updates to non-array "
+                       "element {0}: {1}".format(pre_field or 0, doc))
+                raise FieldSetValueError(msg, code=2)
+            else:
+                path = ".".join(self.log.itered_path)
+                msg = ("The path {0!r} must exist in the document in "
+                       "order to apply array updates.".format(path))
+                raise FieldSetValueError(msg, code=2)
+
+    def array_setter(self, doc, index, path):
+        fieldwalker = FieldWalker(doc, self.doc_type)
+        self.log.itered_path.append(str(index))
+        fieldwalker.log = self.log.copy()
+        self.log.itered_path = []
+        fieldwalker.go(path)
+        return fieldwalker.set(self.value, self.modifier, self.array_filter)
+
+    def walk_aray_positional(self, doc, path, *args):
+        index = self.find_matched_index()
+        if path:
+            return self.array_setter(doc[index], index, path)
+        else:
+            doc = self.extend_array(doc, index, None)
+            return self.setval(doc, index, doc[index])
+
+    def walk_array_filtered(self, doc, path, pre_field, identifier):
         results = []
-        picker = array_filter[identifier](pre_field)
+        if identifier:
+            queryfilter = self.array_filter[identifier](pre_field)
+        else:
+            queryfilter = (lambda _: True)
         for i, d in enumerate(doc):
-            if picker({pre_field: d}):
+            if queryfilter({pre_field: d}):
                 if path:
-                    fieldwalker = FieldWalker(d, self.doc_type)
-                    r = fieldwalker.go(path).set(value, operator, array_filter)
+                    r = self.array_setter(d, i, path)
                 else:
-                    r = self.modify(doc, i, d)
+                    r = self.setval(doc, i, d)
                 results.append(r)
         return any(results)
+
+    def find_matched_index(self):
+        root = self.log.path_root
+        if root is None:
+            msg = ("The positional operator did not find the match needed "
+                   "from the query.")
+            raise FieldSetValueError(msg, code=2)
+        return self.log.matched_index(root)
 
 
 class FieldWalker(object):

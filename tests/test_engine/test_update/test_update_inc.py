@@ -25,11 +25,13 @@ def test_update_inc_2(monty_update, mongo_update):
     ]
     spec = {"$inc": {"a": 1}}
 
-    with pytest.raises(mongo_write_err):
+    with pytest.raises(mongo_write_err) as mongo_err:
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err):
+    with pytest.raises(monty_write_err) as monty_err:
         monty_update(docs, spec)
+
+    assert mongo_err.value.code == monty_err.value.code
 
 
 def test_update_inc_3(monty_update, mongo_update):
@@ -38,11 +40,13 @@ def test_update_inc_3(monty_update, mongo_update):
     ]
     spec = {"$inc": {"a": "1"}}
 
-    with pytest.raises(mongo_write_err):
+    with pytest.raises(mongo_write_err) as mongo_err:
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err):
+    with pytest.raises(monty_write_err) as monty_err:
         monty_update(docs, spec)
+
+    assert mongo_err.value.code == monty_err.value.code
 
 
 def test_update_inc_4(monty_update, mongo_update):
@@ -93,11 +97,13 @@ def test_update_inc_7(monty_update, mongo_update):
     ]
     spec = {"$inc": {"a.b": 1}}
 
-    with pytest.raises(mongo_write_err):
+    with pytest.raises(mongo_write_err) as mongo_err:
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err):
+    with pytest.raises(monty_write_err) as monty_err:
         next(monty_update(docs, spec))
+
+    assert mongo_err.value.code == monty_err.value.code
 
 
 def test_update_inc_8(monty_update, mongo_update):
