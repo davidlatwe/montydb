@@ -157,13 +157,30 @@ def test_update_positional_filtered_near_conflict(monty_update, mongo_update):
     assert next(monty_c) == {"a": [{"b": 5, "c": 1}, {"b": 6, "c": 0}]}
 
 
-def test_update_positional_filtered_has_conflict(monty_update, mongo_update):
+def test_update_positional_filtered_has_conflict_1(monty_update, mongo_update):
     docs = [
         {"a": [{"b": 4, "c": 1}, {"b": 4, "c": 0}]}
     ]
     spec = {"$inc": {"a.$[elem].b": 1, "a.$[conflict].b": 2}}
     array_filters = [{"elem.c": {"$gt": 0}},  # update element 0
                      {"conflict": {"b": 4, "c": 1}}]  # update element 0, too.
+
+    with pytest.raises(mongo_write_err) as mongo_err:
+        mongo_update(docs, spec, array_filters=array_filters)
+
+    with pytest.raises(monty_write_err) as monty_err:
+        monty_update(docs, spec, array_filters=array_filters)
+
+    assert mongo_err.value.code == monty_err.value.code
+
+
+def test_update_positional_filtered_has_conflict_2(monty_update, mongo_update):
+    docs = [
+        {"a": [{"c": 5, "b": 1}, {"c": 8, "b": 0}]}
+    ]
+    spec = {"$set": {"a.$[elem]": 5, "a.$[conflict]": 5}}
+    array_filters = [{"elem.c": 5},  # update element 0
+                     {"conflict.b": 1}]  # update element 0, too.
 
     with pytest.raises(mongo_write_err) as mongo_err:
         mongo_update(docs, spec, array_filters=array_filters)

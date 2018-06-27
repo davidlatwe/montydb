@@ -6,30 +6,33 @@ def _is_array_type(obj):
     return isinstance(obj, (list, FieldValues))
 
 
-class FieldSetValueError(TypeError):
+class FieldWriteError(TypeError):
 
     def __init__(self, error, code=None):
         self.__code = code
-        super(FieldSetValueError, self).__init__(error)
+        super(FieldWriteError, self).__init__(error)
 
     @property
     def code(self):
         return self.__code
 
 
-class LoggerMixin(object):
+class BaseLogger(object):
     __slots__ = (
         "field_levels",
         "matched_indexes",
         "path_root",
     )
 
+    def __init__(self):
+        self.matched_indexes = {}
+
     def matched_index(self, path):
         """Internal method"""
         return self.matched_indexes.get(path.split(".", 1)[0])
 
 
-class GetterLogger(LoggerMixin):
+class GetterLogger(BaseLogger):
     __slots__ = (
         "exists",
         "null_or_missing",
@@ -45,31 +48,42 @@ class GetterLogger(LoggerMixin):
         self.elem_iter_map = []
 
 
-class SetterLogger(LoggerMixin):
+class SetterLogger(BaseLogger):
     __slots__ = (
         "itered_path",
         "modified_path",
+        "transaction_queue",
     )
 
     def __init__(self, fieldwalker=None):
         if fieldwalker is None:
             return
         log_ = fieldwalker.log
-        for attr in LoggerMixin.__slots__:
+        for attr in BaseLogger.__slots__:
             setattr(self, attr, getattr(log_, attr, None))
         self.modified_path = getattr(log_, "modified_path", [])
         self.itered_path = getattr(log_, "itered_path", [])
+        self.transaction_queue = getattr(log_, "transaction_queue", [])
 
     def copy(self):
         logger = SetterLogger()
         logger.matched_indexes = self.matched_indexes
         logger.path_root = self.field_levels[0]
         logger.modified_path = self.modified_path
-        logger.itered_path = self.itered_path[:]
+        logger.itered_path = self.itered_path
+        logger.transaction_queue = self.transaction_queue
         return logger
 
 
-class ValueGetter(object):
+class DropperLogger(SetterLogger):
+    __slots__ = (
+        "itered_path",
+        "modified_path",
+        "transaction_queue",
+    )
+
+
+class FieldGetter(object):
     """Internal class"""
 
     def __init__(self):
@@ -80,7 +94,7 @@ class ValueGetter(object):
         self.F_INDEX_ERROR = False
         self.F_ARRAY_NO_DOC = False
 
-    def get(self, fieldwalker):
+    def run(self, fieldwalker):
         self.logger = fieldwalker.log
         field_levels = self.logger.field_levels
         doc = fieldwalker.doc
@@ -116,7 +130,7 @@ class ValueGetter(object):
             else:
                 self.logger.exists = True
         # End of walk
-        self.commit(fieldwalker, doc)
+        self.report(fieldwalker, doc)
 
     def error_handler(self, err_cls):
         """Internal method"""
@@ -126,7 +140,7 @@ class ValueGetter(object):
             if self.F_BEEN_IN_ARRAY and not self.F_MISSING_IN_ARRAY:
                 self.F_ARRAY_NO_DOC = True
 
-    def commit(self, fieldwalker, doc):
+    def report(self, fieldwalker, doc):
         """Internal method"""
         value = fieldwalker.value
         if not self.field_is_digit and _is_array_type(doc):
@@ -238,54 +252,42 @@ def get_matched_index(fieldwalker):
         return times - 1
 
 
-class ValueSetter(object):
+class FieldSetter(object):
 
     def __init__(self):
-        self.value = None
-        self.modifier = None
-        self.log = None
-        self.doc_type = None
+        pass
 
-    def set(self, fieldwalker, value, operator=None, array_filter=None):
+    def run(self, fieldwalker, value, operator=None, array_filter=None):
         self.value = value
-        self.modifier = operator or (lambda _, val: val)
+        self.modifier = operator or (lambda o, val, f: val)
         self.array_filter = array_filter
         self.log = fieldwalker.log
         self.doc_type = fieldwalker.doc_type
 
         doc = fieldwalker.doc
         fields = deque(self.log.field_levels[:])
-        positioner = identifier = pre_field = None
+        pre_field = None
 
         while fields:
             field = fields.popleft()
-            is_list = isinstance(doc, list)
-            if field == "$":
-                positioner = self.walk_aray_positional
-            elif field[:2] == "$[":
-                identifier = field[2:-1]  # $[identifier]
-                self.check_filter_exists(identifier)
-                positioner = self.walk_array_filtered
-            else:
-                field_is_digit = field.isdigit()
+            field_is_digit, is_list, transaction_positioner, identifier = (
+                self.eval_status(doc, field, pre_field))
 
-            if positioner is not None:
-                field_is_digit = False
-                self.check_array_status(field, is_list, pre_field, doc)
-
-            if is_list and (field_is_digit or positioner):
+            if is_list and (field_is_digit or transaction_positioner):
                 if field_is_digit:
                     index = int(field)
                     if len(fields):
-                        doc = self.extend_array(doc, index, self.doc_type())
-                        doc = doc[index]
+                        doc = self.extend_array(
+                            doc, index, self.doc_type())[index]
                     else:
                         doc = self.extend_array(doc, index, None)
-                        return self.setval(doc, index, doc[index])
+                        self.transact(doc, index)
+                        return
 
-                elif positioner:
+                elif transaction_positioner:
                     path = ".".join(fields)
-                    return positioner(doc, path, pre_field, identifier)
+                    transaction_positioner(doc, path, pre_field, identifier)
+                    return
 
             elif isinstance(doc, self.doc_type):
                 if field == "$":
@@ -296,44 +298,83 @@ class ValueSetter(object):
                         doc[field] = self.doc_type()
                     doc = doc[field]
                 else:
-                    return self.setval(doc, field, doc.get(field))
+                    self.transact(doc, field)
+                    return
 
             else:
-                element = {pre_field: doc}
-                msg = ("Cannot create field {0!r} in element "
-                       "{1}".format(field, element))
-                raise FieldSetValueError(msg, code=28)
+                self.transaction_failed(doc, field, pre_field)
 
             pre_field = field
             self.log.itered_path.append(field)
 
-    def setval(self, doc, field_or_index, old_val):
-        new_val = self.modifier(old_val, self.value)
-        path = ".".join(self.log.itered_path + [str(field_or_index)])
-        self.log.itered_path = []
-        if old_val != new_val:
-            if field_or_index == "_id":
-                msg = ("Performing an update on the path '_id' would modify "
-                       "the immutable field '_id'")
-                raise FieldSetValueError(msg, code=66)
+    def transact(self, doc, key):
+        self.check_transaction_conflict(key)
 
-            if path in self.log.modified_path:
-                msg = "Update created a conflict at {0!r}".format(path)
-                raise FieldSetValueError(msg, code=40)
+        def transaction(k=key, v=self.value):
+            try:
+                """`doc` could be either list or dict(or other mapping type).
+                list `doc` should have content enough element, but dict `doc`
+                cannot be sure that the key exists."""
+                old = doc[k]
+            except KeyError:
+                old = None
+            new = self.modifier(old, v, str(k))
+            if old != new:
+                doc[k] = new
+                return True
+            return False
+        self.log.transaction_queue.append(transaction)
 
-            self.log.modified_path.append(path)
-            doc[field_or_index] = new_val
-            return True
-        return False
+    def transaction_failed(self, doc, field, pre_field):
+        msg = ("Cannot create field {0!r} in element "
+               "{1}".format(field, {pre_field: doc}))
+        raise FieldWriteError(msg, code=28)
+
+    def eval_status(self, doc, field, pre_field):
+        transaction_positioner = identifier = None
+        is_list = isinstance(doc, list)
+        if field == "$":
+            transaction_positioner = self.walk_aray_positional
+        elif field[:2] == "$[":
+            identifier = field[2:-1]  # $[identifier]
+            self.check_filter_exists(identifier)
+            transaction_positioner = self.walk_array_filtered
+        else:
+            field_is_digit = field.isdigit()
+
+        if transaction_positioner is not None:
+            field_is_digit = False
+            self.check_array_status(field, is_list, pre_field, doc)
+
+        return field_is_digit, is_list, transaction_positioner, identifier
+
+    def check_transaction_conflict(self, key):
+        """Internal method"""
+        if key == "_id":
+            msg = ("Performing an update on the path '_id' would modify "
+                   "the immutable field '_id'")
+            raise FieldWriteError(msg, code=66)
+
+        logger = self.log
+        path = ".".join(logger.itered_path + [str(key)])
+
+        if path in self.log.modified_path:
+            msg = "Update created a conflict at {0!r}".format(path)
+            raise FieldWriteError(msg, code=40)
+
+        logger.itered_path = []
+        logger.modified_path.append(path)
 
     def check_dollar_prefixed_field(self, field):
+        """Internal method"""
         if field[:1] == "$":
             full_path = ".".join(self.log.field_levels)
             msg = ("The dollar ($) prefixed field {0!r} in {1!r} is not "
                    "valid for storage.".format(field, full_path))
-            raise FieldSetValueError(msg, code=52)
+            raise FieldWriteError(msg, code=52)
 
     def extend_array(self, doc, index, end_element):
+        """Internal method"""
         length = len(doc)
         if index >= length:
             fill_none = [None for _ in range(index - length)]
@@ -341,62 +382,106 @@ class ValueSetter(object):
         return doc
 
     def check_filter_exists(self, identifier):
+        """Internal method"""
         if identifier and identifier not in self.array_filter:
             full_path = ".".join(self.log.field_levels)
             msg = ("No array filter found for identifier {0!r} "
                    "in path {1!r}".format(identifier, full_path))
-            raise FieldSetValueError(msg, code=2)
+            raise FieldWriteError(msg, code=2)
 
     def check_array_status(self, field, is_list, pre_field, doc):
+        """Internal method"""
         if field != "$" and not is_list:
             if doc:
                 msg = ("Cannot apply array updates to non-array "
                        "element {0}: {1}".format(pre_field or 0, doc))
-                raise FieldSetValueError(msg, code=2)
+                raise FieldWriteError(msg, code=2)
             else:
                 path = ".".join(self.log.itered_path)
                 msg = ("The path {0!r} must exist in the document in "
                        "order to apply array updates.".format(path))
-                raise FieldSetValueError(msg, code=2)
+                raise FieldWriteError(msg, code=2)
 
-    def array_setter(self, doc, index, path):
+    def make_array_fieldwalker(self, doc, index, path):
         fieldwalker = FieldWalker(doc, self.doc_type)
         self.log.itered_path.append(str(index))
         fieldwalker.log = self.log.copy()
         self.log.itered_path = []
-        fieldwalker.go(path)
-        return fieldwalker.set(self.value, self.modifier, self.array_filter)
+        return fieldwalker.go(path)
+
+    def array_setter(self, fieldwalker):
+        """Internal method"""
+        fieldwalker.set(self.value, self.modifier, self.array_filter)
 
     def walk_aray_positional(self, doc, path, *args):
+        """Internal method"""
         index = self.find_matched_index()
         if path:
-            return self.array_setter(doc[index], index, path)
+            fieldwalker = self.make_array_fieldwalker(doc[index], index, path)
+            self.array_setter(fieldwalker)
         else:
             doc = self.extend_array(doc, index, None)
-            return self.setval(doc, index, doc[index])
+            self.transact(doc, index)
 
     def walk_array_filtered(self, doc, path, pre_field, identifier):
-        results = []
+        """Internal method"""
         if identifier:
             queryfilter = self.array_filter[identifier](pre_field)
         else:
             queryfilter = (lambda _: True)
+
         for i, d in enumerate(doc):
             if queryfilter({pre_field: d}):
                 if path:
-                    r = self.array_setter(d, i, path)
+                    fieldwalker = self.make_array_fieldwalker(d, i, path)
+                    self.array_setter(fieldwalker)
                 else:
-                    r = self.setval(doc, i, d)
-                results.append(r)
-        return any(results)
+                    self.transact(doc, i)
 
     def find_matched_index(self):
+        """Internal method"""
         root = self.log.path_root
         if root is None:
             msg = ("The positional operator did not find the match needed "
                    "from the query.")
-            raise FieldSetValueError(msg, code=2)
+            raise FieldWriteError(msg, code=2)
         return self.log.matched_index(root)
+
+
+class FieldDropper(FieldSetter):
+
+    def run(self, fieldwalker, array_filter=None):
+        super(FieldDropper, self).run(
+            fieldwalker, None, None, array_filter)
+
+    def transact(self, doc, key):
+        self.check_transaction_conflict(key)
+
+        if isinstance(doc, self.doc_type):
+            cond = (lambda d, k: k in d)
+            drop = (lambda d, k: d.pop(k))
+        else:
+            cond = (lambda d, k: len(d) > k)
+            drop = (lambda d, k: d.__setitem__(k, None))
+
+        def transaction(k=key, cond=cond, drop=drop):
+            if cond(doc, k):
+                drop(doc, k)
+                return True
+            return False
+        self.log.transaction_queue.append(transaction)
+
+    def transaction_failed(self, *args):
+        """Internal method"""
+        return False
+
+    def extend_array(self, doc, *args):
+        """Internal method"""
+        return doc
+
+    def array_setter(self, fieldwalker):
+        """Internal method"""
+        fieldwalker.drop(self.array_filter)
 
 
 class FieldWalker(object):
@@ -414,9 +499,8 @@ class FieldWalker(object):
         """
         self.doc = doc
         self.doc_type = doc_type or type(doc)
-        self.log = LoggerMixin()
+        self.log = BaseLogger()
         self.value = FieldValues()
-        self.log.matched_indexes = {}
 
     def go(self, path):
         self.log.field_levels = tuple(path.split("."))
@@ -426,12 +510,22 @@ class FieldWalker(object):
         """Walk through document and acquire value with given key-path
         """
         self.log = GetterLogger(self)
-        ValueGetter().get(self)
+        FieldGetter().run(self)
         return self
 
     def set(self, value, by_func=None, pick_with=None):
         self.log = SetterLogger(self)
-        return ValueSetter().set(self, value, by_func, pick_with)
+        FieldSetter().run(self, value, by_func, pick_with)
+
+    def drop(self, pick_with=None):
+        self.log = DropperLogger(self)
+        FieldDropper().run(self, pick_with)
+
+    def commit(self):
+        result = []
+        for transaction in self.log.transaction_queue:
+            result.append(transaction())
+        return any(result)
 
     def __enter__(self):
         return self
@@ -441,6 +535,8 @@ class FieldWalker(object):
         if isinstance(logger, GetterLogger):
             root = logger.field_levels[0]
             logger.matched_indexes[root] = get_matched_index(self)
+        else:
+            self.commit()
 
 
 class FieldValues(object):

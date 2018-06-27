@@ -5,7 +5,7 @@ from bson.py3compat import string_type
 from bson.decimal128 import Decimal128
 
 from ..errors import WriteError
-from .core import FieldSetValueError, Weighted
+from .core import FieldWriteError, Weighted
 from .queries import QueryFilter
 from .helpers import is_numeric_type
 
@@ -24,7 +24,7 @@ class Updator(object):
             "$rename": None,
             "$set": parse_set,
             "$setOnInsert": None,
-            "$unset": None,
+            "$unset": parse_unset,
             "$currentDate": None,
 
         }
@@ -41,10 +41,9 @@ class Updator(object):
             return None
 
         self.__fieldwalker = fieldwalker
-        results = []
         for operator in self.operations.values():
-            results.append(operator(fieldwalker))
-        return any(results)
+            operator(fieldwalker)
+        return fieldwalker.commit()
 
     @property
     def fieldwalker(self):
@@ -121,14 +120,13 @@ def parse_inc(field, value, array_filters):
 
     def _inc(fieldwalker):
 
-        def inc(old_val, inc_val):
+        def inc(old_val, inc_val, field):
             if old_val is not None and not is_numeric_type(old_val):
                 _id = fieldwalker.doc["_id"]
                 value_type = type(old_val).__name__
-                field_name = field.split(".")[-1]
                 msg = ("Cannot apply $inc to a value of non-numeric type. "
                        "{{_id: {0}}} has the field {1!r} of non-numeric type "
-                       "{2}".format(_id, field_name, value_type))
+                       "{2}".format(_id, field, value_type))
                 raise WriteError(msg, code=14)
 
             is_decimal128 = False
@@ -146,7 +144,7 @@ def parse_inc(field, value, array_filters):
 
         try:
             return fieldwalker.go(field).set(value, inc, array_filters)
-        except FieldSetValueError as err:
+        except FieldWriteError as err:
             msg = err.message if hasattr(err, 'message') else str(err)
             raise WriteError(msg, code=err.code)
 
@@ -155,14 +153,14 @@ def parse_inc(field, value, array_filters):
 
 def parse_min(field, value, array_filters):
     def _min(fieldwalker):
-        def min(old_val, min_val):
+        def min(old_val, min_val, field):
             old_val = Weighted(old_val)
             min_val = Weighted(min_val)
             return min_val.value if min_val < old_val else old_val.value
 
         try:
             return fieldwalker.go(field).set(value, min, array_filters)
-        except FieldSetValueError as err:
+        except FieldWriteError as err:
             msg = err.message if hasattr(err, 'message') else str(err)
             raise WriteError(msg, code=err.code)
 
@@ -171,14 +169,14 @@ def parse_min(field, value, array_filters):
 
 def parse_max(field, value, array_filters):
     def _max(fieldwalker):
-        def max(old_val, max_val):
+        def max(old_val, max_val, field):
             old_val = Weighted(old_val)
             max_val = Weighted(max_val)
             return max_val.value if max_val > old_val else old_val.value
 
         try:
             return fieldwalker.go(field).set(value, max, array_filters)
-        except FieldSetValueError as err:
+        except FieldWriteError as err:
             msg = err.message if hasattr(err, 'message') else str(err)
             raise WriteError(msg, code=err.code)
 
@@ -194,14 +192,13 @@ def parse_mul(field, value, array_filters):
         raise WriteError(msg, code=14)
 
     def _mul(fieldwalker):
-        def mul(old_val, mul_val):
+        def mul(old_val, mul_val, field):
             if old_val is not None and not is_numeric_type(old_val):
                 _id = fieldwalker.doc["_id"]
                 value_type = type(old_val).__name__
-                field_name = field.split(".")[-1]
                 msg = ("Cannot apply $mul to a value of non-numeric type. "
                        "{{_id: {0}}} has the field {1!r} of non-numeric type "
-                       "{2}".format(_id, field_name, value_type))
+                       "{2}".format(_id, field, value_type))
                 raise WriteError(msg, code=14)
 
             is_decimal128 = False
@@ -219,7 +216,7 @@ def parse_mul(field, value, array_filters):
 
         try:
             return fieldwalker.go(field).set(value, mul, array_filters)
-        except FieldSetValueError as err:
+        except FieldWriteError as err:
             msg = err.message if hasattr(err, 'message') else str(err)
             raise WriteError(msg, code=err.code)
 
@@ -237,7 +234,7 @@ def parse_set(field, value, array_filters):
     def _set(fieldwalker):
         try:
             return fieldwalker.go(field).set(value, None, array_filters)
-        except FieldSetValueError as err:
+        except FieldWriteError as err:
             msg = err.message if hasattr(err, 'message') else str(err)
             raise WriteError(msg, code=err.code)
 
@@ -251,9 +248,13 @@ def parse_setOnInsert(field, value):
     return _setOnInsert
 
 
-def parse_unset(field, value):
+def parse_unset(field, value, array_filters):
     def _unset(fieldwalker):
-        raise NotImplementedError
+        try:
+            return fieldwalker.go(field).drop(array_filters)
+        except FieldWriteError as err:
+            msg = err.message if hasattr(err, 'message') else str(err)
+            raise WriteError(msg, code=err.code)
 
     return _unset
 
