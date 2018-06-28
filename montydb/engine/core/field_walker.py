@@ -22,6 +22,7 @@ class BaseLogger(object):
         "field_levels",
         "matched_indexes",
         "path_root",
+        "transaction_queue",
     )
 
     def __init__(self):
@@ -34,17 +35,15 @@ class BaseLogger(object):
 
 class GetterLogger(BaseLogger):
     __slots__ = (
-        "exists",
-        "null_or_missing",
         "elem_iter_map",
     )
 
     def __init__(self, fieldwalker):
-        self.field_levels = fieldwalker.log.field_levels
-        self.matched_indexes = fieldwalker.log.matched_indexes
+        log_ = fieldwalker.log
+        self.field_levels = log_.field_levels
+        self.matched_indexes = log_.matched_indexes
+        self.transaction_queue = getattr(log_, "transaction_queue", [])
         self.path_root = self.field_levels[0]
-        self.exists = None
-        self.null_or_missing = None
         self.elem_iter_map = []
 
 
@@ -52,7 +51,6 @@ class SetterLogger(BaseLogger):
     __slots__ = (
         "itered_path",
         "modified_path",
-        "transaction_queue",
     )
 
     def __init__(self, fieldwalker=None):
@@ -76,11 +74,7 @@ class SetterLogger(BaseLogger):
 
 
 class DropperLogger(SetterLogger):
-    __slots__ = (
-        "itered_path",
-        "modified_path",
-        "transaction_queue",
-    )
+    __slots__ = ()
 
 
 class FieldGetter(object):
@@ -108,7 +102,7 @@ class FieldGetter(object):
 
             if _is_array_type(doc):
                 if len(doc) == 0:
-                    self.logger.exists = False
+                    fieldwalker.value.exists = False
                     break
 
                 self.field_is_digit = field.isdigit()
@@ -123,12 +117,12 @@ class FieldGetter(object):
                 doc = doc[key]
             except (KeyError, IndexError, TypeError) as err:
                 doc = None
-                self.logger.exists = False
+                fieldwalker.value.exists = False
                 fieldwalker.value = FieldValues()
                 self.error_handler(err.__class__)
                 break
             else:
-                self.logger.exists = True
+                fieldwalker.value.exists = True
         # End of walk
         self.report(fieldwalker, doc)
 
@@ -151,11 +145,11 @@ class FieldGetter(object):
             self.F_MISSING_IN_ARRAY = False
 
         if self.F_MISSING_IN_ARRAY:
-            fieldwalker.log.null_or_missing = True
+            value.null_or_missing = True
         elif self.F_INDEX_ERROR or self.F_ARRAY_NO_DOC:
-            fieldwalker.log.null_or_missing = False
+            value.null_or_missing = False
         elif None in value:
-            fieldwalker.log.null_or_missing = True
+            value.null_or_missing = True
 
     def preview_array(self, doc, doc_type):
         """Internal method"""
@@ -183,7 +177,7 @@ class FieldGetter(object):
 
         for i, emb_fw in self.element_walkers:
             emb_fw.go(field).get()
-            if emb_fw.log.exists:
+            if emb_fw.value.exists:
                 len_ = len(emb_fw.value.elements)
                 is_list = bool(emb_fw.value.arrays)
                 self.logger.elem_iter_map.append((i, len_, is_list))
@@ -543,6 +537,8 @@ class FieldValues(object):
     __slots__ = (
         "elements",
         "arrays",
+        "exists",
+        "null_or_missing",
         "_iter_queue",
         "_iter_times",
     )
@@ -552,6 +548,8 @@ class FieldValues(object):
         self.arrays = []
         self._iter_queue = None
         self._iter_times = 1
+        self.exists = False
+        self.null_or_missing = False
 
     def _merged(self):
         return self.elements + self.arrays

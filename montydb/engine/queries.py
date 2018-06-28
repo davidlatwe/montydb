@@ -58,7 +58,7 @@ def ordering(fieldwalkers, order):
                     # or largest member
                     value = max(value) if is_reverse else min(value)
 
-            elif not fieldwalker.log.exists:
+            elif not fieldwalker.value.exists:
                 value = Weighted(None)
 
             else:
@@ -517,7 +517,7 @@ def _eq_match(fieldwalker, query):
                     return True
     else:
         if query is None:
-            return fieldwalker.log.null_or_missing
+            return fieldwalker.value.null_or_missing
 
         if isinstance(query, Decimal128):
             query = _cmp_decimal(query)
@@ -755,7 +755,7 @@ Field-level Query Operators
 def parse_exists(query):
     @keep(query)
     def _exists(fieldwalker):
-        return fieldwalker.log.exists == bool(query)
+        return fieldwalker.value.exists == bool(query)
 
     return _exists
 
@@ -871,7 +871,7 @@ def parse_type(query):
 
     @keep(query)
     def _type(fieldwalker):
-        if fieldwalker.log.exists:
+        if fieldwalker.value.exists:
             bids = get_bson_type_id_set(fieldwalker.value)
             return bids.intersection(query)
 

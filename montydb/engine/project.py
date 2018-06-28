@@ -201,7 +201,7 @@ class Projector(object):
 
             if "." in field_path:
                 fore_path, key = field_path.rsplit(".", 1)
-                if fieldwalker.go(fore_path).get().log.exists:
+                if fieldwalker.go(fore_path).get().value.exists:
                     for emb_doc in fieldwalker.value:
                         if key not in emb_doc:
                             continue
@@ -274,7 +274,7 @@ class Projector(object):
         return _positional
 
     def drop_doc(self, fieldwalker, key):
-        if fieldwalker.log.exists:
+        if fieldwalker.value.exists:
             for emb_doc in fieldwalker.value:
                 if key in emb_doc:
                     del emb_doc[key]
