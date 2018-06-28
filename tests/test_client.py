@@ -58,10 +58,8 @@ def test_client_database_names(monty_client, mongo_client):
 
     monty_db_names = monty_client.database_names()
     mongo_db_names = mongo_client.database_names()
-    mongo_db_names.remove("admin")
-    if "config" in mongo_db_names:
-        mongo_db_names.remove("config")
-    assert monty_db_names == mongo_db_names
+    for mtdb in monty_db_names:
+        assert mtdb in mongo_db_names
 
 
 def test_client_drop_database(monty_client):

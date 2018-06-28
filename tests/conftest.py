@@ -32,14 +32,6 @@ def tmp_monty_repo():
     return tmp_dir
 
 
-def purge_all_db(client):
-    for db in client.database_names():
-        if (db in ["admin", "config"] and
-                isinstance(client, pymongo.MongoClient)):
-            continue
-        client.drop_database(db)
-
-
 @pytest.fixture(scope="session")
 def monty_client(storage, tmp_monty_repo):
     if os.path.isdir(tmp_monty_repo):
@@ -57,15 +49,22 @@ def monty_client(storage, tmp_monty_repo):
         pytest.fail("Unknown storage engine: {!r}".format(storage), False)
 
     client = montydb.MontyClient(tmp_monty_repo)
-    purge_all_db(client)
+    # purge_all_db
+    for db in client.database_names():
+        client.drop_database(db)
     return client
 
 
 @pytest.fixture(scope="session")
 def mongo_client():
     client = pymongo.MongoClient("mongodb://localhost:27017")
-    purge_all_db(client)
-    return client
+    existed_dbs = client.database_names()
+    yield client
+    # db cleanup
+    for db in client.database_names():
+        if db in existed_dbs:
+            continue
+        client.drop_database(db)
 
 
 @pytest.fixture(scope="session")
