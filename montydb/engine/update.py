@@ -38,9 +38,7 @@ class Updator(object):
         pass
 
     def __call__(self, fieldwalker):
-        if fieldwalker is None:
-            return None
-
+        """Update document and return a bool value indicate changed or not"""
         self.__fieldwalker = fieldwalker
         for operator in self.operations.values():
             operator(fieldwalker)
