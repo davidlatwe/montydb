@@ -20,39 +20,6 @@ from .results import (BulkWriteResult,
                       UpdateResult)
 
 
-def _internal_scan_query(query_spec, collection):
-    queryfilter = QueryFilter(query_spec)
-    storage = collection.database.client._storage
-    documents = storage.query(MontyCursor(collection), 0)
-
-    first_matched = None
-    for doc in documents:
-        if queryfilter(doc):
-            first_matched = queryfilter.fieldwalker
-            break
-
-    if first_matched:
-        yield first_matched  # for testing empty
-        yield first_matched  # yield again
-        # continue iter documents(generator)
-        for doc in documents:
-            if queryfilter(doc):
-                yield queryfilter.fieldwalker
-
-
-def _remove_dollar_key(doc, doc_type):
-    if isinstance(doc, doc_type):
-        new_doc = doc_type()
-        fields = list(doc.keys())
-        for field in fields:
-            if field[:1] == "$" or "." in field:
-                continue
-            new_doc[field] = _remove_dollar_key(doc[field], doc_type)
-        return new_doc
-    else:
-        return doc
-
-
 class MontyCollection(BaseObject):
 
     def __init__(self, database, name, create=False,
@@ -159,7 +126,39 @@ class MontyCollection(BaseObject):
 
         raise NotImplementedError("Not implemented.")
 
+    def _internal_scan_query(self, query_spec):
+        """An interanl document generator for update"""
+        queryfilter = QueryFilter(query_spec)
+        storage = self.database.client._storage
+        documents = storage.query(MontyCursor(self), 0)
+        first_matched = None
+        for doc in documents:
+            if queryfilter(doc):
+                first_matched = queryfilter.fieldwalker
+                break
+
+        if first_matched:
+            yield first_matched  # for try statement to test update or insert
+            yield first_matched  # start update, yield again
+            # continue iter documents(generator)
+            for doc in documents:
+                if queryfilter(doc):
+                    yield queryfilter.fieldwalker
+
     def _internal_upsert(self, query_spec, updator, raw_result):
+        """Internal document upsert"""
+        def _remove_dollar_key(doc, doc_type):
+            if isinstance(doc, doc_type):
+                new_doc = doc_type()
+                fields = list(doc.keys())
+                for field in fields:
+                    if field[:1] == "$" or "." in field:
+                        continue
+                    new_doc[field] = _remove_dollar_key(doc[field], doc_type)
+                return new_doc
+            else:
+                return doc
+
         document = _remove_dollar_key(deepcopy(query_spec), type(query_spec))
         if "_id" not in document:
             document["_id"] = ObjectId()
@@ -187,7 +186,7 @@ class MontyCollection(BaseObject):
         raw_result = {"n": 0, "nModified": 0}
         updator = Updator(update, array_filters)
         try:
-            fw = next(_internal_scan_query(filter, self))
+            fw = next(self._internal_scan_query(filter))
         except StopIteration:
             if upsert:
                 self._internal_upsert(filter, updator, raw_result)
@@ -216,7 +215,7 @@ class MontyCollection(BaseObject):
 
         raw_result = {"n": 0, "nModified": 0}
         updator = Updator(update, array_filters)
-        scanner = _internal_scan_query(filter, self)
+        scanner = self._internal_scan_query(filter)
         try:
             next(scanner)
         except StopIteration:
