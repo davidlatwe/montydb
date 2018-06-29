@@ -360,3 +360,33 @@ def test_update_with_bad_spec(monty_update, mongo_update):
         monty_update(docs, spec)
 
     assert mongo_err.value.code == monty_err.value.code
+
+
+def test_update_rename_conflict_1(monty_update, mongo_update):
+    docs = [
+        {"a": {"b": "some"}, "c": {"d": []}}
+    ]
+    spec = {"$set": {"c.d": {}}, "$rename": {"a.b": "c.d.b"}}
+
+    with pytest.raises(mongo_write_err) as mongo_err:
+        mongo_update(docs, spec)
+
+    with pytest.raises(monty_write_err) as monty_err:
+        monty_update(docs, spec)
+
+    assert mongo_err.value.code == monty_err.value.code
+
+
+def test_update_rename_conflict_2(monty_update, mongo_update):
+    docs = [
+        {"a": {"b": "some"}, "d": {"e": 5}}
+    ]
+    spec = {"$rename": {"a.b": "c.b.f", "d.e": "c.b"}}
+
+    with pytest.raises(mongo_write_err) as mongo_err:
+        mongo_update(docs, spec)
+
+    with pytest.raises(monty_write_err) as monty_err:
+        monty_update(docs, spec)
+
+    assert mongo_err.value.code == monty_err.value.code

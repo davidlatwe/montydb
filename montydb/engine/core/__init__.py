@@ -2,6 +2,7 @@
 from .field_walker import (
     FieldWalker,
     FieldWriteError,
+    SimpleGetter,
 )
 
 from .weighted import (
@@ -16,6 +17,7 @@ from .weighted import (
 __all__ = [
     "FieldWalker",
     "FieldWriteError",
+    "SimpleGetter",
 
     "Weighted",
     "gravity",

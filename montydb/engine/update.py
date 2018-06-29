@@ -5,7 +5,7 @@ from bson.py3compat import string_type
 from bson.decimal128 import Decimal128
 
 from ..errors import WriteError
-from .core import FieldWriteError, Weighted
+from .core import FieldWriteError, Weighted, SimpleGetter
 from .queries import QueryFilter
 from .helpers import is_numeric_type
 
@@ -21,7 +21,7 @@ class Updator(object):
             "$min": parse_min,
             "$max": parse_max,
             "$mul": parse_mul,
-            "$rename": None,
+            "$rename": parse_rename,
             "$set": parse_set,
             "$setOnInsert": None,
             "$unset": parse_unset,
@@ -29,6 +29,7 @@ class Updator(object):
 
         }
 
+        self.fields_to_update = []
         self.array_filters = self.array_filter_parser(array_filters or [])
         self.operations = OrderedDict(sorted(self.parser(spec).items()))
         self.__fieldwalker = None
@@ -80,7 +81,7 @@ class Updator(object):
         if not next(iter(spec)).startswith("$"):
             raise ValueError("update only works with $ operators")
 
-        field_to_update = {}
+        update_stack = {}
         idnt_tops = list(self.array_filters.keys())
         for op, cmd_doc in spec.items():
             if op not in self.update_ops:
@@ -95,19 +96,29 @@ class Updator(object):
                     if "$[{}]".format(top) in field:
                         idnt_tops.remove(top)
                         break
-                if field in field_to_update:
-                    msg = ("Updating the path {0!r} would create a "
-                           "conflict at {0!r}".format(field))
-                    raise WriteError(msg, code=40)
-                field_to_update[field] = self.update_ops[op](
+
+                update_stack[field] = self.update_ops[op](
                     field, value, self.array_filters)
+
+                self.check_conflict(field)
+                if op == "$rename":
+                    self.check_conflict(value)
 
         if idnt_tops:
             msg = ("The array filter for identifier {0!r} was not "
                    "used in the update {1}".format(idnt_tops[0], spec))
             raise WriteError(msg, code=9)
 
-        return field_to_update
+        return update_stack
+
+    def check_conflict(self, field):
+        for staged in self.fields_to_update:
+            if field.startswith(staged) or staged.startswith(field):
+                msg = ("Updating the path {0!r} would create a "
+                       "conflict at {1!r}".format(field, staged[:len(field)]))
+                raise WriteError(msg, code=40)
+
+        self.fields_to_update.append(field)
 
 
 def parse_inc(field, value, array_filters):
@@ -143,7 +154,7 @@ def parse_inc(field, value, array_filters):
                 return (old_val or 0) + inc_val
 
         try:
-            return fieldwalker.go(field).set(value, inc, array_filters)
+            fieldwalker.go(field).set(value, inc, array_filters)
         except FieldWriteError as err:
             msg = err.message if hasattr(err, 'message') else str(err)
             raise WriteError(msg, code=err.code)
@@ -159,7 +170,7 @@ def parse_min(field, value, array_filters):
             return min_val.value if min_val < old_val else old_val.value
 
         try:
-            return fieldwalker.go(field).set(value, min, array_filters)
+            fieldwalker.go(field).set(value, min, array_filters)
         except FieldWriteError as err:
             msg = err.message if hasattr(err, 'message') else str(err)
             raise WriteError(msg, code=err.code)
@@ -175,7 +186,7 @@ def parse_max(field, value, array_filters):
             return max_val.value if max_val > old_val else old_val.value
 
         try:
-            return fieldwalker.go(field).set(value, max, array_filters)
+            fieldwalker.go(field).set(value, max, array_filters)
         except FieldWriteError as err:
             msg = err.message if hasattr(err, 'message') else str(err)
             raise WriteError(msg, code=err.code)
@@ -215,7 +226,7 @@ def parse_mul(field, value, array_filters):
                 return (old_val or 0.0) * mul_val
 
         try:
-            return fieldwalker.go(field).set(value, mul, array_filters)
+            fieldwalker.go(field).set(value, mul, array_filters)
         except FieldWriteError as err:
             msg = err.message if hasattr(err, 'message') else str(err)
             raise WriteError(msg, code=err.code)
@@ -223,9 +234,51 @@ def parse_mul(field, value, array_filters):
     return _mul
 
 
-def parse_rename(field, value):
+def parse_rename(field, new_field, array_filters):
+    if not isinstance(new_field, string_type):
+        msg = ("The 'to' field for $rename must be a string: {0}: {1}"
+               "".format(field, new_field))
+        raise WriteError(msg, code=2)
+
+    if field == new_field:
+        msg = ("The source and target field for $rename must differ: "
+               "{0}: {1!r}".format(field, new_field))
+        raise WriteError(msg, code=2)
+
+    if field.startswith(new_field) or new_field.startswith(field):
+        msg = ("The source and target field for $rename must not be on the "
+               "same path: {0}: {1!r}".format(field, new_field))
+        raise WriteError(msg, code=2)
+
     def _rename(fieldwalker):
-        raise NotImplementedError
+        getter = SimpleGetter()  # internal getter
+
+        getter.run(fieldwalker, field)
+        if getter.exists:
+            value = getter.value
+        elif getter.array_field:
+            _id = fieldwalker.doc["_id"]
+            msg = ("The source field cannot be an array element, "
+                   "{0!r} in doc with _id: {1} has an array field "
+                   "called {2!r}".format(field, _id, getter.array_field))
+            raise WriteError(msg, code=2)
+        else:
+            return False
+
+        getter.run(fieldwalker, new_field)
+        if getter.array_field:
+            _id = fieldwalker.doc["_id"]
+            msg = ("The destination field cannot be an array element, "
+                   "{0!r} in doc with _id: {1} has an array field "
+                   "called {2!r}".format(new_field, _id, getter.array_field))
+            raise WriteError(msg, code=2)
+
+        try:
+            fieldwalker.go(field).drop()
+            fieldwalker.go(new_field).set(value)
+        except FieldWriteError as err:
+            msg = err.message if hasattr(err, 'message') else str(err)
+            raise WriteError(msg, code=err.code)
 
     return _rename
 
@@ -233,7 +286,7 @@ def parse_rename(field, value):
 def parse_set(field, value, array_filters):
     def _set(fieldwalker):
         try:
-            return fieldwalker.go(field).set(value, None, array_filters)
+            fieldwalker.go(field).set(value, pick_with=array_filters)
         except FieldWriteError as err:
             msg = err.message if hasattr(err, 'message') else str(err)
             raise WriteError(msg, code=err.code)
@@ -251,7 +304,7 @@ def parse_setOnInsert(field, value):
 def parse_unset(field, value, array_filters):
     def _unset(fieldwalker):
         try:
-            return fieldwalker.go(field).drop(array_filters)
+            fieldwalker.go(field).drop(array_filters)
         except FieldWriteError as err:
             msg = err.message if hasattr(err, 'message') else str(err)
             raise WriteError(msg, code=err.code)

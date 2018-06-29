@@ -77,6 +77,32 @@ class DropperLogger(SetterLogger):
     __slots__ = ()
 
 
+class SimpleGetter(object):
+    """Internal class"""
+
+    def run(self, fieldwalker, field):
+        self.exists = False
+        self.value = None
+        self.array_field = None
+
+        doc = fieldwalker.doc
+        pre_key = None
+        for key in field.split("."):
+            try:
+                doc = doc[key]
+            except (KeyError, TypeError):
+                self.exists = False
+                if isinstance(doc, list):
+                    self.array_field = pre_key
+                doc = None
+                break
+            else:
+                self.exists = True
+                pre_key = key
+
+        self.value = doc
+
+
 class FieldGetter(object):
     """Internal class"""
 
