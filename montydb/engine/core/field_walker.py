@@ -283,6 +283,8 @@ class FieldSetter(object):
         self.array_filter = array_filter
         self.log = fieldwalker.log
         self.doc_type = fieldwalker.doc_type
+        self.new_doc = None
+        self.new_doc_entry = None
 
         doc = fieldwalker.doc
         fields = deque(self.log.field_levels[:])
@@ -297,10 +299,10 @@ class FieldSetter(object):
                 if field_is_digit:
                     index = int(field)
                     if len(fields):
-                        doc = self.extend_array(
+                        doc = self.open_array(
                             doc, index, self.doc_type())[index]
                     else:
-                        doc = self.extend_array(doc, index, None)
+                        doc = self.open_array(doc, index, None)
                         self.transact(doc, index)
                         return
 
@@ -314,9 +316,7 @@ class FieldSetter(object):
                     field = str(self.find_matched_index())
                 self.check_dollar_prefixed_field(field)
                 if len(fields):
-                    if field not in doc:
-                        doc[field] = self.doc_type()
-                    doc = doc[field]
+                    doc = self.open_field(doc, field)
                 else:
                     self.transact(doc, field)
                     return
@@ -326,6 +326,30 @@ class FieldSetter(object):
 
             pre_field = field
             self.log.itered_path.append(field)
+
+    def open_field(self, doc, field):
+        if field not in doc:
+            if self.new_doc is None:
+                # prevent any change before commit
+                self.new_doc_entry = doc
+                doc = self.new_doc = {field: self.doc_type()}
+            else:
+                doc[field] = self.doc_type()
+        return doc[field]
+
+    def open_array(self, doc, index, end_element):
+        """Internal method"""
+        length = len(doc)
+        if index >= length:
+            fill_none = [None for _ in range(index - length)]
+            if self.new_doc is None:
+                # prevent any change before commit
+                self.new_doc_entry = doc
+                doc = self.new_doc = doc[:] + fill_none + [end_element]
+            else:
+                # (TODO) this seems won't happen
+                doc += fill_none + [end_element]
+        return doc
 
     def transact(self, doc, key):
         self.check_transaction_conflict(key)
@@ -341,6 +365,12 @@ class FieldSetter(object):
             new = self.modifier(old, v, str(k))
             if old != new:
                 doc[k] = new
+                if self.new_doc_entry is not None:
+                    # write back to original doc
+                    if isinstance(self.new_doc_entry, list):
+                        self.new_doc_entry[:] = self.new_doc
+                    else:
+                        self.new_doc_entry.update(self.new_doc)
                 return True
             return False
         self.log.transaction_queue.append(transaction)
@@ -393,14 +423,6 @@ class FieldSetter(object):
                    "valid for storage.".format(field, full_path))
             raise FieldWriteError(msg, code=52)
 
-    def extend_array(self, doc, index, end_element):
-        """Internal method"""
-        length = len(doc)
-        if index >= length:
-            fill_none = [None for _ in range(index - length)]
-            doc += fill_none + [end_element]
-        return doc
-
     def check_filter_exists(self, identifier):
         """Internal method"""
         if identifier and identifier not in self.array_filter:
@@ -429,7 +451,7 @@ class FieldSetter(object):
         self.log.itered_path = []
         return fieldwalker.go(path)
 
-    def array_setter(self, fieldwalker):
+    def write_array_element(self, fieldwalker):
         """Internal method"""
         fieldwalker.set(self.value, self.modifier, self.array_filter)
 
@@ -438,9 +460,9 @@ class FieldSetter(object):
         index = self.find_matched_index()
         if path:
             fieldwalker = self.make_array_fieldwalker(doc[index], index, path)
-            self.array_setter(fieldwalker)
+            self.write_array_element(fieldwalker)
         else:
-            doc = self.extend_array(doc, index, None)
+            doc = self.open_array(doc, index, None)
             self.transact(doc, index)
 
     def walk_array_filtered(self, doc, path, pre_field, identifier):
@@ -454,7 +476,7 @@ class FieldSetter(object):
             if queryfilter({pre_field: d}):
                 if path:
                     fieldwalker = self.make_array_fieldwalker(d, i, path)
-                    self.array_setter(fieldwalker)
+                    self.write_array_element(fieldwalker)
                 else:
                     self.transact(doc, i)
 
@@ -495,11 +517,11 @@ class FieldDropper(FieldSetter):
         """Internal method"""
         return False
 
-    def extend_array(self, doc, *args):
+    def open_array(self, doc, *args):
         """Internal method"""
         return doc
 
-    def array_setter(self, fieldwalker):
+    def write_array_element(self, fieldwalker):
         """Internal method"""
         fieldwalker.drop(self.array_filter)
 
