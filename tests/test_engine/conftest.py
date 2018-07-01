@@ -5,9 +5,10 @@ import pytest
 def insert(db, docs):
     db.drop_collection("test")
     col = db["test"]
-    for i, d in enumerate(docs):
-        d['_id'] = i
-    col.insert_many(docs)
+    if docs:
+        for i, d in enumerate(docs):
+            d['_id'] = i
+        col.insert_many(docs)
     return col
 
 
