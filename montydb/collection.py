@@ -7,6 +7,7 @@ from .base import (
     validate_is_mapping,
     validate_ok_for_update,
     validate_list_or_none,
+    validate_boolean,
 )
 
 from .cursor import MontyCursor
@@ -179,6 +180,7 @@ class MontyCollection(BaseObject):
         validate_is_mapping("filter", filter)
         validate_ok_for_update(update)
         validate_list_or_none('array_filters', array_filters)
+        validate_boolean('upsert', upsert)
 
         if bypass_document_validation:
             pass
@@ -209,6 +211,7 @@ class MontyCollection(BaseObject):
         validate_is_mapping("filter", filter)
         validate_ok_for_update(update)
         validate_list_or_none('array_filters', array_filters)
+        validate_boolean('upsert', upsert)
 
         if bypass_document_validation:
             pass
