@@ -165,7 +165,7 @@ class MontyCollection(BaseObject):
         raw_result["upserted"] = document["_id"]
         raw_result["n"] = 1
 
-        updator(FieldWalker(document))
+        updator(FieldWalker(document), do_insert=True)
         self.database.client._storage.write_one(self, document)
 
     def update_one(self,

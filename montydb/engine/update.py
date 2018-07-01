@@ -23,7 +23,7 @@ class Updator(object):
             "$mul": parse_mul,
             "$rename": parse_rename,
             "$set": parse_set,
-            "$setOnInsert": None,
+            "$setOnInsert": self.parse_set_on_insert,
             "$unset": parse_unset,
             "$currentDate": None,
 
@@ -32,14 +32,16 @@ class Updator(object):
         self.fields_to_update = []
         self.array_filters = self.array_filter_parser(array_filters or [])
         self.operations = OrderedDict(sorted(self.parser(spec).items()))
+        self.__insert = None
         self.__fieldwalker = None
 
     def __repr__(self):
         pass
 
-    def __call__(self, fieldwalker):
+    def __call__(self, fieldwalker, do_insert=False):
         """Update document and return a bool value indicate changed or not"""
         self.__fieldwalker = fieldwalker
+        self.__insert = do_insert
         for operator in self.operations.values():
             operator(fieldwalker)
         return fieldwalker.commit()
@@ -117,6 +119,13 @@ class Updator(object):
                 raise WriteError(msg, code=40)
 
         self.fields_to_update.append(field)
+
+    def parse_set_on_insert(self, field, value, array_filters):
+        def _set_on_insert(fieldwalker):
+            if self.__insert:
+                parse_set(field, value, array_filters)(fieldwalker)
+
+        return _set_on_insert
 
 
 def parse_inc(field, value, array_filters):
@@ -290,13 +299,6 @@ def parse_set(field, value, array_filters):
             raise WriteError(msg, code=err.code)
 
     return _set
-
-
-def parse_setOnInsert(field, value):
-    def _setOnInsert(fieldwalker):
-        raise NotImplementedError
-
-    return _setOnInsert
 
 
 def parse_unset(field, value, array_filters):
