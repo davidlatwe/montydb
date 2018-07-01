@@ -58,7 +58,7 @@ def monty_client(storage, tmp_monty_repo):
 @pytest.fixture(scope="session")
 def mongo_client():
     client = pymongo.MongoClient("mongodb://localhost:27017")
-    existed_dbs = client.database_names()
+    existed_dbs = client.database_names() + ["admin", "config"]
     yield client
     # db cleanup
     for db in client.database_names():
