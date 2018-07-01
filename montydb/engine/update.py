@@ -1,8 +1,10 @@
 
 from collections import OrderedDict, MutableMapping
+from datetime import datetime
 
 from bson.py3compat import string_type
 from bson.decimal128 import Decimal128
+from bson.timestamp import Timestamp
 
 from ..errors import WriteError
 from .core import FieldWriteError, Weighted, SimpleGetter
@@ -25,7 +27,7 @@ class Updator(object):
             "$set": parse_set,
             "$setOnInsert": self.parse_set_on_insert,
             "$unset": parse_unset,
-            "$currentDate": None,
+            "$currentDate": parse_currentDate,
 
         }
 
@@ -312,8 +314,34 @@ def parse_unset(field, value, array_filters):
     return _unset
 
 
-def parse_currentDate(field, value):
+def parse_currentDate(field, value, array_filters):
+    date_type = {
+        "date": datetime.utcnow(),
+        "timestamp": Timestamp(datetime.utcnow(), 1),
+    }
+
+    if not isinstance(value, bool):
+        if not isinstance(value, MutableMapping):
+            msg = ("{} is not valid type for $currentDate. Please use a "
+                   "boolean ('true') or a $type expression ({{$type: "
+                   "'timestamp/date'}}).".format(type(value).__name__))
+            raise WriteError(msg, code=2)
+
+        for k, v in value.items():
+            if k != "$type":
+                msg = "Unrecognized $currentDate option: {}".format(k)
+                raise WriteError(msg, code=2)
+            if v not in date_type:
+                msg = ("The '$type' string field is required to be 'date' "
+                       "or 'timestamp': {$currentDate: {field : {$type: "
+                       "'date'}}}")
+                raise WriteError(msg, code=2)
+
+            value = date_type[v]
+    else:
+        value = date_type["date"]
+
     def _currentDate(fieldwalker):
-        raise NotImplementedError
+        parse_set(field, value, array_filters)(fieldwalker)
 
     return _currentDate
