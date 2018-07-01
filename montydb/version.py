@@ -1,10 +1,24 @@
 
 VERSION_MAJOR = 0
 VERSION_MINOR = 0
-VERSION_PATCH = 6
+VERSION_PATCH = 7
 
 version_info = (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
-version = '%i.%i.%i' % version_info
+version = "%i.%i.%i" % version_info
 __version__ = version
 
-__all__ = ['version', 'version_info', '__version__']
+
+MONGO_VER_MAJOR = 3
+MONGO_VER_MINOR = 6
+MONGO_VER_PATCH = 4
+
+mongo_version_info = (MONGO_VER_MAJOR, MONGO_VER_MINOR, MONGO_VER_PATCH)
+mongo_version = "%i.%i.%i" % mongo_version_info
+
+__all__ = (
+    "version",
+    "version_info",
+    "mongo_version",
+    "mongo_version_info",
+    "__version__",
+)
