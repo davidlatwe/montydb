@@ -279,7 +279,7 @@ class FieldSetter(object):
 
     def run(self, fieldwalker, value, operator=None, array_filter=None):
         self.value = value
-        self.modifier = operator or (lambda o, val, e, f: val)
+        self.modifier = operator or (lambda o, val, i: val)
         self.array_filter = array_filter
         self.log = fieldwalker.log
         self.doc_type = fieldwalker.doc_type
@@ -354,17 +354,28 @@ class FieldSetter(object):
         self.check_transaction_conflict(key)
 
         def transaction(d=doc, k=key, v=self.value):
+            field_info = {
+                "exists": True,
+                "field": str(key),
+                "path": ".".join(self.log.field_levels),
+                "exec": True,
+            }
+
             try:
                 old = d[k]
             except (KeyError, IndexError) as err:
                 if err.__class__ is IndexError:
                     d = self.open_array(d, k, None)
                 old = None
-                exists = False
-            else:
-                exists = True
-            new = self.modifier(old, v, exists, str(k))
-            if old != new or not exists:
+                field_info["exists"] = False
+
+            new = self.modifier(old, v, field_info)
+
+            if not field_info["exec"]:
+                # do nothing
+                return False
+
+            if old != new or not field_info["exists"]:
                 d[k] = new
                 if self.new_doc_entry is not None:
                     # write back to original doc
@@ -374,6 +385,7 @@ class FieldSetter(object):
                         self.new_doc_entry.update(self.new_doc)
                 return True
             return False
+
         self.log.transaction_queue.append(transaction)
 
     def transaction_failed(self, doc, field, pre_field):

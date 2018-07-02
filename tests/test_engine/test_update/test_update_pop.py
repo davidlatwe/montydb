@@ -76,9 +76,9 @@ def test_update_pop_5(monty_update, mongo_update):
 
 def test_update_pop_6(monty_update, mongo_update):
     docs = [
-        {"a": "not array"}
+        {"a": {"b": "not array"}}
     ]
-    spec = {"$pop": {"a": 1}}
+    spec = {"$pop": {"a.b": 1}}
 
     with pytest.raises(mongo_write_err) as mongo_err:
         mongo_update(docs, spec)
@@ -102,3 +102,17 @@ def test_update_pop_7(monty_update, mongo_update):
         next(monty_update(docs, spec))
 
     assert mongo_err.value.code == monty_err.value.code
+
+
+def test_update_pop_8(monty_update, mongo_update):
+    docs = [
+        {}
+    ]
+    spec = {"$pop": {"a": 1}}
+
+    monty_c = monty_update(docs, spec)
+    mongo_c = mongo_update(docs, spec)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {}

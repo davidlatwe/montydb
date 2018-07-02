@@ -154,13 +154,13 @@ def parse_inc(field, value, array_filters):
 
     def _inc(fieldwalker):
 
-        def inc(old_val, inc_val, exists, field):
-            if exists and not is_numeric_type(old_val):
+        def inc(old_val, inc_val, field_info):
+            if field_info["exists"] and not is_numeric_type(old_val):
                 _id = fieldwalker.doc["_id"]
                 value_type = type(old_val).__name__
                 msg = ("Cannot apply $inc to a value of non-numeric type. "
                        "{{_id: {0}}} has the field {1!r} of non-numeric type "
-                       "{2}".format(_id, field, value_type))
+                       "{2}".format(_id, field_info["field"], value_type))
                 raise WriteError(msg, code=14)
 
             is_decimal128 = False
@@ -187,8 +187,8 @@ def parse_inc(field, value, array_filters):
 
 def parse_min(field, value, array_filters):
     def _min(fieldwalker):
-        def min(old_val, min_val, exists, field):
-            if exists:
+        def min(old_val, min_val, field_info):
+            if field_info["exists"]:
                 old_val = Weighted(old_val)
                 min_val = Weighted(min_val)
                 return min_val.value if min_val < old_val else old_val.value
@@ -206,8 +206,8 @@ def parse_min(field, value, array_filters):
 
 def parse_max(field, value, array_filters):
     def _max(fieldwalker):
-        def max(old_val, max_val, exists, field):
-            if exists:
+        def max(old_val, max_val, field_info):
+            if field_info["exists"]:
                 old_val = Weighted(old_val)
                 max_val = Weighted(max_val)
                 return max_val.value if max_val > old_val else old_val.value
@@ -232,13 +232,13 @@ def parse_mul(field, value, array_filters):
         raise WriteError(msg, code=14)
 
     def _mul(fieldwalker):
-        def mul(old_val, mul_val, exists, field):
-            if exists and not is_numeric_type(old_val):
+        def mul(old_val, mul_val, field_info):
+            if field_info["exists"] and not is_numeric_type(old_val):
                 _id = fieldwalker.doc["_id"]
                 value_type = type(old_val).__name__
                 msg = ("Cannot apply $mul to a value of non-numeric type. "
                        "{{_id: {0}}} has the field {1!r} of non-numeric type "
-                       "{2}".format(_id, field, value_type))
+                       "{2}".format(_id, field_info["field"], value_type))
                 raise WriteError(msg, code=14)
 
             is_decimal128 = False
@@ -369,12 +369,12 @@ def parse_currentDate(field, value, array_filters):
 
 def parse_add_to_set(field, value, array_filters):
     def _add_to_set(fieldwalker):
-        def add_to_set(old_val, new_elem, exists, field):
-            if exists and not isinstance(old_val, list):
+        def add_to_set(old_val, new_elem, field_info):
+            if field_info["exists"] and not isinstance(old_val, list):
                 value_type = type(old_val).__name__
                 msg = ("Cannot apply $addToSet to non-array field. Field "
                        "named {0!r} has non-array type {1}"
-                       "".format(field, value_type))
+                       "".format(field_info["field"], value_type))
                 raise WriteError(msg, code=2)
 
             new_array = (old_val or [])[:]
@@ -406,12 +406,17 @@ def parse_pop(field, value, array_filters):
             raise WriteError(msg_raw.format(field, value), code=9)
 
     def _pop(fieldwalker):
-        def pop(old_val, pop_ind, exists, field):
-            if exists and not isinstance(old_val, list):
+        def pop(old_val, pop_ind, field_info):
+            if field_info["exists"] and not isinstance(old_val, list):
                 value_type = type(old_val).__name__
                 msg = ("Path {0!r} contains an element of non-array type "
-                       "{1!r}".format(field, value_type))
+                       "{1!r}".format(field_info["path"], value_type))
                 raise WriteError(msg, code=14)
+
+            if not field_info["exists"]:
+                # do nothing
+                field_info["exec"] = False
+                return
 
             if pop_ind == 1:
                 return old_val[:-1]
