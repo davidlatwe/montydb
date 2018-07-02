@@ -29,6 +29,20 @@ class Updator(object):
             "$unset": parse_unset,
             "$currentDate": parse_currentDate,
 
+            # array update ops
+            # $                 implemented in FieldWalker
+            # $[]               implemented in FieldWalker
+            # $[<identifier>]   implemented in FieldWalker
+            "$addToSet": parse_add_to_set,
+            "$pop": parse_pop,
+            "$pull": None,
+            "$push": None,
+            "$pullAll": None,
+            "$each": None,
+            "$position": None,
+            "$slice": None,
+            "$sort": None,
+
         }
 
         self.fields_to_update = []
@@ -351,3 +365,63 @@ def parse_currentDate(field, value, array_filters):
         parse_set(field, value, array_filters)(fieldwalker)
 
     return _currentDate
+
+
+def parse_add_to_set(field, value, array_filters):
+    def _add_to_set(fieldwalker):
+        def add_to_set(old_val, new_elem, exists, field):
+            if exists and not isinstance(old_val, list):
+                value_type = type(old_val).__name__
+                msg = ("Cannot apply $addToSet to non-array field. Field "
+                       "named {0!r} has non-array type {1}"
+                       "".format(field, value_type))
+                raise WriteError(msg, code=2)
+
+            new_array = (old_val or [])[:]
+            new_array.append(new_elem)
+            return new_array
+
+        try:
+            fieldwalker.go(field).set(value, add_to_set, array_filters)
+        except FieldWriteError as err:
+            msg = err.message if hasattr(err, 'message') else str(err)
+            raise WriteError(msg, code=err.code)
+
+    return _add_to_set
+
+
+def parse_pop(field, value, array_filters):
+    if not is_numeric_type(value):
+        msg = ("Expected a number in: {0}: {1!r}".format(field, value))
+        raise WriteError(msg, code=9)
+    else:
+        try:
+            value = float(value)
+            msg_raw = "Expected an integer: {0}: {1!r}"
+        except TypeError:
+            msg_raw = "Cannot represent as a 64-bit integer: {0}: {1!r}"
+            value = float(value.to_decimal())
+
+        if value not in (1.0, -1.0):
+            raise WriteError(msg_raw.format(field, value), code=9)
+
+    def _pop(fieldwalker):
+        def pop(old_val, pop_ind, exists, field):
+            if exists and not isinstance(old_val, list):
+                value_type = type(old_val).__name__
+                msg = ("Path {0!r} contains an element of non-array type "
+                       "{1!r}".format(field, value_type))
+                raise WriteError(msg, code=14)
+
+            if pop_ind == 1:
+                return old_val[:-1]
+            else:
+                return old_val[1:]
+
+        try:
+            fieldwalker.go(field).set(value, pop, array_filters)
+        except FieldWriteError as err:
+            msg = err.message if hasattr(err, 'message') else str(err)
+            raise WriteError(msg, code=err.code)
+
+    return _pop
