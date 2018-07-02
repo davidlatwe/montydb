@@ -7,7 +7,7 @@ from bson.decimal128 import Decimal128
 from bson.timestamp import Timestamp
 
 from ..errors import WriteError
-from .core import FieldWriteError, Weighted, SimpleGetter
+from .core import FieldWriteError, Weighted, SimpleGetter, _cmp_decimal
 from .queries import QueryFilter
 from .helpers import is_numeric_type
 
@@ -35,9 +35,9 @@ class Updator(object):
             # $[<identifier>]   implemented in FieldWalker
             "$addToSet": parse_add_to_set,
             "$pop": parse_pop,
-            "$pull": None,
-            "$push": None,
-            "$pullAll": None,
+            "$pull": parse_pull,
+            "$push": parse_push,
+            "$pullAll": parse_pull_all,
             "$each": None,
             "$position": None,
             "$slice": None,
@@ -431,3 +431,81 @@ def parse_pop(field, value, array_filters):
             raise WriteError(msg, code=err.code)
 
     return _pop
+
+
+def parse_pull(field, value, array_filters):
+    def _pull(fieldwalker):
+        def pull(old_val, pull_ind, field_info):
+            pass
+
+        try:
+            fieldwalker.go(field).set(value, pull, array_filters)
+        except FieldWriteError as err:
+            msg = err.message if hasattr(err, 'message') else str(err)
+            raise WriteError(msg, code=err.code)
+
+    return _pull
+
+
+def parse_push(field, value, array_filters):
+    def _push(fieldwalker):
+        def push(old_val, new_elem, field_info):
+            if field_info["exists"] and not isinstance(old_val, list):
+                value_type = type(old_val).__name__
+                _id = fieldwalker.doc["_id"]
+                msg = ("The field {0!r} must be an array but is of type "
+                       "{1} in document {{_id: {2}}}"
+                       "".format(field_info["field"], value_type, _id))
+                raise WriteError(msg, code=2)
+
+            new_array = (old_val or [])[:]
+            new_array.append(new_elem)
+            return new_array
+
+        try:
+            fieldwalker.go(field).set(value, push, array_filters)
+        except FieldWriteError as err:
+            msg = err.message if hasattr(err, 'message') else str(err)
+            raise WriteError(msg, code=err.code)
+
+    return _push
+
+
+def parse_pull_all(field, value, array_filters):
+    if not isinstance(value, list):
+        value_type = type(value).__name__
+        msg = ("$pullAll requires an array argument but was given a {}"
+               "".format(value_type))
+        raise WriteError(msg, code=2)
+
+    def _pull_all(fieldwalker):
+        def pull_all(old_val, pull_list, field_info):
+            if field_info["exists"] and not isinstance(old_val, list):
+                msg = "Cannot apply $pull to a non-array value"
+                raise WriteError(msg, code=2)
+
+            if not field_info["exists"]:
+                # do nothing
+                field_info["exec"] = False
+                return
+
+            def convert(lst):
+                for val in lst:
+                    if isinstance(val, Decimal128):
+                        yield _cmp_decimal(val)
+                    else:
+                        yield val
+
+            pull_list = list(convert(pull_list))
+            old_val = list(convert(old_val))
+
+            new_array = [elem for elem in old_val if elem not in pull_list]
+            return new_array
+
+        try:
+            fieldwalker.go(field).set(value, pull_all, array_filters)
+        except FieldWriteError as err:
+            msg = err.message if hasattr(err, 'message') else str(err)
+            raise WriteError(msg, code=err.code)
+
+    return _pull_all
