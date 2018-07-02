@@ -378,7 +378,8 @@ def parse_add_to_set(field, value, array_filters):
                 raise WriteError(msg, code=2)
 
             new_array = (old_val or [])[:]
-            new_array.append(new_elem)
+            if new_elem not in new_array:
+                new_array.append(new_elem)
             return new_array
 
         try:

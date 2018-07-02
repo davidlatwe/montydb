@@ -60,3 +60,17 @@ def test_update_addToSet_4(monty_update, mongo_update):
         next(monty_update(docs, spec))
 
     assert mongo_err.value.code == monty_err.value.code
+
+
+def test_update_addToSet_5(monty_update, mongo_update):
+    docs = [
+        {"a": [1, 2, 3]}
+    ]
+    spec = {"$addToSet": {"a": 3}}
+
+    monty_c = monty_update(docs, spec)
+    mongo_c = mongo_update(docs, spec)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {"a": [1, 2, 3]}
