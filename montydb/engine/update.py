@@ -140,8 +140,8 @@ def parse_inc(field, value, array_filters):
 
     def _inc(fieldwalker):
 
-        def inc(old_val, inc_val, field):
-            if old_val is not None and not is_numeric_type(old_val):
+        def inc(old_val, inc_val, exists, field):
+            if exists and not is_numeric_type(old_val):
                 _id = fieldwalker.doc["_id"]
                 value_type = type(old_val).__name__
                 msg = ("Cannot apply $inc to a value of non-numeric type. "
@@ -173,10 +173,13 @@ def parse_inc(field, value, array_filters):
 
 def parse_min(field, value, array_filters):
     def _min(fieldwalker):
-        def min(old_val, min_val, field):
-            old_val = Weighted(old_val)
-            min_val = Weighted(min_val)
-            return min_val.value if min_val < old_val else old_val.value
+        def min(old_val, min_val, exists, field):
+            if exists:
+                old_val = Weighted(old_val)
+                min_val = Weighted(min_val)
+                return min_val.value if min_val < old_val else old_val.value
+            else:
+                return min_val
 
         try:
             fieldwalker.go(field).set(value, min, array_filters)
@@ -189,10 +192,13 @@ def parse_min(field, value, array_filters):
 
 def parse_max(field, value, array_filters):
     def _max(fieldwalker):
-        def max(old_val, max_val, field):
-            old_val = Weighted(old_val)
-            max_val = Weighted(max_val)
-            return max_val.value if max_val > old_val else old_val.value
+        def max(old_val, max_val, exists, field):
+            if exists:
+                old_val = Weighted(old_val)
+                max_val = Weighted(max_val)
+                return max_val.value if max_val > old_val else old_val.value
+            else:
+                return max_val
 
         try:
             fieldwalker.go(field).set(value, max, array_filters)
@@ -212,8 +218,8 @@ def parse_mul(field, value, array_filters):
         raise WriteError(msg, code=14)
 
     def _mul(fieldwalker):
-        def mul(old_val, mul_val, field):
-            if old_val is not None and not is_numeric_type(old_val):
+        def mul(old_val, mul_val, exists, field):
+            if exists and not is_numeric_type(old_val):
                 _id = fieldwalker.doc["_id"]
                 value_type = type(old_val).__name__
                 msg = ("Cannot apply $mul to a value of non-numeric type. "

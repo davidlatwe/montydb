@@ -279,7 +279,7 @@ class FieldSetter(object):
 
     def run(self, fieldwalker, value, operator=None, array_filter=None):
         self.value = value
-        self.modifier = operator or (lambda o, val, f: val)
+        self.modifier = operator or (lambda o, val, e, f: val)
         self.array_filter = array_filter
         self.log = fieldwalker.log
         self.doc_type = fieldwalker.doc_type
@@ -302,7 +302,6 @@ class FieldSetter(object):
                         doc = self.open_array(
                             doc, index, self.doc_type())[index]
                     else:
-                        doc = self.open_array(doc, index, None)
                         self.transact(doc, index)
                         return
 
@@ -354,17 +353,19 @@ class FieldSetter(object):
     def transact(self, doc, key):
         self.check_transaction_conflict(key)
 
-        def transaction(k=key, v=self.value):
+        def transaction(d=doc, k=key, v=self.value):
             try:
-                """`doc` could be either list or dict(or other mapping type).
-                list `doc` should have content enough element, but dict `doc`
-                cannot be sure that the key exists."""
-                old = doc[k]
-            except KeyError:
+                old = d[k]
+            except (KeyError, IndexError) as err:
+                if err.__class__ is IndexError:
+                    d = self.open_array(d, k, None)
                 old = None
-            new = self.modifier(old, v, str(k))
-            if old != new:
-                doc[k] = new
+                exists = False
+            else:
+                exists = True
+            new = self.modifier(old, v, exists, str(k))
+            if old != new or not exists:
+                d[k] = new
                 if self.new_doc_entry is not None:
                     # write back to original doc
                     if isinstance(self.new_doc_entry, list):
@@ -462,7 +463,6 @@ class FieldSetter(object):
             fieldwalker = self.make_array_fieldwalker(doc[index], index, path)
             self.write_array_element(fieldwalker)
         else:
-            doc = self.open_array(doc, index, None)
             self.transact(doc, index)
 
     def walk_array_filtered(self, doc, path, pre_field, identifier):

@@ -86,3 +86,31 @@ def test_update_min_6(monty_update, mongo_update):
     assert next(mongo_c) == next(monty_c)
     monty_c.rewind()
     assert next(monty_c) == {"a": Timestamp(10, 0)}
+
+
+def test_update_min_7(monty_update, mongo_update):
+    docs = [
+        {"a": None}
+    ]
+    spec = {"$min": {"a": []}}
+
+    monty_c = monty_update(docs, spec)
+    mongo_c = mongo_update(docs, spec)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {"a": None}
+
+
+def test_update_min_8(monty_update, mongo_update):
+    docs = [
+        {}
+    ]
+    spec = {"$min": {"a": None}}
+
+    monty_c = monty_update(docs, spec)
+    mongo_c = mongo_update(docs, spec)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {"a": None}
