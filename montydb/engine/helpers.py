@@ -24,6 +24,8 @@ def is_array_type(obj):
 
 
 def is_numeric_type(obj):
+    if isinstance(obj, bool):
+        return False
     number_type = (integer_types, float, Int64, Decimal128)
     return isinstance(obj, number_type)
 

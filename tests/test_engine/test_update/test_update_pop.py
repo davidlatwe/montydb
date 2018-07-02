@@ -87,3 +87,18 @@ def test_update_pop_6(monty_update, mongo_update):
         next(monty_update(docs, spec))
 
     assert mongo_err.value.code == monty_err.value.code
+
+
+def test_update_pop_7(monty_update, mongo_update):
+    docs = [
+        {"a": []}
+    ]
+    spec = {"$pop": {"a": True}}
+
+    with pytest.raises(mongo_write_err) as mongo_err:
+        mongo_update(docs, spec)
+
+    with pytest.raises(monty_write_err) as monty_err:
+        next(monty_update(docs, spec))
+
+    assert mongo_err.value.code == monty_err.value.code
