@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from bson import BSON, SON
 
 from ..engine.helpers import with_metaclass
 
@@ -114,6 +115,9 @@ class AbstractCollection(with_metaclass(ABCMeta, object)):
         self.wconcern = subject.write_concern
         self.coptions = subject.codec_options
 
+    def _encode_doc(self, doc):
+        return BSON.encode(doc, False, self.coptions)
+
     @property
     def contractor_cls(self):
         raise NotImplementedError("")
@@ -139,6 +143,16 @@ class AbstractCursor(with_metaclass(ABCMeta, object)):
 
     def __init__(self, collection, subject):
         self._collection = collection
+
+    def _decode_doc(self, doc):
+        """
+        Document field order matters
+
+        In order to match sub-document like MongoDB, decode to SON for internal
+        usage.
+        """
+        coptions = self._collection.coptions.with_options(document_class=SON)
+        return BSON(doc).decode(coptions)
 
     @abstractmethod
     def query(self):

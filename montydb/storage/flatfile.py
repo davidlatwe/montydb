@@ -10,7 +10,7 @@ from bson.json_util import (
     dumps as _dumps,
 )
 
-from .base import (
+from .abcs import (
     StorageConfig,
     AbstractStorage,
     AbstractDatabase,
@@ -55,6 +55,9 @@ class FlatFileConfig(StorageConfig):
 
 
 FLATFILE_DB_EXT = ".json"
+
+
+# (TODO) CANONICAL_JSON_OPTIONS might need to sync with codec_options
 
 
 def _read_pretty(file_path):
@@ -240,9 +243,6 @@ class FlatFileCollection(AbstractCollection):
             return func(self, *args, **kwargs)
         return make_table
 
-    def _encode_doc(self, doc):
-        return BSON.encode(doc, False, self.coptions)
-
     @_ensure_table
     def write_one(self, doc):
         _doc = SON()
@@ -281,10 +281,6 @@ class FlatFileCursor(AbstractCursor):
     @property
     def _flatfile(self):
         return self._collection._flatfile
-
-    def _decode_doc(self, doc):
-        # Decode BSON types
-        return BSON(doc).decode(self._collection.coptions)
 
     def query(self, max_scan):
         cache = self._flatfile.read()

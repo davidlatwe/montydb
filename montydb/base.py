@@ -23,7 +23,7 @@ import collections
 
 from bson import BSON, SON
 from bson.py3compat import integer_types, string_type, abc, iteritems
-from bson.codec_options import CodecOptions, DEFAULT_CODEC_OPTIONS
+from bson.codec_options import CodecOptions
 from bson.raw_bson import RawBSONDocument
 from bson.codec_options import _parse_codec_options
 
@@ -32,22 +32,17 @@ ASCENDING = 1
 DESCENDING = -1
 
 
-def _bson_touch(doc, codec_op=DEFAULT_CODEC_OPTIONS):
+def command_coder(*args, **kwargs):
+    """Convert everything to SON
     """
-    BSON will convert bytes string `b""` to unicode in PY2 since it's also
-    `str` type, while in PY3 keep it as `bytes`. This might cause trouble
-    dealing `Binary` type querying.
-    Inorder to help this kind of scenario, make MontyDB to behave more like
-    MongoDB, the command doucment like cursor filter should be encoded to
-    BSON and decode back before parsing it, just like PyMongo encoded to
-    BSON before sending to server.
-    """
-    if isinstance(doc, abc.Mapping):
-        # Preserve the order of the query document when decode it back
-        order_keep = CodecOptions(document_class=SON)
-        return BSON(BSON.encode(doc, False, codec_op)).decode(order_keep)
-    else:
-        return doc  # should be None type.
+    codec_op = kwargs["codec_op"]
+    for doc in args:
+        if isinstance(doc, collections.MutableMapping):
+            # Preserve the order of the query document when decode it back
+            order_keep = codec_op.with_options(document_class=SON)
+            yield BSON.encode(doc, False, codec_op).decode(order_keep)
+        else:
+            yield doc  # should be None type.
 
 
 def validate_is_document_type(option, value):

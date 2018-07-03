@@ -12,7 +12,7 @@ try:
 except ImportError:
     from yaml import Loader, Dumper
 
-from .storage.base import StorageConfig
+from .storage.abcs import StorageConfig
 from .storage.memory import MemoryConfig, MEMORY_REPOSITORY
 from .storage.sqlite import SQLiteConfig
 from .errors import ConfigurationError

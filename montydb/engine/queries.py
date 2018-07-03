@@ -5,7 +5,6 @@ from datetime import datetime
 
 from bson.py3compat import integer_types, string_type
 from bson.regex import Regex, str_flags_to_int
-from bson.son import SON
 from bson.min_key import MinKey
 from bson.max_key import MaxKey
 from bson.decimal128 import Decimal128
@@ -27,7 +26,6 @@ from .core import (
 )
 
 from .helpers import (
-    PY36,
     RE_PATTERN_TYPE,
     is_mapping_type,
     is_array_type,
@@ -487,47 +485,18 @@ def _is_comparable(val, qry):
 
 
 def _eq_match(fieldwalker, query):
-    """
-    Document key order matters
+    if query is None:
+        return fieldwalker.value.null_or_missing
 
-    In PY3.6, `dict` has order-preserving, but two different key ordered
-    dictionary are still equal.
-    https://docs.python.org/3.6/whatsnew/3.6.html#new-dict-implementation
+    if isinstance(query, Decimal128):
+        query = _cmp_decimal(query)
 
-    ```python 3.6
-    >>> print({'a': 1.0, 'b': 1.0})
-    {'a': 1.0, 'b': 1.0}
-    >>> print({'b': 1.0, 'a': 1.0})
-    {'b': 1.0, 'a': 1.0}
-    >>> {'a': 1.0, 'b': 1.0} == {'b': 1.0, 'a': 1.0}
-    True
-    ```
+    for val in fieldwalker.value:
+        if isinstance(val, Decimal128):
+            val = _cmp_decimal(val)
 
-    So before finding equal element in field, have to convert to `SON` first.
-
-    """
-    if is_mapping_type(query):
-        if PY36 and not isinstance(query, SON):
-            query = SON(query)
-        for val in fieldwalker.value:
-            if is_mapping_type(val):
-                if PY36 and not isinstance(val, SON):
-                    val = SON(val)
-                if query == val:
-                    return True
-    else:
-        if query is None:
-            return fieldwalker.value.null_or_missing
-
-        if isinstance(query, Decimal128):
-            query = _cmp_decimal(query)
-
-        for val in fieldwalker.value:
-            if isinstance(val, Decimal128):
-                val = _cmp_decimal(val)
-
-            if val == query and _is_comparable(val, query):
-                return True
+        if val == query and _is_comparable(val, query):
+            return True
 
 
 def parse_eq(query):

@@ -1,6 +1,7 @@
 
 from bson import ObjectId
 from bson.py3compat import integer_types
+from bson.codec_options import DEFAULT_CODEC_OPTIONS
 
 from ..engine.core import FieldWalker, Weighted
 from ..engine.queries import QueryFilter, ordering
@@ -9,7 +10,7 @@ from ..base import (
     _fields_list_to_dict,
     _index_document,
     _index_list,
-    _bson_touch,
+    command_coder,
 )
 
 
@@ -89,8 +90,9 @@ class MontyList(list):
         if projection is not None:
             projection = _fields_list_to_dict(projection, "projection")
         sort = sort and _index_document(sort) or None
-        spec = _bson_touch(filter or {})
-        proj = _bson_touch(projection)
+
+        spec, proj = command_coder(filter or {}, projection,
+                                   codec_op=DEFAULT_CODEC_OPTIONS)
 
         qf = QueryFilter(spec)
         pj = Projector(proj, qf) if proj is not None else None

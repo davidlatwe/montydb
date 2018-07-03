@@ -17,7 +17,7 @@ from montydb.errors import ConfigurationError
 from montydb.storage.memory import MemoryStorage
 from montydb.storage.sqlite import SQLiteStorage
 from montydb.storage.flatfile import FlatFileStorage
-from montydb.storage.base import StorageConfig
+from montydb.storage.abcs import StorageConfig
 from montydb.storage import (
     SQLiteConfig,
     FlatFileConfig,

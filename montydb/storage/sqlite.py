@@ -8,7 +8,7 @@ from bson import BSON
 from bson.py3compat import _unicode
 
 from ..base import WriteConcern
-from .base import (
+from .abcs import (
     StorageConfig,
     AbstractStorage,
     AbstractDatabase,
@@ -397,13 +397,9 @@ class SQLiteCursor(AbstractCursor):
     def _col_path(self):
         return self._collection._col_path
 
-    def _decode_doc(self, doc):
-        # Decode BSON types
-        return BSON(doc[0]).decode(self._collection.coptions)
-
     def query(self, max_scan):
         docs = self._conn.read_all(self._col_path, max_scan)
-        return (self._decode_doc(doc) for doc in docs)
+        return (self._decode_doc(doc[0]) for doc in docs)
 
 
 SQLiteCollection.contractor_cls = SQLiteCursor

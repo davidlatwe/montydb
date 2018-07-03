@@ -1,8 +1,8 @@
 
 from itertools import islice
-from bson import SON, BSON
+from bson import SON
 
-from .base import (
+from .abcs import (
     StorageConfig,
     AbstractStorage,
     AbstractDatabase,
@@ -97,9 +97,6 @@ class MemoryCollection(AbstractCollection):
     def _col_exists(self):
         return self._database.collection_exists(self._name)
 
-    def _encode_doc(self, doc):
-        return BSON.encode(doc, False, self.coptions)
-
     def write_one(self, doc):
         self._col[str(doc["_id"])] = self._encode_doc(doc)
         return doc["_id"]
@@ -128,9 +125,6 @@ class MemoryCursor(AbstractCursor):
         if self._collection._col_exists():
             return self._collection._col
         return SON()
-
-    def _decode_doc(self, doc):
-        return BSON(doc).decode(self._collection.coptions)
 
     def query(self, max_scan):
         docs = (self._decode_doc(doc) for doc in self._col.values())

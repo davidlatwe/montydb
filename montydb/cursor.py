@@ -3,7 +3,7 @@ import copy
 from collections import deque
 
 from bson import RE_TYPE
-from bson.son import SON
+from bson import BSON, SON
 from bson.py3compat import iteritems, integer_types
 
 from .errors import InvalidOperation, OperationFailure
@@ -15,7 +15,7 @@ from .base import (
     _fields_list_to_dict,
     _index_list,
     _index_document,
-    _bson_touch,
+    command_coder,
 )
 
 
@@ -95,8 +95,11 @@ class MontyCursor(object):
         self._components = (collection.database, collection, self)
         self._codec_options = collection.codec_options
 
-        self._spec = _bson_touch(spec, self._codec_options)
-        self._projection = _bson_touch(projection, self._codec_options)
+        spec, projection = command_coder(spec, projection,
+                                         codec_op=self._codec_options)
+
+        self._spec = spec
+        self._projection = projection
         self._skip = skip
         self._limit = limit
         self._ordering = sort and _index_document(sort) or None
@@ -298,7 +301,7 @@ class MontyCursor(object):
             for fw in fieldwalkers:
                 projector(fw)
 
-        self._data = deque(fw.doc for fw in fieldwalkers)
+        self._data = deque(self._decode_docs(fw) for fw in fieldwalkers)
         self._retrieved += len(fieldwalkers)
         # (NOTE) cursor id should return from storage, but ignore for now.
         self._id = 0
@@ -309,6 +312,16 @@ class MontyCursor(object):
 
         if self._limit and self._id and self._limit <= self._retrieved:
             self.__die()
+
+    def _decode_docs(self, fieldwalker):
+        """
+        decode document from internal SON type to the type defined in
+        codec options.
+        """
+        if self._codec_options.document_class is dict:
+            # SON.to_dict()
+            return fieldwalker.doc.to_dict()
+        return BSON.encode(fieldwalker.doc).decode(self._codec_options)
 
     def _refresh(self):
         """Refreshes the cursor with more data from Monty.
