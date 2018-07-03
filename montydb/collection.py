@@ -15,6 +15,8 @@ from .cursor import MontyCursor
 from .engine.core import FieldWalker
 from .engine.queries import QueryFilter
 from .engine.update import Updator
+from .engine.helpers import is_internal_doc_type
+
 from .results import (BulkWriteResult,
                       DeleteResult,
                       InsertOneResult,
@@ -149,19 +151,21 @@ class MontyCollection(BaseObject):
 
     def _internal_upsert(self, query_spec, updator, raw_result):
         """Internal document upsert"""
-        def _remove_dollar_key(doc, doc_type):
-            if isinstance(doc, doc_type):
-                new_doc = doc_type()
+        doc_cls = self._database.codec_options.document_class
+
+        def _remove_dollar_key(doc):
+            if is_internal_doc_type(doc):
+                new_doc = doc_cls()
                 fields = list(doc.keys())
                 for field in fields:
                     if field[:1] == "$" or "." in field:
                         continue
-                    new_doc[field] = _remove_dollar_key(doc[field], doc_type)
+                    new_doc[field] = _remove_dollar_key(doc[field])
                 return new_doc
             else:
                 return doc
 
-        document = _remove_dollar_key(deepcopy(query_spec), type(query_spec))
+        document = _remove_dollar_key(deepcopy(query_spec))
         if "_id" not in document:
             document["_id"] = ObjectId()
         raw_result["upserted"] = document["_id"]
@@ -185,6 +189,9 @@ class MontyCollection(BaseObject):
 
         filter, update = command_coder(filter, update,
                                        codec_op=self._database.codec_options)
+        if array_filters:
+            array_filters = command_coder(
+                *array_filters, codec_op=self._database.codec_options)
 
         if bypass_document_validation:
             pass
@@ -219,6 +226,9 @@ class MontyCollection(BaseObject):
 
         filter, update = command_coder(filter, update,
                                        codec_op=self._database.codec_options)
+        if array_filters:
+            array_filters = command_coder(
+                *array_filters, codec_op=self._database.codec_options)
 
         if bypass_document_validation:
             pass

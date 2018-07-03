@@ -1,7 +1,7 @@
 
-from collections import OrderedDict, MutableMapping
 from datetime import datetime
 
+from bson import SON
 from bson.py3compat import string_type
 from bson.decimal128 import Decimal128
 from bson.timestamp import Timestamp
@@ -9,7 +9,7 @@ from bson.timestamp import Timestamp
 from ..errors import WriteError
 from .core import FieldWriteError, Weighted, SimpleGetter, _cmp_decimal
 from .queries import QueryFilter
-from .helpers import is_numeric_type
+from .helpers import is_numeric_type, is_internal_doc_type
 
 
 class Updator(object):
@@ -47,7 +47,7 @@ class Updator(object):
 
         self.fields_to_update = []
         self.array_filters = self.array_filter_parser(array_filters or [])
-        self.operations = OrderedDict(sorted(self.parser(spec).items()))
+        self.operations = SON(sorted(self.parser(spec).items()))
         self.__insert = None
         self.__fieldwalker = None
 
@@ -102,7 +102,7 @@ class Updator(object):
         for op, cmd_doc in spec.items():
             if op not in self.update_ops:
                 raise WriteError("Unknown modifier: {}".format(op))
-            if not isinstance(cmd_doc, MutableMapping):
+            if not is_internal_doc_type(cmd_doc):
                 msg = ("Modifiers operate on fields but we found type {0} "
                        "instead. For example: {{$mod: {{<field>: ...}}}} "
                        "not {1}".format(type(cmd_doc).__name__, spec))
@@ -341,7 +341,7 @@ def parse_currentDate(field, value, array_filters):
     }
 
     if not isinstance(value, bool):
-        if not isinstance(value, MutableMapping):
+        if not is_internal_doc_type(value):
             msg = ("{} is not valid type for $currentDate. Please use a "
                    "boolean ('true') or a $type expression ({{$type: "
                    "'timestamp/date'}}).".format(type(value).__name__))

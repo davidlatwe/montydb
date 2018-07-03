@@ -1,6 +1,8 @@
 
 from datetime import datetime
+from collections import Mapping
 
+from bson import SON
 from bson.timestamp import Timestamp
 from bson.objectid import ObjectId
 from bson.min_key import MinKey
@@ -14,7 +16,6 @@ from bson.code import Code
 from bson.py3compat import string_type, integer_types
 
 from ..helpers import (
-    is_mapping_type,
     RE_PATTERN_TYPE,
     re_int_flag_to_str,
 )
@@ -120,6 +121,7 @@ def gravity(value, weight_only=None):
         Decimal128: 2,
         _cmp_decimal: 2,
         # string: 3,
+        SON: 4,
         dict: 4,
         list: 5,
         tuple: 5,
@@ -129,7 +131,8 @@ def gravity(value, weight_only=None):
         bool: 8,
         datetime: 9,
         Timestamp: 10,
-        # Regex: 11
+        Regex: 11,
+        RE_PATTERN_TYPE: 11,
         # Code without scope: 12
         # Code with scope: 13
         MaxKey: 127
@@ -140,16 +143,14 @@ def gravity(value, weight_only=None):
         wgt = TYPE_WEIGHT[type(value)]
 
     except KeyError:
-        if is_mapping_type(value):
-            wgt = 4
-        elif isinstance(value, (RE_PATTERN_TYPE, Regex)):
-            wgt = 11
-        elif isinstance(value, Code):  # also an instance of string_type
+        if isinstance(value, Code):  # also an instance of string_type
             wgt = 12 if value.scope is None else 13
         elif isinstance(value, string_type):
             wgt = 3
         elif isinstance(value, bytes):  # pragma: no PY2 cover
             wgt = 6
+        elif isinstance(value, Mapping):
+            wgt = 4
         else:
             raise TypeError("Not weightable type: {!r}".format(type(value)))
 

@@ -1,8 +1,8 @@
 
 import sys
 import re
-from collections import Mapping
 
+from bson import SON
 from bson.py3compat import integer_types
 from bson.int64 import Int64
 from bson.decimal128 import Decimal128
@@ -15,12 +15,8 @@ PY36 = sys.version_info[0] == 3 and sys.version_info[1] >= 6
 RE_PATTERN_TYPE = type(re.compile(""))
 
 
-def is_mapping_type(obj):
-    return isinstance(obj, Mapping)
-
-
-def is_array_type(obj):
-    return isinstance(obj, (list, tuple))
+def is_internal_doc_type(obj):
+    return isinstance(obj, SON)
 
 
 def is_numeric_type(obj):

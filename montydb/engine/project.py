@@ -4,8 +4,7 @@ from bson.py3compat import string_type
 from ..errors import OperationFailure
 from .queries import QueryFilter
 from .helpers import (
-    is_mapping_type,
-    is_array_type,
+    is_internal_doc_type,
 )
 
 
@@ -13,7 +12,9 @@ def _is_include(val):
     """
     [] and "" will be `True` as well
     """
-    return bool(is_array_type(val) or isinstance(val, string_type) or val)
+    return bool(isinstance(val, list) or
+                isinstance(val, string_type) or
+                val)
 
 
 def _is_positional_match(conditions, match_field):
@@ -41,9 +42,9 @@ def _perr_doc(val):
         if isinstance(_v, string_type):
             v_lis.append("{0}: \"{1}\"".format(_k, _v))
         else:
-            if is_mapping_type(_v):
+            if is_internal_doc_type(_v):
                 _v = _perr_doc(_v)
-            if is_array_type(_v):
+            if isinstance(_v, list):
                 _ = []
                 for v in _v:
                     _.append(_perr_doc(v))
@@ -90,7 +91,7 @@ class Projector(object):
 
         for key, val in spec.items():
             # Parsing options
-            if is_mapping_type(val):
+            if is_internal_doc_type(val):
                 if not len(val) == 1:
                     _v = _perr_doc(val)
                     raise OperationFailure(">1 field in obj: {}".format(_v))
@@ -103,7 +104,7 @@ class Projector(object):
                             slicing = slice(sub_v)
                         else:
                             slicing = slice(sub_v, None)
-                    elif is_array_type(sub_v):
+                    elif isinstance(sub_v, list):
                         if not len(sub_v) == 2:
                             raise OperationFailure("$slice array wrong size")
                         if sub_v[1] <= 0:
@@ -118,7 +119,7 @@ class Projector(object):
                     self.array_field[key] = self.parse_slice(key, slicing)
 
                 elif sub_k == "$elemMatch":
-                    if not is_mapping_type(sub_v):
+                    if not is_internal_doc_type(sub_v):
                         raise OperationFailure("elemMatch: Invalid argument, "
                                                "object required.")
                     if self.array_op_type == self.ARRAY_OP_POSITIONAL:
@@ -205,12 +206,12 @@ class Projector(object):
                     for emb_doc in fieldwalker.value:
                         if key not in emb_doc:
                             continue
-                        if is_array_type(emb_doc[key]):
+                        if isinstance(emb_doc[key], list):
                             emb_doc[key] = emb_doc[key][slicing]
             else:
                 doc = fieldwalker.doc
                 if field_path in doc:
-                    if is_array_type(doc[field_path]):
+                    if isinstance(doc[field_path], list):
                         doc[field_path] = doc[field_path][slicing]
 
         return _slice
@@ -221,7 +222,7 @@ class Projector(object):
         def _elemMatch(fieldwalker):
             doc = fieldwalker.doc
             has_match = False
-            if field_path in doc and is_array_type(doc[field_path]):
+            if field_path in doc and isinstance(doc[field_path], list):
                 for emb_doc in doc[field_path]:
                     if qfilter_(emb_doc):
                         doc[field_path] = [emb_doc]
@@ -248,7 +249,7 @@ class Projector(object):
             path = ""
             while paths:
                 path = paths.pop()
-                if is_array_type(doc[path]):
+                if isinstance(doc[path], list):
                     if matched_index is None:
                         match = False
                     elif matched_index >= len(doc[path]):
@@ -283,7 +284,7 @@ class Projector(object):
         if fore_path:
             key_list = []
             for val in fieldwalker.value:
-                if is_mapping_type(val):
+                if is_internal_doc_type(val):
                     key_list += list(val.keys())
             key_list = list(set(key_list))
         else:
