@@ -225,7 +225,7 @@ class QueryFilter(object):
         self.field_ops = {
 
             # Logical
-            "$not": self.parse_not(),
+            "$not": self._parse_not,
 
             # Comparison
             "$eq": parse_eq,
@@ -243,7 +243,7 @@ class QueryFilter(object):
 
             # Array
             "$all": parse_all,
-            "$elemMatch": self.parse_elemMatch(),
+            "$elemMatch": self._parse_elemMatch,
             "$size": parse_size,
 
             # Evaluation
@@ -373,46 +373,36 @@ class QueryFilter(object):
 
         return _parse_logic
 
-    def parse_not(self):
-        """`$not` logical operator
-        """
-        def _parse_not(sub_spec):
-            # $not logic only available in field-level
-            if isinstance(sub_spec, (RE_PATTERN_TYPE, Regex)):
-                return self.subparser("$not", {"$regex": sub_spec})
+    def _parse_not(self, sub_spec):
+        # $not logic only available in field-level
+        if isinstance(sub_spec, (RE_PATTERN_TYPE, Regex)):
+            return self.subparser("$not", {"$regex": sub_spec})
 
-            elif is_mapping_type(sub_spec):
-                for op in sub_spec:
-                    if op not in self.field_ops:
-                        raise OperationFailure("unknown operator: "
-                                               "{}".format(op))
-                    if op == "$regex":
-                        raise OperationFailure("$not cannot have a regex")
-
-                return self.subparser("$not", sub_spec)
-
-            else:
-                raise OperationFailure("$not needs a regex or a document")
-
-        return _parse_not
-
-    def parse_elemMatch(self):
-        """`$elemMatch` field-level operator
-        """
-        def _parse_elemMatch(sub_spec):
-            # $elemMatch only available in field-level
-            if not is_mapping_type(sub_spec):
-                raise OperationFailure("$elemMatch needs an Object")
-
+        elif is_mapping_type(sub_spec):
             for op in sub_spec:
-                if op in self.field_ops:
-                    return self.subparser("$elemMatch", sub_spec)
-                elif not op.startswith("$") or op in self.pathless_ops:
-                    return parse_elemMatch(sub_spec)
-                else:
-                    raise OperationFailure("unknown operator: {}".format(op))
+                if op not in self.field_ops:
+                    raise OperationFailure("unknown operator: "
+                                           "{}".format(op))
+                if op == "$regex":
+                    raise OperationFailure("$not cannot have a regex")
 
-        return _parse_elemMatch
+            return self.subparser("$not", sub_spec)
+
+        else:
+            raise OperationFailure("$not needs a regex or a document")
+
+    def _parse_elemMatch(self, sub_spec):
+        # $elemMatch only available in field-level
+        if not is_mapping_type(sub_spec):
+            raise OperationFailure("$elemMatch needs an Object")
+
+        for op in sub_spec:
+            if op in self.field_ops:
+                return self.subparser("$elemMatch", sub_spec)
+            elif not op.startswith("$") or op in self.pathless_ops:
+                return parse_elemMatch(sub_spec)
+            else:
+                raise OperationFailure("unknown operator: {}".format(op))
 
 
 def _is_expression_obj(sub_spec):
