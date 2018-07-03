@@ -434,9 +434,24 @@ def parse_pop(field, value, array_filters):
 
 
 def parse_pull(field, value, array_filters):
+    queryfilter = QueryFilter({"": value})
+
     def _pull(fieldwalker):
-        def pull(old_val, pull_ind, field_info):
-            pass
+        def pull(old_val, _, field_info):
+            if field_info["exists"] and not isinstance(old_val, list):
+                msg = "Cannot apply $pull to a non-array value"
+                raise WriteError(msg, code=2)
+
+            if not field_info["exists"]:
+                # do nothing
+                field_info["exec"] = False
+                return
+
+            new_array = []
+            for elem in old_val:
+                if not queryfilter({"": elem}):
+                    new_array.append(elem)
+            return new_array
 
         try:
             fieldwalker.go(field).set(value, pull, array_filters)
