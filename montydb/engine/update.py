@@ -433,8 +433,15 @@ def parse_pop(field, value, array_filters):
     return _pop
 
 
+def _lose_top_order(value):
+    if is_internal_doc_type(value):
+        return dict(value)
+    else:
+        return value
+
+
 def parse_pull(field, value, array_filters):
-    queryfilter = QueryFilter({"": value})
+    queryfilter = QueryFilter({"": _lose_top_order(value)})
 
     def _pull(fieldwalker):
         def pull(old_val, _, field_info):
@@ -449,7 +456,8 @@ def parse_pull(field, value, array_filters):
 
             new_array = []
             for elem in old_val:
-                if not queryfilter({"": elem}):
+                result = queryfilter({"": _lose_top_order(elem)})
+                if not result:
                     new_array.append(elem)
             return new_array
 

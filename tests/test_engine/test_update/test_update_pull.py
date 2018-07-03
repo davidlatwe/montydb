@@ -3,6 +3,7 @@ import pytest
 
 from pymongo.errors import WriteError as mongo_write_err
 from montydb.errors import WriteError as monty_write_err
+from montydb.engine.helpers import PY36
 
 
 def test_update_pull_1(monty_update, mongo_update):
@@ -73,7 +74,7 @@ def test_update_pull_5(monty_update, mongo_update):
 
     assert next(mongo_c) == next(monty_c)
     monty_c.rewind()
-    assert next(monty_c) == {"a": []}  # {"c": 1, "b": 1}
+    assert next(monty_c) == {"a": []}
 
 
 def test_update_pull_6(monty_update, mongo_update):
@@ -87,4 +88,7 @@ def test_update_pull_6(monty_update, mongo_update):
 
     assert next(mongo_c) == next(monty_c)
     monty_c.rewind()
-    assert next(monty_c) == {"a": [{"x": {"c": 1, "b": 1}}]}  # {"c": 1, "b": 1}
+    if PY36:
+        assert next(monty_c) == {"a": [{"x": {"b": 1, "c": 1}}]}
+    else:
+        assert next(monty_c) == {"a": []}
