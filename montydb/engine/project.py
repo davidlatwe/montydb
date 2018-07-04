@@ -4,7 +4,7 @@ from bson.py3compat import string_type
 from ..errors import OperationFailure
 from .queries import QueryFilter
 from .helpers import (
-    is_internal_doc_type,
+    is_duckument_type,
 )
 
 
@@ -42,7 +42,7 @@ def _perr_doc(val):
         if isinstance(_v, string_type):
             v_lis.append("{0}: \"{1}\"".format(_k, _v))
         else:
-            if is_internal_doc_type(_v):
+            if is_duckument_type(_v):
                 _v = _perr_doc(_v)
             if isinstance(_v, list):
                 _ = []
@@ -91,7 +91,7 @@ class Projector(object):
 
         for key, val in spec.items():
             # Parsing options
-            if is_internal_doc_type(val):
+            if is_duckument_type(val):
                 if not len(val) == 1:
                     _v = _perr_doc(val)
                     raise OperationFailure(">1 field in obj: {}".format(_v))
@@ -119,7 +119,7 @@ class Projector(object):
                     self.array_field[key] = self.parse_slice(key, slicing)
 
                 elif sub_k == "$elemMatch":
-                    if not is_internal_doc_type(sub_v):
+                    if not is_duckument_type(sub_v):
                         raise OperationFailure("elemMatch: Invalid argument, "
                                                "object required.")
                     if self.array_op_type == self.ARRAY_OP_POSITIONAL:
@@ -284,7 +284,7 @@ class Projector(object):
         if fore_path:
             key_list = []
             for val in fieldwalker.value:
-                if is_internal_doc_type(val):
+                if is_duckument_type(val):
                     key_list += list(val.keys())
             key_list = list(set(key_list))
         else:

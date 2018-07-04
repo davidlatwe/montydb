@@ -15,7 +15,7 @@ from .cursor import MontyCursor
 from .engine.core import FieldWalker
 from .engine.queries import QueryFilter
 from .engine.update import Updator
-from .engine.helpers import is_internal_doc_type
+from .engine.helpers import is_duckument_type
 
 from .results import (BulkWriteResult,
                       DeleteResult,
@@ -154,7 +154,7 @@ class MontyCollection(BaseObject):
         doc_cls = self._database.codec_options.document_class
 
         def _remove_dollar_key(doc):
-            if is_internal_doc_type(doc):
+            if is_duckument_type(doc):
                 new_doc = doc_cls()
                 fields = list(doc.keys())
                 for field in fields:

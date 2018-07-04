@@ -27,20 +27,21 @@ from bson.codec_options import CodecOptions
 from bson.raw_bson import RawBSONDocument
 from bson.codec_options import _parse_codec_options
 
+from .engine.helpers import is_duckument_type
 
 ASCENDING = 1
 DESCENDING = -1
 
 
 def command_coder(*args, **kwargs):
-    """Convert everything to SON
+    """Convert to BSON bytes and back
     """
     codec_op = kwargs["codec_op"]
     for doc in args:
-        if isinstance(doc, collections.MutableMapping):
-            # Preserve the order of the query document when decode it back
-            order_keep = codec_op.with_options(document_class=SON)
-            yield BSON.encode(doc, False, codec_op).decode(order_keep)
+        if is_duckument_type(doc):
+            # Preserve the type of the query document when decode it back
+            type_keep = codec_op.with_options(document_class=type(doc))
+            yield BSON.encode(doc, False, codec_op).decode(type_keep)
         else:
             yield doc  # should be None type.
 

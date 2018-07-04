@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from bson import BSON, SON
+from bson import BSON
 
 from ..engine.helpers import with_metaclass
 
@@ -146,13 +146,8 @@ class AbstractCursor(with_metaclass(ABCMeta, object)):
 
     def _decode_doc(self, doc):
         """
-        Document field order matters
-
-        In order to match sub-document like MongoDB, decode to SON for internal
-        usage.
         """
-        coptions = self._collection.coptions.with_options(document_class=SON)
-        return BSON(doc).decode(coptions)
+        return BSON(doc).decode(self._collection.coptions)
 
     @abstractmethod
     def query(self):

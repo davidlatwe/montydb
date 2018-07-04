@@ -301,7 +301,7 @@ class MontyCursor(object):
             for fw in fieldwalkers:
                 projector(fw)
 
-        self._data = deque(self._decode_docs(fw) for fw in fieldwalkers)
+        self._data = deque(fw.doc for fw in fieldwalkers)
         self._retrieved += len(fieldwalkers)
         # (NOTE) cursor id should return from storage, but ignore for now.
         self._id = 0
@@ -312,16 +312,6 @@ class MontyCursor(object):
 
         if self._limit and self._id and self._limit <= self._retrieved:
             self.__die()
-
-    def _decode_docs(self, fieldwalker):
-        """
-        decode document from internal SON type to the type defined in
-        codec options.
-        """
-        if self._codec_options.document_class is dict:
-            # SON.to_dict()
-            return fieldwalker.doc.to_dict()
-        return BSON.encode(fieldwalker.doc).decode(self._codec_options)
 
     def _refresh(self):
         """Refreshes the cursor with more data from Monty.

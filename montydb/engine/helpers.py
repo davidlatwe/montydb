@@ -2,7 +2,6 @@
 import sys
 import re
 
-from bson import SON
 from bson.py3compat import integer_types
 from bson.int64 import Int64
 from bson.decimal128 import Decimal128
@@ -12,11 +11,64 @@ FS_ENCODE = sys.getfilesystemencoding()
 PY3 = sys.version_info[0] == 3
 PY36 = sys.version_info[0] == 3 and sys.version_info[1] >= 6
 
+if PY3:
+    from itertools import zip_longest
+else:
+    from itertools import izip_longest as zip_longest
+
+
 RE_PATTERN_TYPE = type(re.compile(""))
 
 
-def is_internal_doc_type(obj):
-    return isinstance(obj, SON)
+def _compare_documents_in_py36(a, b):
+    if len(a) == len(b):
+        if all(ak == bk for ak, bk in zip_longest(a.keys(), b.keys())):
+            for av, bv in zip_longest(a.values(), b.values()):
+                if (is_duckument_type(av) and is_duckument_type(bv) and
+                        not _compare_documents_in_py36(av, bv)) or av != bv:
+                        return False
+            return True
+
+    return False
+
+
+def compare_documents(this, that):
+    """Document key order matters
+
+    Before PY 3.6, the `dict` key order is defined by Python itself, so as
+    long as two dicts both have same keys, thier order will be the same.
+
+    In PY 3.6, `dict` has order-preserving,
+    https://docs.python.org/3.6/whatsnew/3.6.html#new-dict-implementation
+    but two different key ordered dictionary are still equal.
+    ```python 3.6
+    >>> print({'a': 1.0, 'b': 1.0})
+    {'a': 1.0, 'b': 1.0}
+    >>> print({'b': 1.0, 'a': 1.0})
+    {'b': 1.0, 'a': 1.0}
+    >>> {'a': 1.0, 'b': 1.0} == {'b': 1.0, 'a': 1.0}
+    True
+    ```
+    Therefore, we should compare them by length, keys, values separately.
+    """
+    if not PY36:
+        return this == that
+    else:
+        return _compare_documents_in_py36(this, that)
+
+
+def is_duckument_type(obj):
+    """Internal mapping type checker
+
+    Instead of using `isinstance(obj, MutableMapping)`, duck type checking
+    is much cheaper and work on most common use cases.
+
+    If an object has these attritubes, is a document:
+        `__len__`, `keys`, `values`
+
+    """
+    doc_attrs = ("__len__", "keys", "values")
+    return all(hasattr(obj, attr) for attr in doc_attrs)
 
 
 def is_numeric_type(obj):

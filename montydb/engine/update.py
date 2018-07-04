@@ -9,7 +9,7 @@ from bson.timestamp import Timestamp
 from ..errors import WriteError
 from .core import FieldWriteError, Weighted, SimpleGetter, _cmp_decimal
 from .queries import QueryFilter
-from .helpers import is_numeric_type, is_internal_doc_type
+from .helpers import is_numeric_type, is_duckument_type, PY36
 
 
 class Updator(object):
@@ -102,7 +102,7 @@ class Updator(object):
         for op, cmd_doc in spec.items():
             if op not in self.update_ops:
                 raise WriteError("Unknown modifier: {}".format(op))
-            if not is_internal_doc_type(cmd_doc):
+            if not is_duckument_type(cmd_doc):
                 msg = ("Modifiers operate on fields but we found type {0} "
                        "instead. For example: {{$mod: {{<field>: ...}}}} "
                        "not {1}".format(type(cmd_doc).__name__, spec))
@@ -341,7 +341,7 @@ def parse_currentDate(field, value, array_filters):
     }
 
     if not isinstance(value, bool):
-        if not is_internal_doc_type(value):
+        if not is_duckument_type(value):
             msg = ("{} is not valid type for $currentDate. Please use a "
                    "boolean ('true') or a $type expression ({{$type: "
                    "'timestamp/date'}}).".format(type(value).__name__))
@@ -434,8 +434,9 @@ def parse_pop(field, value, array_filters):
 
 
 def _lose_top_order(value):
-    if is_internal_doc_type(value):
-        return dict(value)
+    if PY36 and is_duckument_type(value):
+        # To lose top level key order, sort alphabetically to unify them.
+        return {k: v for k, v in sorted(value.items())}
     else:
         return value
 

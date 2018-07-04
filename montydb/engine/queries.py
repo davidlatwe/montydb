@@ -29,9 +29,10 @@ from .core import (
 
 from .helpers import (
     RE_PATTERN_TYPE,
-    is_internal_doc_type,
+    is_duckument_type,
     is_pattern_type,
     keep,
+    compare_documents,
 )
 
 
@@ -323,7 +324,7 @@ class QueryFilter(object):
         #   2) raise an "OperationFailure: unknown operator" error.
         #
         if isinstance(sub_spec, Regex):
-            sub_spec = SON({"$regex": sub_spec})
+            sub_spec = {"$regex": sub_spec}
 
         if _is_expression_obj(sub_spec):
             # Modify `sub_spec` for $regex and $options
@@ -365,7 +366,7 @@ class QueryFilter(object):
             logic_box = LogicBox(theme)
 
             for cond in sub_spec:
-                if not is_internal_doc_type(cond):
+                if not is_duckument_type(cond):
                     raise OperationFailure(
                         "$or/$and/$nor entries need to be full objects")
 
@@ -377,9 +378,9 @@ class QueryFilter(object):
     def _parse_not(self, sub_spec):
         # $not logic only available in field-level
         if isinstance(sub_spec, (RE_PATTERN_TYPE, Regex)):
-            return self.subparser("$not", SON({"$regex": sub_spec}))
+            return self.subparser("$not", {"$regex": sub_spec})
 
-        elif is_internal_doc_type(sub_spec):
+        elif is_duckument_type(sub_spec):
             for op in sub_spec:
                 if op not in self.field_ops:
                     raise OperationFailure("unknown operator: "
@@ -394,7 +395,7 @@ class QueryFilter(object):
 
     def _parse_elemMatch(self, sub_spec):
         # $elemMatch only available in field-level
-        if not is_internal_doc_type(sub_spec):
+        if not is_duckument_type(sub_spec):
             raise OperationFailure("$elemMatch needs an Object")
 
         for op in sub_spec:
@@ -407,7 +408,7 @@ class QueryFilter(object):
 
 
 def _is_expression_obj(sub_spec):
-    return (is_internal_doc_type(sub_spec) and
+    return (is_duckument_type(sub_spec) and
             next(iter(sub_spec)).startswith("$"))
 
 
@@ -476,18 +477,27 @@ def _is_comparable(val, qry):
 
 
 def _eq_match(fieldwalker, query):
-    if query is None:
-        return fieldwalker.value.null_or_missing
+    """
+    """
+    if is_duckument_type(query):
+        for val in fieldwalker.value:
+            if is_duckument_type(val):
+                if compare_documents(query, val):
+                    return True
 
-    if isinstance(query, Decimal128):
-        query = _cmp_decimal(query)
+    else:
+        if query is None:
+            return fieldwalker.value.null_or_missing
 
-    for val in fieldwalker.value:
-        if isinstance(val, Decimal128):
-            val = _cmp_decimal(val)
+        if isinstance(query, Decimal128):
+            query = _cmp_decimal(query)
 
-        if val == query and _is_comparable(val, query):
-            return True
+        for val in fieldwalker.value:
+            if isinstance(val, Decimal128):
+                val = _cmp_decimal(val)
+
+            if val == query and _is_comparable(val, query):
+                return True
 
 
 def parse_eq(query):
@@ -645,15 +655,15 @@ def parse_all(query):
     if not isinstance(query, list):
         raise OperationFailure("$all needs an array")
 
-    if is_internal_doc_type(query[0]) and next(iter(query[0])) == "$elemMatch":
+    if is_duckument_type(query[0]) and next(iter(query[0])) == "$elemMatch":
         go_match = True
         for q in query:
-            if not (is_internal_doc_type(q) and next(iter(q)) == "$elemMatch"):
+            if not (is_duckument_type(q) and next(iter(q)) == "$elemMatch"):
                 raise OperationFailure("$all/$elemMatch has to be consistent")
     else:
         go_match = False
         for q in query:
-            if is_internal_doc_type(q) and next(iter(q)) in field_op_ls:
+            if is_duckument_type(q) and next(iter(q)) in field_op_ls:
                 raise OperationFailure("no $ expressions in $all")
 
     @keep(query)
