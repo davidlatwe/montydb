@@ -9,7 +9,7 @@ from bson.timestamp import Timestamp
 from ..errors import WriteError
 from .core import FieldWriteError, Weighted, SimpleGetter, _cmp_decimal
 from .queries import QueryFilter
-from .helpers import is_numeric_type, is_duckument_type, PY36
+from .helpers import is_numeric_type, is_duckument_type
 
 
 class Updator(object):
@@ -433,16 +433,17 @@ def parse_pop(field, value, array_filters):
     return _pop
 
 
-def _lose_top_order(value):
-    if PY36 and is_duckument_type(value):
-        # To lose top level key order, sort alphabetically to unify them.
-        return {k: v for k, v in sorted(value.items())}
+def parse_pull(field, value_or_conditions, array_filters):
+    if is_duckument_type(value_or_conditions):
+        query_spec = {}
+        for k, v in value_or_conditions.items():
+            if not k[:1] == "$":
+                query_spec[".".join((field, k))] = v
+            else:
+                query_spec[field] = {k: v}
+        queryfilter = QueryFilter(query_spec)
     else:
-        return value
-
-
-def parse_pull(field, value, array_filters):
-    queryfilter = QueryFilter({"": _lose_top_order(value)})
+        queryfilter = QueryFilter({field: value_or_conditions})
 
     def _pull(fieldwalker):
         def pull(old_val, _, field_info):
@@ -457,13 +458,14 @@ def parse_pull(field, value, array_filters):
 
             new_array = []
             for elem in old_val:
-                result = queryfilter({"": _lose_top_order(elem)})
+                result = queryfilter({field: elem})
+
                 if not result:
                     new_array.append(elem)
             return new_array
 
         try:
-            fieldwalker.go(field).set(value, pull, array_filters)
+            fieldwalker.go(field).set(None, pull, array_filters)
         except FieldWriteError as err:
             msg = err.message if hasattr(err, 'message') else str(err)
             raise WriteError(msg, code=err.code)
