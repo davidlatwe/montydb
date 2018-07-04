@@ -3,7 +3,7 @@ import copy
 from collections import deque
 
 from bson import RE_TYPE
-from bson import BSON, SON
+from bson import SON
 from bson.py3compat import iteritems, integer_types
 
 from .errors import InvalidOperation, OperationFailure
