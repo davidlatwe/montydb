@@ -108,10 +108,9 @@ class Updator(object):
                        "not {1}".format(type(cmd_doc).__name__, spec))
                 raise WriteError(msg, code=9)
             for field, value in cmd_doc.items():
-                for top in idnt_tops:
+                for top in list(idnt_tops):
                     if "$[{}]".format(top) in field:
                         idnt_tops.remove(top)
-                        break
 
                 update_stack[field] = self.update_ops[op](
                     field, value, self.array_filters)
