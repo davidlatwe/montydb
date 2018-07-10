@@ -34,14 +34,14 @@ DESCENDING = -1
 
 
 def command_coder(*args, **kwargs):
-    """Convert to BSON bytes and back
+    """Convert command doc to SON type
     """
     codec_op = kwargs["codec_op"]
     for doc in args:
         if is_duckument_type(doc):
             # Preserve the type of the query document when decode it back
-            type_keep = codec_op.with_options(document_class=type(doc))
-            yield BSON.encode(doc, False, codec_op).decode(type_keep)
+            order_keep = codec_op.with_options(document_class=SON)
+            yield BSON.encode(doc, False, codec_op).decode(order_keep)
         else:
             yield doc  # should be None type.
 
