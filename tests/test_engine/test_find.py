@@ -1,6 +1,4 @@
 
-from montydb.engine.helpers import PY36
-
 
 def test_find_1(monty_find, mongo_find):
     docs = [
@@ -27,7 +25,6 @@ def test_find_2(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 1 if PY36 else 2
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
 
@@ -42,6 +39,5 @@ def test_find_3(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 1 if PY36 else 2
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)

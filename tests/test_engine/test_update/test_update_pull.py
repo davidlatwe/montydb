@@ -3,7 +3,6 @@ import pytest
 
 from pymongo.errors import WriteError as mongo_write_err
 from montydb.errors import WriteError as monty_write_err
-from montydb.engine.helpers import PY36
 
 
 def test_update_pull_1(monty_update, mongo_update):
@@ -86,12 +85,8 @@ def test_update_pull_6(monty_update, mongo_update):
     monty_c = monty_update(docs, spec)
     mongo_c = mongo_update(docs, spec)
 
+    # result may differ depend on dict order
     assert next(mongo_c) == next(monty_c)
-    monty_c.rewind()
-    if PY36:
-        assert next(monty_c) == {"a": [{"x": {"b": 1, "c": 1}}]}
-    else:
-        assert next(monty_c) == {"a": []}
 
 
 def test_update_pull_7(monty_update, mongo_update):
@@ -106,14 +101,9 @@ def test_update_pull_7(monty_update, mongo_update):
     monty_c = monty_update(docs, spec)
     mongo_c = mongo_update(docs, spec)
 
-    assert next(mongo_c) == next(monty_c)
-    monty_c.rewind()
-    if PY36:
-        assert monty_c[0] == {"a": [{"x": {"c": 1, "b": 1}, "y": 1}]}
-        assert monty_c[1] == {"a": [{"y": 1, "x": {"c": 1, "b": 1}}]}
-    else:
-        assert monty_c[0] == {"a": []}
-        assert monty_c[1] == {"a": []}
+    # result may differ depend on dict order
+    for doc in mongo_c:
+        assert doc == next(monty_c)
 
 
 def test_update_pull_8(monty_update, mongo_update):

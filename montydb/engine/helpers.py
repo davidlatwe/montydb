@@ -1,5 +1,6 @@
 
 import sys
+import platform
 import re
 
 from bson.py3compat import integer_types
@@ -9,7 +10,6 @@ from bson.decimal128 import Decimal128
 FS_ENCODE = sys.getfilesystemencoding()
 
 PY3 = sys.version_info[0] == 3
-PY36 = sys.version_info[0] == 3 and sys.version_info[1] >= 6
 
 if PY3:
     from itertools import zip_longest
@@ -20,41 +20,43 @@ else:
 RE_PATTERN_TYPE = type(re.compile(""))
 
 
-def _compare_documents_in_py36(a, b):
+def _compare_doc_in_strict_order(a, b):
     if len(a) == len(b):
         if all(ak == bk for ak, bk in zip_longest(a.keys(), b.keys())):
             for av, bv in zip_longest(a.values(), b.values()):
                 if (is_duckument_type(av) and is_duckument_type(bv) and
-                        not _compare_documents_in_py36(av, bv)) or av != bv:
+                        not _compare_doc_in_strict_order(av, bv)) or av != bv:
                         return False
             return True
 
     return False
 
 
+DictKeyOrderMutable = (
+    # CPython >= 3.5
+    (sys.version_info[0] == 3 and sys.version_info[1] >= 5) or
+    # all PyPy
+    platform.python_implementation() == "PyPy"
+)
+
+
 def compare_documents(this, that):
     """Document key order matters
 
-    Before PY 3.6, the `dict` key order is defined by Python itself, so as
-    long as two dicts both have same keys, thier order will be the same.
+    In PY 3.6, `dict` has order-preserving, so does PyPy and PyPy3, and in
+    PY 3.5, `dict` is random iteration ordered.
 
-    In PY 3.6, `dict` has order-preserving,
-    https://docs.python.org/3.6/whatsnew/3.6.html#new-dict-implementation
-    but two different key ordered dictionary are still equal.
-    ```python 3.6
-    >>> print({'a': 1.0, 'b': 1.0})
-    {'a': 1.0, 'b': 1.0}
-    >>> print({'b': 1.0, 'a': 1.0})
-    {'b': 1.0, 'a': 1.0}
-    >>> {'a': 1.0, 'b': 1.0} == {'b': 1.0, 'a': 1.0}
-    True
-    ```
+    Which means, same key-value pairs could have different orders in runtime,
+    and two dictionary with same values but different key ordered are still
+    equal in comparison, but not equal in MongoDB.
+
     Therefore, we should compare them by length, keys, values separately.
     """
-    if not PY36:
+    if not DictKeyOrderMutable:
+        # use simple `equal` if the order is constant
         return this == that
     else:
-        return _compare_documents_in_py36(this, that)
+        return _compare_doc_in_strict_order(this, that)
 
 
 def is_duckument_type(obj):
