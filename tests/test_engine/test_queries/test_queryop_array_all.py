@@ -1,6 +1,5 @@
 
 import pytest
-from montydb.engine.core import FieldWalker
 from montydb.errors import OperationFailure
 
 
@@ -14,7 +13,6 @@ def test_qop_all_1(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0]).go("a").get().value == [1, 2, 3, [1, 2, 3]]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -30,7 +28,6 @@ def test_qop_all_2(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0]).go("a").get().value == [1, 2, 3, [1, 2, 3]]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -46,8 +43,6 @@ def test_qop_all_3(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0]).go("a").get().value == [1, 2, 3, [1, 2, 3]]
-    assert FieldWalker(docs[1]).go("a").get().value == [2, 3, [2, 3]]
     assert mongo_c.count() == 2
     assert monty_c.count() == mongo_c.count()
     for i in range(2):
@@ -64,8 +59,6 @@ def test_qop_all_4(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0]).go("a").get().value == [3, 1, 2, [3, 1, 2]]
-    assert FieldWalker(docs[1]).go("a").get().value == [3, 2, [3, 2]]
     assert mongo_c.count() == 2
     assert monty_c.count() == mongo_c.count()
     for i in range(2):
@@ -83,7 +76,6 @@ def test_qop_all_5(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[1]).go("a").get().value == [[2, 3], 1, [[2, 3], 1]]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -99,7 +91,6 @@ def test_qop_all_6(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0]).go("a.b").get().value == [1, 2]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)

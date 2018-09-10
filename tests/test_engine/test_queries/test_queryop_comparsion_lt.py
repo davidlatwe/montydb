@@ -1,6 +1,5 @@
 
 import pytest
-from montydb.engine.core import FieldWalker
 from montydb.errors import OperationFailure
 
 from datetime import datetime
@@ -27,7 +26,6 @@ def test_qop_lt_1(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0]).go("a").get().value == [[]]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
