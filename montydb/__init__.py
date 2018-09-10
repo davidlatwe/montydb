@@ -13,6 +13,14 @@ from .configure import MontyConfigure
 
 from . import utils
 
+from .version import (
+    version,
+    version_info,
+    mongo_version,
+    mongo_version_info,
+    __version__,
+)
+
 
 __all__ = [
 
@@ -28,4 +36,10 @@ __all__ = [
     "CursorType",
 
     "utils",
+
+    "version",
+    "version_info",
+    "mongo_version",
+    "mongo_version_info",
+    "__version__",
 ]
