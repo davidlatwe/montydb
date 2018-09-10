@@ -23,7 +23,6 @@ from .version import (
 
 
 __all__ = [
-
     "MontyClient",
     "MontyDatabase",
     "MontyCollection",
