@@ -71,17 +71,21 @@ class Updator(object):
         for i, filter_ in enumerate(array_filters):
             top = ""
             conds = {}
+
             for identifier, cond in filter_.items():
                 id_s = identifier.split(".", 1)
+
                 if not top and id_s[0] in filters:
                     msg = ("Found multiple array filters with the same "
                            "top-level field name {}".format(id_s[0]))
                     raise WriteError(msg, code=9)
+
                 if top and id_s[0] != top:
                     msg = ("Error parsing array filter: Expected a single "
                            "top-level field name, found {0!r} and {1!r}"
                            "".format(top, id_s[0]))
                     raise WriteError(msg, code=9)
+
                 top = id_s[0]
                 if len(id_s) > 1:
                     conds.update({"{}.{}".format("{}", id_s[1]): cond})
@@ -99,14 +103,17 @@ class Updator(object):
 
         update_stack = {}
         idnt_tops = list(self.array_filters.keys())
+
         for op, cmd_doc in spec.items():
             if op not in self.update_ops:
                 raise WriteError("Unknown modifier: {}".format(op))
+
             if not is_duckument_type(cmd_doc):
                 msg = ("Modifiers operate on fields but we found type {0} "
                        "instead. For example: {{$mod: {{<field>: ...}}}} "
                        "not {1}".format(type(cmd_doc).__name__, spec))
                 raise WriteError(msg, code=9)
+
             for field, value in cmd_doc.items():
                 for top in list(idnt_tops):
                     if "$[{}]".format(top) in field:
