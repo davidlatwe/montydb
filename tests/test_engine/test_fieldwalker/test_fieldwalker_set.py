@@ -10,6 +10,7 @@ def test_fieldwalker_value_set_1():
     fieldwalker = FieldWalker(doc)
     with fieldwalker.go(path):
         fieldwalker.set(value)
+        doc = fieldwalker.commit()
     assert doc == {"a": 10}
 
 
@@ -21,6 +22,7 @@ def test_fieldwalker_value_set_2():
     fieldwalker = FieldWalker(doc)
     with fieldwalker.go(path):
         fieldwalker.set(value)
+        doc = fieldwalker.commit()
     assert doc == {"a": {"b": 10}}
 
 
@@ -32,6 +34,7 @@ def test_fieldwalker_value_set_3():
     fieldwalker = FieldWalker(doc)
     with fieldwalker.go(path):
         fieldwalker.set(value)
+        doc = fieldwalker.commit()
     assert doc == {"a": [1, 20, 3]}
 
 
@@ -44,6 +47,7 @@ def test_fieldwalker_value_set_4():
     with fieldwalker.go(path):
         fieldwalker.set(value)
         assert doc == {"a": [1, 2, 3]}
+        doc = fieldwalker.commit()
     assert doc == {"a": [1, 2, 3, None, None, 9]}
 
 
@@ -57,6 +61,7 @@ def test_fieldwalker_value_set_5():
         fieldwalker.go("c")
         fieldwalker.set(99)
         assert doc == {}
+        doc = fieldwalker.commit()
     assert doc == {"a": {"b": 10}, "c": 99}
 
 
@@ -68,4 +73,5 @@ def test_fieldwalker_value_set_6():
     fieldwalker = FieldWalker(doc)
     with fieldwalker.go(path):
         fieldwalker.set(value)
+        doc = fieldwalker.commit()
     assert doc == {"a": [1, None, {"b": 20}]}
