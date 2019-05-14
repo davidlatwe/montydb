@@ -274,6 +274,9 @@ class FieldTree(object):
     def __repr__(self):
         return "FieldTree({})".format(self)
 
+    def clear(self):
+        self.root.children = list()
+
     def grow(self, fields):
         self.picked = [self.root]
         pre_field = ""
@@ -306,7 +309,6 @@ class FieldTree(object):
 
     def read(self, fields):
         self.handler = FieldTreeReader(self)
-        self.root.children = list()  # Ensure clean read
         self.grow(fields)
         return FieldValues(self.picked)
 
@@ -434,4 +436,4 @@ class FieldWalker(object):
         return self
 
     def __exit__(self, *args):
-        pass
+        self.tree.clear()
