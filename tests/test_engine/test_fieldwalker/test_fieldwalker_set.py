@@ -1,4 +1,10 @@
-from montydb.engine.core import FieldWalker
+
+import pytest
+from montydb.engine.core import (
+    FieldWalker,
+    FieldCreateError,
+    FieldConflictError,
+)
 
 
 def test_fieldwalker_value_set_1():
@@ -75,3 +81,38 @@ def test_fieldwalker_value_set_6():
         fieldwalker.set(value)
         doc = fieldwalker.commit()
     assert doc == {"a": [1, None, {"b": 20}]}
+
+
+def test_fieldwalker_value_set_7():
+    doc = {"a": [{"b": 0}, {"b": 1}]}
+    path = "a.b"
+    value = 10
+
+    fieldwalker = FieldWalker(doc)
+    with fieldwalker.go(path):
+        with pytest.raises(FieldCreateError):
+            fieldwalker.set(value)
+
+
+def test_fieldwalker_value_set_8():
+    doc = {}
+
+    fieldwalker = FieldWalker(doc)
+    with fieldwalker:
+        fieldwalker.go("a.b")
+        fieldwalker.set(1)
+        fieldwalker.go("a")
+        with pytest.raises(FieldConflictError):
+            fieldwalker.set(2)
+
+
+def test_fieldwalker_value_set_9():
+    doc = {"a": [{"b": 0}, {"b": 1}]}
+    path = "a.1.b"
+    value = 10
+
+    fieldwalker = FieldWalker(doc)
+    with fieldwalker.go(path):
+        fieldwalker.set(value)
+        doc = fieldwalker.commit()
+    assert doc == {"a": [{"b": 0}, {"b": 10}]}
