@@ -312,9 +312,10 @@ class FieldTree(object):
         self.grow(fields)
         return FieldValues(self.picked)
 
-    def stage(self, field, value):
+    def stage(self, field, value, evaluator=None):
         """Internal method, for staging the changes
         """
+        evaluator = evaluator or (lambda _, val: val)
         staging = [node for node in self.picked if node == field]
         updates = list()
 
@@ -326,16 +327,16 @@ class FieldTree(object):
                            "at {1!r}".format(update, changed))
                     raise ConflictError(msg)
 
-            node.value = value
+            node.value = evaluator(node.value, value)
             updates.append(update)
 
         self.changes += updates
 
-    def write(self, fields, value):
+    def write(self, fields, value, evaluator=None):
         self.handler = FieldTreeWriter(self)
         self.handler.on_delete = value is _no_val
         self.grow(fields)
-        self.stage(fields[-1], value)
+        self.stage(fields[-1], value, evaluator=evaluator)
 
     def delete(self, fields):
         self.write(fields, _no_val)
@@ -423,8 +424,8 @@ class FieldWalker(object):
         self.value = self.tree.read(self.steps)
         return self
 
-    def set(self, value):
-        self.tree.write(self.steps, value)
+    def set(self, value, evaluator=None):
+        self.tree.write(self.steps, value, evaluator)
 
     def drop(self):
         self.tree.delete(self.steps)
