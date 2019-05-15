@@ -217,7 +217,7 @@ class FieldTreeWriter(object):
         try:
             val = doc[field]
         except KeyError:
-            val = dict()
+            val = self.map_cls()
 
         if index:
             field = index + "." + field
@@ -234,7 +234,7 @@ class FieldTreeWriter(object):
             try:
                 val = doc[int(field)]
             except IndexError:
-                val = dict()
+            val = self.map_cls()
 
             node.spawn(val, field, located=True, in_array=True)
 
@@ -350,7 +350,7 @@ class FieldTree(object):
             doc = node.value
 
             if isinstance(doc, self.map_cls):
-                new_doc = dict()
+                new_doc = self.map_cls()
                 fields = list(doc.keys()) + [str(child) for child in node
                                              if child not in doc]
                 for field in fields:
