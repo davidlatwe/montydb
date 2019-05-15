@@ -13,11 +13,15 @@ class FieldWalkError(Exception):
     """Base class for FieldWalker exceptions."""
 
 
-class CreateError(FieldWalkError):
+class FieldWriteError(FieldWalkError):
+    """FieldWalker write operation error class"""
+
+
+class FieldCreateError(FieldWriteError):
     """Raised when creating field on immutable value."""
 
 
-class ConflictError(FieldWalkError):
+class FieldConflictError(FieldWriteError):
     """Raised when field path overlapping between write operations."""
 
 
@@ -207,7 +211,7 @@ class FieldTreeWriter(object):
         elif not self.on_delete:
             msg = ("Cannot create field {0!r} in element "
                    "{1}".format(field, {str(node): node.value}))
-            raise CreateError(msg)
+            raise FieldCreateError(msg)
 
         return node.children
 
@@ -320,7 +324,7 @@ class FieldTree(object):
                 if is_conflict(update, changed):
                     msg = ("Updating the path {0!r} would create a conflict "
                            "at {1!r}".format(update, changed))
-                    raise ConflictError(msg)
+                    raise FieldConflictError(msg)
 
             node.value = evaluator(node.value, value)
             updates.append(update)
