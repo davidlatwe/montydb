@@ -226,17 +226,12 @@ class FieldTreeWriter(object):
     def write_array(self, node, field):
         doc = node.value
 
-        for i, elem in enumerate(doc):
-            if isinstance(elem, self.map_cls):
-                self.write_map(node, field, str(i), elem)
-
-        if field.isdigit():
-            try:
-                val = doc[int(field)]
-            except IndexError:
+        try:
+            val = doc[int(field)]
+        except IndexError:
             val = self.map_cls()
 
-            node.spawn(val, field, located=True, in_array=True)
+        node.spawn(val, field, located=True, in_array=True)
 
 
 def is_conflict(path_a, path_b):
