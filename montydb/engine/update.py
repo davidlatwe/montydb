@@ -428,28 +428,24 @@ def parse_pop(field, value, array_filters):
             raise WriteError(msg_raw.format(field, value), code=9)
 
     def _pop(fieldwalker):
-        def pop(old_val, pop_ind, field_info):
-            if field_info["exists"] and not isinstance(old_val, list):
+        def pop(node, pop_ind):
+            old_val = node.value
+            if node.exists and not isinstance(old_val, list):
                 value_type = type(old_val).__name__
                 msg = ("Path {0!r} contains an element of non-array type "
-                       "{1!r}".format(field_info["path"], value_type))
+                       "{1!r}".format(str(node), value_type))
                 raise WriteError(msg, code=14)
 
-            if not field_info["exists"]:
+            if not node.exists:
                 # do nothing
-                field_info["exec"] = False
-                return
+                return old_val
 
             if pop_ind == 1:
                 return old_val[:-1]
             else:
                 return old_val[1:]
 
-        try:
-            fieldwalker.go(field).set(value, pop, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, pop, array_filters)
 
     return _pop
 
@@ -467,15 +463,15 @@ def parse_pull(field, value_or_conditions, array_filters):
         queryfilter = QueryFilter({field: value_or_conditions})
 
     def _pull(fieldwalker):
-        def pull(old_val, _, field_info):
-            if field_info["exists"] and not isinstance(old_val, list):
+        def pull(node, _):
+            old_val = node.value
+            if node.exists and not isinstance(old_val, list):
                 msg = "Cannot apply $pull to a non-array value"
                 raise WriteError(msg, code=2)
 
-            if not field_info["exists"]:
+            if not node.exists:
                 # do nothing
-                field_info["exec"] = False
-                return
+                return old_val
 
             new_array = []
             for elem in old_val:
@@ -485,35 +481,28 @@ def parse_pull(field, value_or_conditions, array_filters):
                     new_array.append(elem)
             return new_array
 
-        try:
-            fieldwalker.go(field).set(None, pull, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, None, pull, array_filters)
 
     return _pull
 
 
 def parse_push(field, value, array_filters):
     def _push(fieldwalker):
-        def push(old_val, new_elem, field_info):
-            if field_info["exists"] and not isinstance(old_val, list):
+        def push(node, new_elem):
+            old_val = node.value
+            if node.exists and not isinstance(old_val, list):
                 value_type = type(old_val).__name__
                 _id = fieldwalker.doc["_id"]
                 msg = ("The field {0!r} must be an array but is of type "
                        "{1} in document {{_id: {2}}}"
-                       "".format(field_info["field"], value_type, _id))
+                       "".format(str(node), value_type, _id))
                 raise WriteError(msg, code=2)
 
             new_array = (old_val or [])[:]
             new_array.append(new_elem)
             return new_array
 
-        try:
-            fieldwalker.go(field).set(value, push, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, push, array_filters)
 
     return _push
 
@@ -526,15 +515,15 @@ def parse_pull_all(field, value, array_filters):
         raise WriteError(msg, code=2)
 
     def _pull_all(fieldwalker):
-        def pull_all(old_val, pull_list, field_info):
-            if field_info["exists"] and not isinstance(old_val, list):
+        def pull_all(node, pull_list):
+            old_val = node.value
+            if node.exists and not isinstance(old_val, list):
                 msg = "Cannot apply $pull to a non-array value"
                 raise WriteError(msg, code=2)
 
-            if not field_info["exists"]:
+            if not node.exists:
                 # do nothing
-                field_info["exec"] = False
-                return
+                return old_val
 
             def convert(lst):
                 for val in lst:
@@ -549,10 +538,6 @@ def parse_pull_all(field, value, array_filters):
             new_array = [elem for elem in old_val if elem not in pull_list]
             return new_array
 
-        try:
-            fieldwalker.go(field).set(value, pull_all, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, pull_all, array_filters)
 
     return _pull_all
