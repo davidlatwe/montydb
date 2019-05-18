@@ -191,7 +191,7 @@ def parse_inc(field, value, array_filters):
                 value_type = type(old_val).__name__
                 msg = ("Cannot apply $inc to a value of non-numeric type. "
                        "{{_id: {0}}} has the field {1!r} of non-numeric type "
-                       "{2}".format(_id, node, value_type))
+                       "{2}".format(_id, str(node), value_type))
                 raise WriteError(msg, code=14)
 
             is_decimal128 = False
