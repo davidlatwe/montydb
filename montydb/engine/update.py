@@ -18,6 +18,24 @@ from .queries import QueryFilter
 from .helpers import is_numeric_type, is_duckument_type
 
 
+def _update(fieldwalker,
+            field,
+            value,
+            evaluator,
+            array_filters):
+
+    fieldwalker.go(field)
+    try:
+        fieldwalker.set(value, evaluator, array_filters)
+    # Take error message and put error code
+    except FieldCreateError as err:
+        raise WriteError(str(err), code=28)
+    except FieldConflictError as err:
+        raise WriteError(str(err), code=40)
+    except PositionalWriteError as err:
+        raise WriteError(str(err), code=2)
+
+
 class Updator(object):
 
     def __init__(self, spec, array_filters=None):
@@ -162,13 +180,14 @@ def parse_inc(field, value, array_filters):
 
     def _inc(fieldwalker):
 
-        def inc(old_val, inc_val, field_info):
-            if field_info["exists"] and not is_numeric_type(old_val):
+        def inc(node, inc_val):
+            old_val = node.value
+            if node.exists and not is_numeric_type(old_val):
                 _id = fieldwalker.doc["_id"]
                 value_type = type(old_val).__name__
                 msg = ("Cannot apply $inc to a value of non-numeric type. "
                        "{{_id: {0}}} has the field {1!r} of non-numeric type "
-                       "{2}".format(_id, field_info["field"], value_type))
+                       "{2}".format(_id, node, value_type))
                 raise WriteError(msg, code=14)
 
             is_decimal128 = False
@@ -184,11 +203,7 @@ def parse_inc(field, value, array_filters):
             else:
                 return (old_val or 0) + inc_val
 
-        try:
-            fieldwalker.go(field).set(value, inc, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, inc, array_filters)
 
     return _inc
 
