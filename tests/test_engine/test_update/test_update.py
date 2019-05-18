@@ -225,6 +225,20 @@ def test_update_id(monty_update, mongo_update):
     assert mongo_err.value.code == monty_err.value.code
 
 
+def test_update_id2(monty_update, mongo_update):
+    docs = [
+        {"a": {"b": {"_id": 0}}},
+    ]
+    spec = {"$inc": {"a.b._id": 3}}
+
+    monty_c = monty_update(docs, spec)
+    mongo_c = mongo_update(docs, spec)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {"a": {"b": {"_id": 3}}}
+
+
 def test_update_positional(monty_update, mongo_update):
     docs = [
         {"a": [{"b": 3, "c": 1}, {"b": 4, "c": 0}]}
