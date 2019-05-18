@@ -393,12 +393,13 @@ def parse_currentDate(field, value, array_filters):
 
 def parse_add_to_set(field, value, array_filters):
     def _add_to_set(fieldwalker):
-        def add_to_set(old_val, new_elem, field_info):
-            if field_info["exists"] and not isinstance(old_val, list):
+        def add_to_set(node, new_elem):
+            old_val = node.value
+            if node.exists and not isinstance(old_val, list):
                 value_type = type(old_val).__name__
                 msg = ("Cannot apply $addToSet to non-array field. Field "
                        "named {0!r} has non-array type {1}"
-                       "".format(field_info["field"], value_type))
+                       "".format(str(node), value_type))
                 raise WriteError(msg, code=2)
 
             new_array = (old_val or [])[:]
@@ -406,11 +407,7 @@ def parse_add_to_set(field, value, array_filters):
                 new_array.append(new_elem)
             return new_array
 
-        try:
-            fieldwalker.go(field).set(value, add_to_set, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, add_to_set, array_filters)
 
     return _add_to_set
 
