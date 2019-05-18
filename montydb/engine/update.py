@@ -154,6 +154,11 @@ class Updator(object):
                 raise WriteError(msg, code=9)
 
             for field, value in cmd_doc.items():
+                if field == "_id":
+                    msg = ("Performing an update on the path '_id' would "
+                           "modify the immutable field '_id'")
+                    raise WriteError(msg, code=66)
+
                 for top in list(idnt_tops):
                     if "$[{}]".format(top) in field:
                         idnt_tops.remove(top)
