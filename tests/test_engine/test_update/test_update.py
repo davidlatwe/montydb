@@ -286,6 +286,21 @@ def test_update_array_faild_2(monty_update, mongo_update):
     assert mongo_err.value.code == monty_err.value.code
 
 
+def test_update_array_faild_3(monty_update, mongo_update):
+    docs = [
+        {"a": {"1": 4}}
+    ]
+    spec = {"$inc": {"a.1.$[]": 1}}
+
+    with pytest.raises(mongo_write_err) as mongo_err:
+        mongo_update(docs, spec)
+
+    with pytest.raises(monty_write_err) as monty_err:
+        monty_update(docs, spec)
+
+    assert mongo_err.value.code == monty_err.value.code
+
+
 def test_update_with_dollar_prefixed_field(monty_update, mongo_update):
     docs = [
         {"a": {"1": 4}}

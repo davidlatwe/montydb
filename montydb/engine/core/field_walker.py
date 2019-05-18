@@ -234,11 +234,13 @@ class FieldTreeWriter(object):
                    "to apply array updates.".format(node.full_path()))
             raise FieldWriteError(msg, code=2)
 
+        if (is_multi_position_operator(field) and
+                not isinstance(node.value, list)):
+            msg = ("Cannot apply array updates to non-array "
+                   "element {0}: {1}".format(str(node), node.value))
+            raise FieldWriteError(msg, code=2)
+
         if isinstance(node.value, self.map_cls):
-            if is_multi_position_operator(field):
-                msg = ("Cannot apply array updates to non-array "
-                       "element {0}: {1}".format(str(node), node.value))
-                raise FieldWriteError(msg, code=2)
 
             self.write_map(node, field)
 
