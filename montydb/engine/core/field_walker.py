@@ -42,6 +42,7 @@ class FieldValues(object):
 
         self.matched_node = None
         self._value_iter = self.iter_full
+        self.__iter = self.iter_full()
 
     def _iter(self, array_only, unpack, pack):
         for node in self.nodes:
@@ -67,6 +68,9 @@ class FieldValues(object):
                     yield doc
 
         self.matched_node = None
+
+    def iter_plain(self):
+        return self._iter(False, False, True)
 
     def iter_full(self):
         return self._iter(False, True, True)

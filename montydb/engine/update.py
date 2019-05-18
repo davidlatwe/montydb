@@ -9,6 +9,7 @@ from bson.timestamp import Timestamp
 from ..errors import WriteError
 from .core import (
     _cmp_decimal,
+    FieldWalker,
     Weighted,
     FieldCreateError,
     FieldConflictError,
@@ -295,6 +296,12 @@ def parse_mul(field, value, array_filters):
     return _mul
 
 
+def _get_array_member(fieldvalues):
+    for node in fieldvalues.nodes:
+        if node.in_array:
+            return node
+
+
 def parse_rename(field, new_field, array_filters):
     if not isinstance(new_field, string_type):
         msg = ("The 'to' field for $rename must be a string: {0}: {1}"
@@ -312,34 +319,40 @@ def parse_rename(field, new_field, array_filters):
         raise WriteError(msg, code=2)
 
     def _rename(fieldwalker):
-        getter = SimpleGetter()  # internal getter
 
-        getter.run(fieldwalker, field)
-        if getter.exists:
-            value = getter.value
-        elif getter.array_field:
-            _id = fieldwalker.doc["_id"]
+        probe = FieldWalker(fieldwalker.doc)
+
+        probe.go(field).get()
+        fieldvalues = probe.value
+
+        if not fieldvalues.exists:
+            return
+
+        value = next(fieldvalues.iter_plain())
+
+        array_member = _get_array_member(fieldvalues)
+        if array_member is not None:
+            _id = probe.doc["_id"]
+            array_field = str(array_member.parent)
             msg = ("The source field cannot be an array element, "
                    "{0!r} in doc with _id: {1} has an array field "
-                   "called {2!r}".format(field, _id, getter.array_field))
+                   "called {2!r}".format(field, _id, array_field))
             raise WriteError(msg, code=2)
-        else:
-            return False
 
-        getter.run(fieldwalker, new_field)
-        if getter.array_field:
-            _id = fieldwalker.doc["_id"]
+        probe.go(new_field).get()
+        fieldvalues = probe.value
+
+        array_member = _get_array_member(fieldvalues)
+        if array_member is not None:
+            _id = probe.doc["_id"]
+            array_field = str(array_member.parent)
             msg = ("The destination field cannot be an array element, "
                    "{0!r} in doc with _id: {1} has an array field "
-                   "called {2!r}".format(new_field, _id, getter.array_field))
+                   "called {2!r}".format(new_field, _id, array_field))
             raise WriteError(msg, code=2)
 
-        try:
-            fieldwalker.go(field).drop()
-            fieldwalker.go(new_field).set(value)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _drop(fieldwalker, field, array_filters)
+        _update(fieldwalker, new_field, value, None, array_filters)
 
     return _rename
 
