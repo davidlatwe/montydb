@@ -513,7 +513,10 @@ class FieldWalker(object):
         self.tree.delete(self.steps, array_filters)
 
     def commit(self):
-        return self.tree.extract()
+        has_change = bool(self.tree.changes)
+        if has_change:
+            self.doc = self.tree.extract()
+        return has_change
 
     def __enter__(self):
         return self

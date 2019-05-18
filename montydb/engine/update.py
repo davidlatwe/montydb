@@ -82,9 +82,12 @@ class Updator(object):
         """Update document and return a bool value indicate changed or not"""
         self.__fieldwalker = fieldwalker
         self.__insert = do_insert
-        for operator in self.operations.values():
-            operator(fieldwalker)
-        return fieldwalker.commit()
+
+        with fieldwalker:
+            for operator in self.operations.values():
+                operator(fieldwalker)
+
+            return fieldwalker.commit()
 
     @property
     def fieldwalker(self):
