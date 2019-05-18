@@ -332,11 +332,7 @@ def parse_rename(field, new_field, array_filters):
 
 def parse_set(field, value, array_filters):
     def _set(fieldwalker):
-        try:
-            fieldwalker.go(field).set(value, pick_with=array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, None, array_filters)
 
     return _set
 
