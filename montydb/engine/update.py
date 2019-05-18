@@ -214,38 +214,32 @@ def parse_inc(field, value, array_filters):
 
 def parse_min(field, value, array_filters):
     def _min(fieldwalker):
-        def min(old_val, min_val, field_info):
-            if field_info["exists"]:
+        def min(node, min_val):
+            old_val = node.value
+            if node.exists:
                 old_val = Weighted(old_val)
                 min_val = Weighted(min_val)
                 return min_val.value if min_val < old_val else old_val.value
             else:
                 return min_val
 
-        try:
-            fieldwalker.go(field).set(value, min, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, min, array_filters)
 
     return _min
 
 
 def parse_max(field, value, array_filters):
     def _max(fieldwalker):
-        def max(old_val, max_val, field_info):
-            if field_info["exists"]:
+        def max(node, max_val):
+            old_val = node.value
+            if node.exists:
                 old_val = Weighted(old_val)
                 max_val = Weighted(max_val)
                 return max_val.value if max_val > old_val else old_val.value
             else:
                 return max_val
 
-        try:
-            fieldwalker.go(field).set(value, max, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, max, array_filters)
 
     return _max
 
@@ -259,13 +253,14 @@ def parse_mul(field, value, array_filters):
         raise WriteError(msg, code=14)
 
     def _mul(fieldwalker):
-        def mul(old_val, mul_val, field_info):
-            if field_info["exists"] and not is_numeric_type(old_val):
+        def mul(node, mul_val):
+            old_val = node.value
+            if node.exists and not is_numeric_type(old_val):
                 _id = fieldwalker.doc["_id"]
                 value_type = type(old_val).__name__
                 msg = ("Cannot apply $mul to a value of non-numeric type. "
                        "{{_id: {0}}} has the field {1!r} of non-numeric type "
-                       "{2}".format(_id, field_info["field"], value_type))
+                       "{2}".format(_id, str(node), value_type))
                 raise WriteError(msg, code=14)
 
             is_decimal128 = False
@@ -281,11 +276,7 @@ def parse_mul(field, value, array_filters):
             else:
                 return (old_val or 0.0) * mul_val
 
-        try:
-            fieldwalker.go(field).set(value, mul, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, mul, array_filters)
 
     return _mul
 
