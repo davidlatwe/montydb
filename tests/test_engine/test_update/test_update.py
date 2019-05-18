@@ -157,6 +157,24 @@ def test_update_positional_filtered_near_conflict(monty_update, mongo_update):
     assert next(monty_c) == {"a": [{"b": 5, "c": 1}, {"b": 6, "c": 0}]}
 
 
+def test_update_positional_filtered_multi(monty_update, mongo_update):
+    docs = [
+        {"a": [{"b": 0, "c": [{"d": 80}, {"d": 95}]},
+               {"b": 1, "c": [{"d": 90}, {"d": 85}]}]}
+    ]
+    spec = {"$inc": {"a.$[elem].c.$[deep].d": 1000}}
+    array_filters = [{"elem.b": {"$gt": 0}},
+                     {"deep.d": {"$lt": 90}}]
+
+    monty_c = monty_update(docs, spec, array_filters=array_filters)
+    mongo_c = mongo_update(docs, spec, array_filters=array_filters)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {"a": [{"b": 0, "c": [{"d": 80}, {"d": 95}]},
+                                   {"b": 1, "c": [{"d": 90}, {"d": 1085}]}]}
+
+
 def test_update_positional_filtered_has_conflict_1(monty_update, mongo_update):
     docs = [
         {"a": [{"b": 4, "c": 1}, {"b": 4, "c": 0}]}
