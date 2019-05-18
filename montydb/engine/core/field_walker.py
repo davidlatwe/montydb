@@ -390,7 +390,7 @@ class FieldTree(object):
 
     def fields_positioning(self, fields, matched=None, array_filters=None):
         if "$" in fields:
-            if not matched and not matched.in_array:
+            if matched is None or not matched.in_array:
                 # If hasn't queried or not matched in array
                 msg = ("The positional operator did not find the match needed "
                        "from the query.")
