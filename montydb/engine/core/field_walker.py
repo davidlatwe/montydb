@@ -507,15 +507,20 @@ class FieldWalker(object):
         self.value = self.tree.read(self.steps)
         return self
 
-    def set(self, value, evaluator=None, array_filters=None):
+    def _fields_positioning(self, array_filters):
         matched = self.value.matched_node if self.value else None
         steps = self.tree.fields_positioning(self.steps,
                                              matched,
                                              array_filters)
+        return steps
+
+    def set(self, value, evaluator=None, array_filters=None):
+        steps = self._fields_positioning(array_filters)
         self.tree.write(steps, value, evaluator, array_filters)
 
     def drop(self, array_filters=None):
-        self.tree.delete(self.steps, array_filters)
+        steps = self._fields_positioning(array_filters)
+        self.tree.delete(steps, array_filters)
 
     def commit(self):
         has_change = bool(self.tree.changes)

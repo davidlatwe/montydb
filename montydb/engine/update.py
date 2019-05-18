@@ -36,6 +36,20 @@ def _update(fieldwalker,
         raise WriteError(str(err), code=2)
 
 
+def _drop(fieldwalker, field, array_filters):
+
+    fieldwalker.go(field)
+    try:
+        fieldwalker.drop(array_filters)
+    # Take error message and put error code
+    except FieldCreateError as err:
+        raise WriteError(str(err), code=28)
+    except FieldConflictError as err:
+        raise WriteError(str(err), code=40)
+    except PositionalWriteError as err:
+        raise WriteError(str(err), code=2)
+
+
 class Updator(object):
 
     def __init__(self, spec, array_filters=None):
@@ -337,13 +351,9 @@ def parse_set(field, value, array_filters):
     return _set
 
 
-def parse_unset(field, value, array_filters):
+def parse_unset(field, _, array_filters):
     def _unset(fieldwalker):
-        try:
-            fieldwalker.go(field).drop(array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _drop(fieldwalker, field, array_filters)
 
     return _unset
 
