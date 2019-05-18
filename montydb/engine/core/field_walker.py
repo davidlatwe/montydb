@@ -240,14 +240,16 @@ class FieldTreeWriter(object):
 
         try:
             val = doc[field]
+            exists = True
         except KeyError:
             val = self.map_cls()
+            exists = False
 
         if index:
             field = index + "." + field
 
         self.trace.add(field)
-        node.spawn(val, field, in_array=bool(index))
+        node.spawn(val, field, exists=exists, in_array=bool(index))
 
     def write_array(self, node, field):
         doc = node.value
