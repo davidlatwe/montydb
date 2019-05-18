@@ -36,7 +36,7 @@ from .helpers import (
 )
 
 
-def ordering(fieldwalkers, order):
+def ordering(fieldwalkers, order, doc_type=None):
     """
     """
     total = len(fieldwalkers)
@@ -48,7 +48,7 @@ def ordering(fieldwalkers, order):
 
         for indx, fieldwalker in enumerate(fieldwalkers):
             # get field value
-            fieldwalker = FieldWalker(fieldwalker.doc).go(path).get()
+            fieldwalker = FieldWalker(fieldwalker.doc, doc_type).go(path).get()
             values = fieldwalker.value.values
             if values:
                 value = tuple([Weighted(val) for val in values])
