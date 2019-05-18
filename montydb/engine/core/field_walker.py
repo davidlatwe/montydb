@@ -233,6 +233,10 @@ class FieldTreeWriter(object):
             raise PositionalWriteError(msg)
 
         if isinstance(node.value, self.map_cls):
+            if is_multi_position_operator(field):
+                msg = ("Cannot apply array updates to non-array "
+                       "element {0}: {1}".format(str(node), node.value))
+                raise PositionalWriteError(msg)
 
             self.write_map(node, field)
 
