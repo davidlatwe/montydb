@@ -223,6 +223,12 @@ class FieldTreeWriter(object):
         self.trace = set()
 
     def operate(self, node, field):
+        if field.startswith("$") and not field.startswith("$["):
+            full_path = node.full_path() + "." + field
+            msg = ("The dollar ($) prefixed field {0!r} in {1!r} is not "
+                   "valid for storage.".format(field, full_path))
+            raise FieldWriteError(msg, code=52)
+
         if not node.exists and is_multi_position_operator(field):
             msg = ("The path {0!r} must exist in the document in order "
                    "to apply array updates.".format(node.full_path()))
