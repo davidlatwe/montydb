@@ -16,17 +16,13 @@ class FieldWalkError(Exception):
 class FieldWriteError(FieldWalkError):
     """FieldWalker write operation error class"""
 
+    def __init__(self, error, code=None):
+        self.__code = code
+        super(FieldWriteError, self).__init__(error)
 
-class FieldCreateError(FieldWriteError):
-    """Raised when creating field on immutable value."""
-
-
-class FieldConflictError(FieldWriteError):
-    """Raised when field path overlapping between write operations."""
-
-
-class PositionalWriteError(FieldWriteError):
-    """Raised when field path overlapping between write operations."""
+    @property
+    def code(self):
+        return self.__code
 
 
 class FieldValues(object):
@@ -230,13 +226,13 @@ class FieldTreeWriter(object):
         if not node.exists and is_multi_position_operator(field):
             msg = ("The path {0!r} must exist in the document in order "
                    "to apply array updates.".format(node.full_path()))
-            raise PositionalWriteError(msg)
+            raise FieldWriteError(msg, code=2)
 
         if isinstance(node.value, self.map_cls):
             if is_multi_position_operator(field):
                 msg = ("Cannot apply array updates to non-array "
                        "element {0}: {1}".format(str(node), node.value))
-                raise PositionalWriteError(msg)
+                raise FieldWriteError(msg, code=2)
 
             self.write_map(node, field)
 
@@ -248,7 +244,7 @@ class FieldTreeWriter(object):
         elif not self.on_delete:
             msg = ("Cannot create field {0!r} in element "
                    "{1}".format(field, {str(node): node.value}))
-            raise FieldCreateError(msg)
+            raise FieldWriteError(msg, code=28)
 
         return node.children
 
@@ -391,7 +387,7 @@ class FieldTree(object):
                 if is_conflict(update, changed):
                     msg = ("Updating the path {0!r} would create a conflict "
                            "at {1!r}".format(update, changed))
-                    raise FieldConflictError(msg)
+                    raise FieldWriteError(msg, code=40)
 
             new_value = evaluator(node, value)
 
@@ -407,12 +403,12 @@ class FieldTree(object):
                 # If hasn't queried or not matched in array
                 msg = ("The positional operator did not find the match needed "
                        "from the query.")
-                raise PositionalWriteError(msg)
+                raise FieldWriteError(msg, code=2)
 
             elif fields.count("$") > 1:
                 msg = ("Too many positional (i.e. '$') elements found in path "
                        "{!r}".format(".".join(fields)))
-                raise PositionalWriteError(msg)
+                raise FieldWriteError(msg, code=2)
 
             else:
                 # Replace "$" into matched index
@@ -429,7 +425,7 @@ class FieldTree(object):
                 if identifier and identifier not in array_filters:
                     msg = ("No array filter found for identifier {0!r} in "
                            "path {1!r}".format(identifier, ".".join(fields)))
-                    raise PositionalWriteError(msg)
+                    raise FieldWriteError(msg, code=2)
         return fields
 
     def write(self, fields, value, evaluator=None, array_filters=None):

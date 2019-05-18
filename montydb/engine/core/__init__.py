@@ -1,9 +1,7 @@
 
 from .field_walker import (
     FieldWalker,
-    FieldCreateError,
-    FieldConflictError,
-    PositionalWriteError,
+    FieldWriteError,
 )
 
 from .weighted import (
@@ -17,9 +15,7 @@ from .weighted import (
 
 __all__ = [
     "FieldWalker",
-    "FieldCreateError",
-    "FieldConflictError",
-    "PositionalWriteError",
+    "FieldWriteError",
 
     "Weighted",
     "gravity",

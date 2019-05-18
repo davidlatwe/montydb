@@ -2,8 +2,7 @@
 import pytest
 from montydb.engine.core import (
     FieldWalker,
-    FieldCreateError,
-    FieldConflictError,
+    FieldWriteError,
 )
 
 
@@ -90,7 +89,7 @@ def test_fieldwalker_value_set_7():
 
     fieldwalker = FieldWalker(doc)
     with fieldwalker.go(path):
-        with pytest.raises(FieldCreateError):
+        with pytest.raises(FieldWriteError):
             fieldwalker.set(value)
 
 
@@ -102,7 +101,7 @@ def test_fieldwalker_value_set_8():
         fieldwalker.go("a.b")
         fieldwalker.set(1)
         fieldwalker.go("a")
-        with pytest.raises(FieldConflictError):
+        with pytest.raises(FieldWriteError):
             fieldwalker.set(2)
 
 

@@ -11,9 +11,7 @@ from .core import (
     _cmp_decimal,
     FieldWalker,
     Weighted,
-    FieldCreateError,
-    FieldConflictError,
-    PositionalWriteError,
+    FieldWriteError,
 )
 from .queries import QueryFilter
 from .helpers import is_numeric_type, is_duckument_type
@@ -29,12 +27,8 @@ def _update(fieldwalker,
     try:
         fieldwalker.set(value, evaluator, array_filters)
     # Take error message and put error code
-    except FieldCreateError as err:
-        raise WriteError(str(err), code=28)
-    except FieldConflictError as err:
-        raise WriteError(str(err), code=40)
-    except PositionalWriteError as err:
-        raise WriteError(str(err), code=2)
+    except FieldWriteError as err:
+        raise WriteError(str(err), code=err.code)
 
 
 def _drop(fieldwalker, field, array_filters):
@@ -43,12 +37,8 @@ def _drop(fieldwalker, field, array_filters):
     try:
         fieldwalker.drop(array_filters)
     # Take error message and put error code
-    except FieldCreateError as err:
-        raise WriteError(str(err), code=28)
-    except FieldConflictError as err:
-        raise WriteError(str(err), code=40)
-    except PositionalWriteError as err:
-        raise WriteError(str(err), code=2)
+    except FieldWriteError as err:
+        raise WriteError(str(err), code=err.code)
 
 
 class Updator(object):
