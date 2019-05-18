@@ -338,6 +338,7 @@ class FieldTree(object):
                     previous.add(field)
                     continue
 
+            self.handler.trace.clear()
             new_picked = []
             for node in self.picked:
                 if node not in previous:
@@ -348,7 +349,6 @@ class FieldTree(object):
             self.picked = new_picked
 
             previous = self.handler.trace.copy()
-            self.handler.trace.clear()
 
             # When READ, stop if all nodes not exists
             if (isinstance(self.handler, FieldTreeReader) and
@@ -360,11 +360,11 @@ class FieldTree(object):
         self.grow(fields)
         return FieldValues(self.picked)
 
-    def stage(self, field, value, evaluator=None):
+    def stage(self, value, evaluator=None):
         """Internal method, for staging the changes
         """
         evaluator = evaluator or (lambda _, val: val)
-        staging = [node for node in self.picked if node == field]
+        staging = [node for node in self.picked if node in self.handler.trace]
         updates = list()
 
         for node in staging:
@@ -419,7 +419,7 @@ class FieldTree(object):
         self.handler.filters = array_filters
         self.handler.on_delete = value is _no_val
         self.grow(fields)
-        self.stage(fields[-1], value, evaluator=evaluator)
+        self.stage(value, evaluator=evaluator)
 
     def delete(self, fields, array_filters=None):
         self.write(fields, _no_val, array_filters=array_filters)
