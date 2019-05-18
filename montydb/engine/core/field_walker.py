@@ -383,9 +383,9 @@ class FieldTree(object):
 
         self.changes += updates
 
-    def fields_positioning(self, fields, array_filters=None):
+    def fields_positioning(self, fields, matched=None, array_filters=None):
         if "$" in fields:
-            if len(self.root) == 0 or not self.values.matched_node.in_array:
+            if not matched and not matched.in_array:
                 # If hasn't queried or not matched in array
                 msg = ("The positional operator did not find the match needed "
                        "from the query.")
@@ -398,7 +398,7 @@ class FieldTree(object):
 
             else:
                 # Replace "$" into matched index
-                position = self.values.matched_node.split(".")[0]
+                position = matched.split(".")[0]
                 fields[fields.index("$")] = position
 
         if array_filters is None:
@@ -418,7 +418,6 @@ class FieldTree(object):
         self.handler = FieldTreeWriter(self)
         self.handler.filters = array_filters
         self.handler.on_delete = value is _no_val
-        fields = self.fields_positioning(fields, array_filters)
         self.grow(fields)
         self.stage(fields[-1], value, evaluator=evaluator)
 
@@ -509,7 +508,11 @@ class FieldWalker(object):
         return self
 
     def set(self, value, evaluator=None, array_filters=None):
-        self.tree.write(self.steps, value, evaluator, array_filters)
+        matched = self.value.matched_node if self.value else None
+        steps = self.tree.fields_positioning(self.steps,
+                                             matched,
+                                             array_filters)
+        self.tree.write(steps, value, evaluator, array_filters)
 
     def drop(self, array_filters=None):
         self.tree.delete(self.steps, array_filters)
