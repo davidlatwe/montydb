@@ -227,11 +227,20 @@ class FieldTreeWriter(object):
         self.trace = set()
 
     def operate(self, node, field):
+        if not node.exists and is_multi_position_operator(field):
+            msg = ("The path {0!r} must exist in the document in order "
+                   "to apply array updates.".format(node.full_path()))
+            raise PositionalWriteError(msg)
+
         if isinstance(node.value, self.map_cls):
+
             self.write_map(node, field)
+
         elif (isinstance(node.value, list) and
                 (field.isdigit() or is_multi_position_operator(field))):
+
             self.write_array(node, field)
+
         elif not self.on_delete:
             msg = ("Cannot create field {0!r} in element "
                    "{1}".format(field, {str(node): node.value}))
