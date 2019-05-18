@@ -93,13 +93,9 @@ class Updator(object):
                     raise WriteError(msg, code=9)
 
                 top = id_s[0]
-                if len(id_s) > 1:
-                    conds.update({"{}.{}".format("{}", id_s[1]): cond})
-                else:
-                    conds.update({"{}": cond})
+                conds.update({identifier: cond})
 
-            filters[top] = lambda x, c=conds: QueryFilter(
-                {k.format(x): v for k, v in c.items()})
+            filters[top] = QueryFilter(conds)
 
         return filters
 
