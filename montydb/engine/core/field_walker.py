@@ -300,6 +300,7 @@ class FieldTree(object):
         self.map_cls = doc_type or type(doc)
         self.root = FieldNode("", doc, exists=True)
         self.handler = None
+        self.previous = None
         self.picked = None
         self.changes = list()
 
@@ -328,7 +329,7 @@ class FieldTree(object):
 
     def grow(self, fields):
         self.picked = [self.root]
-        previous = set([""])
+        self.previous = set([""])
 
         for field in fields:
             if not is_multi_position_operator(field):
@@ -339,20 +340,20 @@ class FieldTree(object):
 
                 if old_picked:
                     self.picked = old_picked
-                    previous.add(field)
+                    self.previous.add(field)
                     continue
 
             self.handler.trace.clear()
             new_picked = []
             for node in self.picked:
-                if node not in previous:
+                if node not in self.previous:
                     continue
 
                 new_picked += self.handler.operate(node, field)
 
             self.picked = new_picked
 
-            previous = self.handler.trace.copy()
+            self.previous = self.handler.trace.copy()
 
             # When READ, stop if all nodes not exists
             if (isinstance(self.handler, FieldTreeReader) and
@@ -368,7 +369,7 @@ class FieldTree(object):
         """Internal method, for staging the changes
         """
         evaluator = evaluator or (lambda _, val: val)
-        staging = [node for node in self.picked if node in self.handler.trace]
+        staging = [node for node in self.picked if node in self.previous]
         updates = list()
 
         for node in staging:
