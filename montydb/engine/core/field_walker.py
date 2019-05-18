@@ -25,6 +25,10 @@ class FieldConflictError(FieldWriteError):
     """Raised when field path overlapping between write operations."""
 
 
+class PositionalWriteError(FieldWriteError):
+    """Raised when field path overlapping between write operations."""
+
+
 class FieldValues(object):
     __slots__ = ("nodes", "values", "exists", "null_or_missing",
                  "matched_node", "_value_iter", "__iter")
