@@ -347,6 +347,23 @@ def test_update_complex_position_1(monty_update, mongo_update):
                                    {"b": [3, 6], "2": 10}]}
 
 
+def test_update_complex_position_1_1(monty_update, mongo_update):
+    docs = [
+        {"a": {"1": [{"b": [1, 5]}, {"b": [2, 4]}, {"b": [3, 6]}]}}
+    ]
+    spec = {"$inc": {"a.1.$[].$": 10}}
+    find = {"a.1.b.1": {"$gt": 5}}
+
+    monty_c = monty_update(docs, spec, find)
+    mongo_c = mongo_update(docs, spec, find)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {"a": {"1": [{"b": [1, 5], "2": 10},
+                                         {"b": [2, 4], "2": 10},
+                                         {"b": [3, 6], "2": 10}]}}
+
+
 def test_update_complex_position_2(monty_update, mongo_update):
     docs = [
         {"a": [{"b": [1, 5]}, {"b": [2, 4]}, {"b": [3, 6]}]}

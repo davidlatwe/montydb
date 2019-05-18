@@ -419,8 +419,14 @@ class FieldTree(object):
                 raise FieldWriteError(msg, code=2)
 
             else:
-                # Replace "$" into matched index
-                position = matched.split(".")[0]
+                # Replace "$" into top matched array element index
+                while matched.parent is not None:
+                    if not matched.in_array:
+                        break
+                    top_matched = matched
+                    matched = matched.parent
+
+                position = top_matched.split(".")[0]
                 fields[fields.index("$")] = position
 
         if array_filters is None:
