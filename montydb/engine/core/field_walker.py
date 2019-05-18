@@ -155,6 +155,7 @@ class FieldTreeReader(object):
 
     def __init__(self, tree):
         self.map_cls = tree.map_cls
+        self.trace = set()
 
     def operate(self, node, field):
         if node.exists is False:
@@ -182,6 +183,8 @@ class FieldTreeReader(object):
 
         if index:
             field = index + "." + field
+
+        self.trace.add(field)
         node.spawn(val, field, exists=exists, in_array=bool(index))
 
     def read_array(self, node, field):
@@ -198,19 +201,32 @@ class FieldTreeReader(object):
             except IndexError:
                 val = _no_val
                 exists = False
+
+            self.trace.add(field)
             node.spawn(val, field, located=True, exists=exists, in_array=True)
+
+
+def is_multi_position_operator(field):
+    return field[:2] == "$["
+
+
+def parse_identifier(field):
+    return field[2:-1]  # $[identifier]
 
 
 class FieldTreeWriter(object):
 
     def __init__(self, tree):
         self.map_cls = tree.map_cls
+        self.filters = None
         self.on_delete = False
+        self.trace = set()
 
     def operate(self, node, field):
         if isinstance(node.value, self.map_cls):
             self.write_map(node, field)
-        elif isinstance(node.value, list) and field.isdigit():
+        elif (isinstance(node.value, list) and
+                (field.isdigit() or is_multi_position_operator(field))):
             self.write_array(node, field)
         elif not self.on_delete:
             msg = ("Cannot create field {0!r} in element "
@@ -229,17 +245,41 @@ class FieldTreeWriter(object):
 
         if index:
             field = index + "." + field
+
+        self.trace.add(field)
         node.spawn(val, field, in_array=bool(index))
 
     def write_array(self, node, field):
         doc = node.value
 
-        try:
-            val = doc[int(field)]
-        except IndexError:
-            val = self.map_cls()
+        if is_multi_position_operator(field):
+            identifier = parse_identifier(field)
+            if identifier:
+                # filter
+                filter = self.filters[identifier]
+                for i, elem in enumerate(doc):
+                    if filter({identifier: elem}):
+                        field = str(i)
 
-        node.spawn(val, field, located=True, in_array=True)
+                        self.trace.add(field)
+                        node.spawn(elem, field, exists=True, in_array=True)
+            else:
+                # all
+                for i, elem in enumerate(doc):
+                    field = str(i)
+
+                    self.trace.add(field)
+                    node.spawn(elem, field, exists=True, in_array=True)
+        else:
+            try:
+                val = doc[int(field)]
+                exists = True
+            except IndexError:
+                val = self.map_cls()
+                exists = False
+
+            self.trace.add(field)
+            node.spawn(val, field, exists=exists, in_array=True)
 
 
 def is_conflict(path_a, path_b):
@@ -282,28 +322,31 @@ class FieldTree(object):
 
     def grow(self, fields):
         self.picked = [self.root]
-        pre_field = ""
+        previous = set([""])
 
         for field in fields:
-            old_picked = []
-            for node in [child for node in self.picked for child in node]:
-                if field == node or node.endswith("." + field):
-                    old_picked.append(node)
+            if not is_multi_position_operator(field):
+                old_picked = []
+                for node in [child for node in self.picked for child in node]:
+                    if field == node or node.endswith("." + field):
+                        old_picked.append(node)
 
-            if old_picked:
-                self.picked = old_picked
-                pre_field = field
-                continue
+                if old_picked:
+                    self.picked = old_picked
+                    previous.add(field)
+                    continue
 
             new_picked = []
             for node in self.picked:
-                if not (pre_field == node or node.endswith("." + pre_field)):
+                if node not in previous:
                     continue
 
                 new_picked += self.handler.operate(node, field)
 
             self.picked = new_picked
-            pre_field = field
+
+            previous = self.handler.trace.copy()
+            self.handler.trace.clear()
 
             # When READ, stop if all nodes not exists
             if (isinstance(self.handler, FieldTreeReader) and
@@ -330,19 +373,55 @@ class FieldTree(object):
                            "at {1!r}".format(update, changed))
                     raise FieldConflictError(msg)
 
-            node.value = evaluator(node.value, value)
-            updates.append(update)
+            new_value = evaluator(node, value)
+
+            if node.value != new_value:
+                node.value = new_value
+                updates.append(update)
 
         self.changes += updates
 
-    def write(self, fields, value, evaluator=None):
+    def fields_positioning(self, fields, array_filters=None):
+        if "$" in fields:
+            if len(self.root) == 0 or not self.values.matched_node.in_array:
+                # If hasn't queried or not matched in array
+                msg = ("The positional operator did not find the match needed "
+                       "from the query.")
+                raise PositionalWriteError(msg)
+
+            elif fields.count("$") > 1:
+                msg = ("Too many positional (i.e. '$') elements found in path "
+                       "{!r}".format(".".join(fields)))
+                raise PositionalWriteError(msg)
+
+            else:
+                # Replace "$" into matched index
+                position = self.values.matched_node.split(".")[0]
+                fields[fields.index("$")] = position
+
+        if array_filters is None:
+            return fields
+
+        for field in fields:
+            if is_multi_position_operator(field):
+                identifier = parse_identifier(field)
+
+                if identifier and identifier not in array_filters:
+                    msg = ("No array filter found for identifier {0!r} in "
+                           "path {1!r}".format(identifier, ".".join(fields)))
+                    raise PositionalWriteError(msg)
+        return fields
+
+    def write(self, fields, value, evaluator=None, array_filters=None):
         self.handler = FieldTreeWriter(self)
+        self.handler.filters = array_filters
         self.handler.on_delete = value is _no_val
+        fields = self.fields_positioning(fields, array_filters)
         self.grow(fields)
         self.stage(fields[-1], value, evaluator=evaluator)
 
-    def delete(self, fields):
-        self.write(fields, _no_val)
+    def delete(self, fields, array_filters=None):
+        self.write(fields, _no_val, array_filters=array_filters)
 
     def extract(self):
         ON_DELETE = False
@@ -418,7 +497,7 @@ class FieldWalker(object):
         self.value = None
 
     def go(self, path):
-        self.steps = tuple(path.split("."))
+        self.steps = path.split(".")
         return self
 
     def get(self):
@@ -427,11 +506,11 @@ class FieldWalker(object):
         self.value = self.tree.read(self.steps)
         return self
 
-    def set(self, value, evaluator=None):
-        self.tree.write(self.steps, value, evaluator)
+    def set(self, value, evaluator=None, array_filters=None):
+        self.tree.write(self.steps, value, evaluator, array_filters)
 
-    def drop(self):
-        self.tree.delete(self.steps)
+    def drop(self, array_filters=None):
+        self.tree.delete(self.steps, array_filters)
 
     def commit(self):
         return self.tree.extract()
