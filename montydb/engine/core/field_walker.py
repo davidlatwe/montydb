@@ -65,6 +65,19 @@ class FieldValues(object):
 
         self.matched_node = None
 
+    def first_matched(self):
+        matched = self.matched_node
+        if matched is None:
+            return
+
+        while matched.parent is not None:
+            if not matched.in_array:
+                break
+            first = matched
+            matched = matched.parent
+
+        return first
+
     def iter_plain(self):
         return self._iter(False, False, True)
 
@@ -405,8 +418,14 @@ class FieldTree(object):
 
         self.changes += updates
 
-    def fields_positioning(self, fields, matched=None, array_filters=None):
+    def fields_positioning(self, fields, fieldvalues=None, array_filters=None):
         if "$" in fields:
+
+            if fieldvalues is None:
+                matched = None
+            else:
+                matched = fieldvalues.matched_node
+
             if matched is None or not matched.in_array:
                 # If hasn't queried or not matched in array
                 msg = ("The positional operator did not find the match needed "
@@ -420,12 +439,7 @@ class FieldTree(object):
 
             else:
                 # Replace "$" into top matched array element index
-                while matched.parent is not None:
-                    if not matched.in_array:
-                        break
-                    top_matched = matched
-                    matched = matched.parent
-
+                top_matched = fieldvalues.first_matched()
                 position = top_matched.split(".")[0]
                 fields[fields.index("$")] = position
 
@@ -535,19 +549,16 @@ class FieldWalker(object):
         self.value = self.tree.read(self.steps)
         return self
 
-    def _fields_positioning(self, array_filters):
-        matched = self.value.matched_node if self.value else None
-        steps = self.tree.fields_positioning(self.steps,
-                                             matched,
-                                             array_filters)
-        return steps
-
     def set(self, value, evaluator=None, array_filters=None):
-        steps = self._fields_positioning(array_filters)
+        steps = self.tree.fields_positioning(self.steps,
+                                             self.value,
+                                             array_filters)
         self.tree.write(steps, value, evaluator, array_filters)
 
     def drop(self, array_filters=None):
-        steps = self._fields_positioning(array_filters)
+        steps = self.tree.fields_positioning(self.steps,
+                                             self.value,
+                                             array_filters)
         self.tree.delete(steps, array_filters)
 
     def commit(self):
