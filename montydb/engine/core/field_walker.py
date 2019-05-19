@@ -110,7 +110,7 @@ class FieldValues(object):
 
 
 class FieldNode(str):
-    __slots__ = ("value", "located", "exists",
+    __slots__ = ("value", "located", "exists", "full_path",
                  "in_array", "parent", "children")
 
     def __new__(cls, field, doc, located=False, exists=False,
@@ -127,6 +127,9 @@ class FieldNode(str):
             obj.in_array = True
 
         return obj
+
+    def __init__(self, *args, **kwargs):
+        self.full_path = self.concat_parents()
 
     def __repr__(self):
         return "FieldNode({})".format(self)
@@ -153,8 +156,8 @@ class FieldNode(str):
             return True
         return False
 
-    def full_path(self):
-        forepath = getattr(self.parent, "full_path", lambda: "")()
+    def concat_parents(self):
+        forepath = getattr(self.parent, "concat_parents", lambda: "")()
         if forepath:
             return forepath + "." + str(self)
         return str(self)
@@ -237,14 +240,14 @@ class FieldTreeWriter(object):
 
     def operate(self, node, field):
         if field.startswith("$") and not field.startswith("$["):
-            full_path = node.full_path() + "." + field
+            full_path = node.full_path + "." + field
             msg = ("The dollar ($) prefixed field {0!r} in {1!r} is not "
                    "valid for storage.".format(field, full_path))
             raise FieldWriteError(msg, code=52)
 
         if not node.exists and is_multi_position_operator(field):
             msg = ("The path {0!r} must exist in the document in order "
-                   "to apply array updates.".format(node.full_path()))
+                   "to apply array updates.".format(node.full_path))
             raise FieldWriteError(msg, code=2)
 
         if (is_multi_position_operator(field) and
@@ -403,7 +406,7 @@ class FieldTree(object):
         updates = list()
 
         for node in staging:
-            update = node.full_path()
+            update = node.full_path
             for changed in self.changes:
                 if is_conflict(update, changed):
                     msg = ("Updating the path {0!r} would create a conflict "
