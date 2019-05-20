@@ -365,10 +365,12 @@ class FieldTree(object):
         self.previous = set([""])
 
         for field in fields:
+
             if not is_multi_position_operator(field):
+                # Reuse previous spawned nodes
                 old_picked = []
                 for node in [child for node in self.picked for child in node]:
-                    if field == node or node.endswith("." + field):
+                    if field == node and node.parent in self.previous:
                         old_picked.append(node)
 
                 if old_picked:
