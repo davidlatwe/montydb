@@ -1,6 +1,4 @@
 
-from montydb.engine.core import FieldWalker
-
 from bson.binary import Binary
 from bson.code import Code
 from bson.int64 import Int64
@@ -18,7 +16,6 @@ def test_qop_eq_1(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0]).go("a").get().value == [1]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -34,7 +31,6 @@ def test_qop_eq_2(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0]).go("a").get().value == [1]
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
@@ -50,7 +46,6 @@ def test_qop_eq_3(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0]).go("a").get().value == [1, [1]]
     assert mongo_c.count() == 2
     assert monty_c.count() == mongo_c.count()
     for i in range(2):
@@ -67,7 +62,6 @@ def test_qop_eq_4(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[1]).go("a").get().value == [[1], 2, [[1], 2]]
     assert mongo_c.count() == 2
     assert monty_c.count() == mongo_c.count()
     for i in range(2):
@@ -86,8 +80,6 @@ def test_qop_eq_5(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0]).go("a").get().value == [2, 1, [2, 1]]
-    assert FieldWalker(docs[2]).go("a").get().value == [[2, 1], 3, [[2, 1], 3]]
     assert mongo_c.count() == 2
     assert monty_c.count() == mongo_c.count()
     for i in range(2):
@@ -177,4 +169,17 @@ def test_qop_eq_11(monty_find, mongo_find):
     mongo_c = mongo_find(docs, spec)
 
     assert mongo_c.count() == 2
+    assert monty_c.count() == mongo_c.count()
+
+
+def test_qop_eq_12(monty_find, mongo_find):
+    docs = [
+        {"tags": [["ssl", "security"], "warning"]}
+    ]
+    spec = {"tags.0": "security"}
+
+    monty_c = monty_find(docs, spec)
+    mongo_c = mongo_find(docs, spec)
+
+    assert mongo_c.count() == 0
     assert monty_c.count() == mongo_c.count()

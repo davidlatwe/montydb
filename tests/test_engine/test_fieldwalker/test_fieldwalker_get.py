@@ -20,7 +20,8 @@ def test_fieldwalker_value_get_3():
     doc = {"a": {"b": 1}}
     path = "a.b"
     value = [1]
-    assert FieldWalker(doc).go(path).get().value == value
+    field_value = FieldWalker(doc).go(path).get().value
+    assert list(field_value.iter_full()) == value
 
 
 def test_fieldwalker_value_get_4():
@@ -28,35 +29,40 @@ def test_fieldwalker_value_get_4():
     doc = {"a": [1]}
     path = "a"
     value = [1, [1]]
-    assert FieldWalker(doc).go(path).get().value == value
+    field_value = FieldWalker(doc).go(path).get().value
+    assert list(field_value.iter_full()) == value
 
 
 def test_fieldwalker_value_get_5():
     doc = {"a": [0, 1]}
     path = "a"
     value = [0, 1, [0, 1]]
-    assert FieldWalker(doc).go(path).get().value == value
+    field_value = FieldWalker(doc).go(path).get().value
+    assert list(field_value.iter_full()) == value
 
 
 def test_fieldwalker_value_get_6():
     doc = {"a": [0, [1], 2]}
     path = "a"
     value = [0, [1], 2, [0, [1], 2]]
-    assert FieldWalker(doc).go(path).get().value == value
+    field_value = FieldWalker(doc).go(path).get().value
+    assert list(field_value.iter_full()) == value
 
 
 def test_fieldwalker_value_get_7():
     doc = {"a": {"b": [1]}}
     path = "a.b"
     value = [1, [1]]
-    assert FieldWalker(doc).go(path).get().value == value
+    field_value = FieldWalker(doc).go(path).get().value
+    assert list(field_value.iter_full()) == value
 
 
 def test_fieldwalker_value_get_8():
     doc = {"a": [{"b": [0, 1]}, {"b": [2, 3]}, {"b": [4, 5]}]}
     path = "a.b"
-    value = [0, 1, 2, 3, 4, 5, [0, 1], [2, 3], [4, 5]]
-    assert FieldWalker(doc).go(path).get().value == value
+    value = [0, 1, [0, 1], 2, 3, [2, 3], 4, 5, [4, 5]]
+    field_value = FieldWalker(doc).go(path).get().value
+    assert list(field_value.iter_full()) == value
 
 
 def test_fieldwalker_value_get_9():
@@ -140,8 +146,9 @@ def test_fieldwalker_value_get_19():
                  {"b": [2, {"c": [3, "y"]}]},
                  {"b": [4, {"c": [5, "z"]}]}]}
     path = "a.b.1.c"
-    value = [1, "x", 3, "y", 5, "z", [1, "x"], [3, "y"], [5, "z"]]
-    assert FieldWalker(doc).go(path).get().value == value
+    value = [1, "x", [1, "x"], 3, "y", [3, "y"], 5, "z", [5, "z"]]
+    field_value = FieldWalker(doc).go(path).get().value
+    assert list(field_value.iter_full()) == value
 
 
 def test_fieldwalker_value_get_20():
@@ -154,10 +161,11 @@ def test_fieldwalker_value_get_20():
                  ]}
     path = "a.b.c.1.d"
     value = [
-        1, "x", 3, "y", 5, "z", 11, "i", 13, "j", 15, "k",
-        [1, "x"], [3, "y"], [5, "z"], [11, "i"], [13, "j"], [15, "k"]
+        1, "x", [1, "x"], 3, "y", [3, "y"], 5, "z", [5, "z"],
+        11, "i", [11, "i"], 13, "j", [13, "j"], 15, "k", [15, "k"]
     ]
-    assert FieldWalker(doc).go(path).get().value == value
+    field_value = FieldWalker(doc).go(path).get().value
+    assert list(field_value.iter_full()) == value
 
 
 def test_fieldwalker_value_get_21():
@@ -245,7 +253,7 @@ def test_fieldwalker_value_get_27():
                         {"c": [{"0": [{"d": [0, 6]}]}, {"d": [15, "k"]}]}]}
                  ]}
     path = "a.b.c.0.d.1"
-    value = [1, 2, 3, 4, 5, 6, "z"]
+    value = [1, 2, 3, "z", 4, 5, 6]
     fw = FieldWalker(doc).go(path).get()
     assert fw.value == value
 

@@ -7,9 +7,38 @@ from bson.decimal128 import Decimal128
 from bson.timestamp import Timestamp
 
 from ..errors import WriteError
-from .core import FieldWriteError, Weighted, SimpleGetter, _cmp_decimal
+from .core import (
+    _cmp_decimal,
+    FieldWalker,
+    Weighted,
+    FieldWriteError,
+)
 from .queries import QueryFilter
 from .helpers import is_numeric_type, is_duckument_type
+
+
+def _update(fieldwalker,
+            field,
+            value,
+            evaluator,
+            array_filters):
+
+    fieldwalker.go(field)
+    try:
+        fieldwalker.set(value, evaluator, array_filters)
+    # Take error message and put error code
+    except FieldWriteError as err:
+        raise WriteError(str(err), code=err.code)
+
+
+def _drop(fieldwalker, field, array_filters):
+
+    fieldwalker.go(field)
+    try:
+        fieldwalker.drop(array_filters)
+    # Take error message and put error code
+    except FieldWriteError as err:
+        raise WriteError(str(err), code=err.code)
 
 
 class Updator(object):
@@ -47,6 +76,7 @@ class Updator(object):
 
         self.fields_to_update = []
         self.array_filters = self.array_filter_parser(array_filters or [])
+        # sort by key (operator)
         self.operations = SON(sorted(self.parser(spec).items()))
         self.__insert = None
         self.__fieldwalker = None
@@ -58,9 +88,12 @@ class Updator(object):
         """Update document and return a bool value indicate changed or not"""
         self.__fieldwalker = fieldwalker
         self.__insert = do_insert
-        for operator in self.operations.values():
-            operator(fieldwalker)
-        return fieldwalker.commit()
+
+        with fieldwalker:
+            for operator in self.operations.values():
+                operator(fieldwalker)
+
+            return fieldwalker.commit()
 
     @property
     def fieldwalker(self):
@@ -71,25 +104,25 @@ class Updator(object):
         for i, filter_ in enumerate(array_filters):
             top = ""
             conds = {}
+
             for identifier, cond in filter_.items():
                 id_s = identifier.split(".", 1)
+
                 if not top and id_s[0] in filters:
                     msg = ("Found multiple array filters with the same "
                            "top-level field name {}".format(id_s[0]))
                     raise WriteError(msg, code=9)
+
                 if top and id_s[0] != top:
                     msg = ("Error parsing array filter: Expected a single "
                            "top-level field name, found {0!r} and {1!r}"
                            "".format(top, id_s[0]))
                     raise WriteError(msg, code=9)
-                top = id_s[0]
-                if len(id_s) > 1:
-                    conds.update({"{}.{}".format("{}", id_s[1]): cond})
-                else:
-                    conds.update({"{}": cond})
 
-            filters[top] = lambda x, c=conds: QueryFilter(
-                {k.format(x): v for k, v in c.items()})
+                top = id_s[0]
+                conds.update({identifier: cond})
+
+            filters[top] = QueryFilter(conds)
 
         return filters
 
@@ -99,15 +132,23 @@ class Updator(object):
 
         update_stack = {}
         idnt_tops = list(self.array_filters.keys())
+
         for op, cmd_doc in spec.items():
             if op not in self.update_ops:
                 raise WriteError("Unknown modifier: {}".format(op))
+
             if not is_duckument_type(cmd_doc):
                 msg = ("Modifiers operate on fields but we found type {0} "
                        "instead. For example: {{$mod: {{<field>: ...}}}} "
                        "not {1}".format(type(cmd_doc).__name__, spec))
                 raise WriteError(msg, code=9)
+
             for field, value in cmd_doc.items():
+                if field == "_id":
+                    msg = ("Performing an update on the path '_id' would "
+                           "modify the immutable field '_id'")
+                    raise WriteError(msg, code=66)
+
                 for top in list(idnt_tops):
                     if "$[{}]".format(top) in field:
                         idnt_tops.remove(top)
@@ -153,13 +194,14 @@ def parse_inc(field, value, array_filters):
 
     def _inc(fieldwalker):
 
-        def inc(old_val, inc_val, field_info):
-            if field_info["exists"] and not is_numeric_type(old_val):
+        def inc(node, inc_val):
+            old_val = node.value
+            if node.exists and not is_numeric_type(old_val):
                 _id = fieldwalker.doc["_id"]
                 value_type = type(old_val).__name__
                 msg = ("Cannot apply $inc to a value of non-numeric type. "
                        "{{_id: {0}}} has the field {1!r} of non-numeric type "
-                       "{2}".format(_id, field_info["field"], value_type))
+                       "{2}".format(_id, str(node), value_type))
                 raise WriteError(msg, code=14)
 
             is_decimal128 = False
@@ -175,49 +217,39 @@ def parse_inc(field, value, array_filters):
             else:
                 return (old_val or 0) + inc_val
 
-        try:
-            fieldwalker.go(field).set(value, inc, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, inc, array_filters)
 
     return _inc
 
 
 def parse_min(field, value, array_filters):
     def _min(fieldwalker):
-        def min(old_val, min_val, field_info):
-            if field_info["exists"]:
+        def min(node, min_val):
+            old_val = node.value
+            if node.exists:
                 old_val = Weighted(old_val)
                 min_val = Weighted(min_val)
                 return min_val.value if min_val < old_val else old_val.value
             else:
                 return min_val
 
-        try:
-            fieldwalker.go(field).set(value, min, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, min, array_filters)
 
     return _min
 
 
 def parse_max(field, value, array_filters):
     def _max(fieldwalker):
-        def max(old_val, max_val, field_info):
-            if field_info["exists"]:
+        def max(node, max_val):
+            old_val = node.value
+            if node.exists:
                 old_val = Weighted(old_val)
                 max_val = Weighted(max_val)
                 return max_val.value if max_val > old_val else old_val.value
             else:
                 return max_val
 
-        try:
-            fieldwalker.go(field).set(value, max, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, max, array_filters)
 
     return _max
 
@@ -231,13 +263,14 @@ def parse_mul(field, value, array_filters):
         raise WriteError(msg, code=14)
 
     def _mul(fieldwalker):
-        def mul(old_val, mul_val, field_info):
-            if field_info["exists"] and not is_numeric_type(old_val):
+        def mul(node, mul_val):
+            old_val = node.value
+            if node.exists and not is_numeric_type(old_val):
                 _id = fieldwalker.doc["_id"]
                 value_type = type(old_val).__name__
                 msg = ("Cannot apply $mul to a value of non-numeric type. "
                        "{{_id: {0}}} has the field {1!r} of non-numeric type "
-                       "{2}".format(_id, field_info["field"], value_type))
+                       "{2}".format(_id, str(node), value_type))
                 raise WriteError(msg, code=14)
 
             is_decimal128 = False
@@ -253,13 +286,15 @@ def parse_mul(field, value, array_filters):
             else:
                 return (old_val or 0.0) * mul_val
 
-        try:
-            fieldwalker.go(field).set(value, mul, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, mul, array_filters)
 
     return _mul
+
+
+def _get_array_member(fieldvalues):
+    for node in fieldvalues.nodes:
+        if node.in_array:
+            return node
 
 
 def parse_rename(field, new_field, array_filters):
@@ -279,56 +314,54 @@ def parse_rename(field, new_field, array_filters):
         raise WriteError(msg, code=2)
 
     def _rename(fieldwalker):
-        getter = SimpleGetter()  # internal getter
 
-        getter.run(fieldwalker, field)
-        if getter.exists:
-            value = getter.value
-        elif getter.array_field:
-            _id = fieldwalker.doc["_id"]
+        probe = FieldWalker(fieldwalker.doc)
+
+        probe.go(field).get()
+        fieldvalues = probe.value
+
+        if not fieldvalues.exists:
+            return
+
+        value = next(fieldvalues.iter_plain())
+
+        array_member = _get_array_member(fieldvalues)
+        if array_member is not None:
+            _id = probe.doc["_id"]
+            array_field = str(array_member.parent)
             msg = ("The source field cannot be an array element, "
                    "{0!r} in doc with _id: {1} has an array field "
-                   "called {2!r}".format(field, _id, getter.array_field))
+                   "called {2!r}".format(field, _id, array_field))
             raise WriteError(msg, code=2)
-        else:
-            return False
 
-        getter.run(fieldwalker, new_field)
-        if getter.array_field:
-            _id = fieldwalker.doc["_id"]
+        probe.go(new_field).get()
+        fieldvalues = probe.value
+
+        array_member = _get_array_member(fieldvalues)
+        if array_member is not None:
+            _id = probe.doc["_id"]
+            array_field = str(array_member.parent)
             msg = ("The destination field cannot be an array element, "
                    "{0!r} in doc with _id: {1} has an array field "
-                   "called {2!r}".format(new_field, _id, getter.array_field))
+                   "called {2!r}".format(new_field, _id, array_field))
             raise WriteError(msg, code=2)
 
-        try:
-            fieldwalker.go(field).drop()
-            fieldwalker.go(new_field).set(value)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _drop(fieldwalker, field, array_filters)
+        _update(fieldwalker, new_field, value, None, array_filters)
 
     return _rename
 
 
 def parse_set(field, value, array_filters):
     def _set(fieldwalker):
-        try:
-            fieldwalker.go(field).set(value, pick_with=array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, None, array_filters)
 
     return _set
 
 
-def parse_unset(field, value, array_filters):
+def parse_unset(field, _, array_filters):
     def _unset(fieldwalker):
-        try:
-            fieldwalker.go(field).drop(array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _drop(fieldwalker, field, array_filters)
 
     return _unset
 
@@ -368,12 +401,13 @@ def parse_currentDate(field, value, array_filters):
 
 def parse_add_to_set(field, value, array_filters):
     def _add_to_set(fieldwalker):
-        def add_to_set(old_val, new_elem, field_info):
-            if field_info["exists"] and not isinstance(old_val, list):
+        def add_to_set(node, new_elem):
+            old_val = node.value
+            if node.exists and not isinstance(old_val, list):
                 value_type = type(old_val).__name__
                 msg = ("Cannot apply $addToSet to non-array field. Field "
                        "named {0!r} has non-array type {1}"
-                       "".format(field_info["field"], value_type))
+                       "".format(str(node), value_type))
                 raise WriteError(msg, code=2)
 
             new_array = (old_val or [])[:]
@@ -381,11 +415,7 @@ def parse_add_to_set(field, value, array_filters):
                 new_array.append(new_elem)
             return new_array
 
-        try:
-            fieldwalker.go(field).set(value, add_to_set, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, add_to_set, array_filters)
 
     return _add_to_set
 
@@ -406,28 +436,24 @@ def parse_pop(field, value, array_filters):
             raise WriteError(msg_raw.format(field, value), code=9)
 
     def _pop(fieldwalker):
-        def pop(old_val, pop_ind, field_info):
-            if field_info["exists"] and not isinstance(old_val, list):
+        def pop(node, pop_ind):
+            old_val = node.value
+            if node.exists and not isinstance(old_val, list):
                 value_type = type(old_val).__name__
                 msg = ("Path {0!r} contains an element of non-array type "
-                       "{1!r}".format(field_info["path"], value_type))
+                       "{1!r}".format(str(node), value_type))
                 raise WriteError(msg, code=14)
 
-            if not field_info["exists"]:
+            if not node.exists:
                 # do nothing
-                field_info["exec"] = False
-                return
+                return old_val
 
             if pop_ind == 1:
                 return old_val[:-1]
             else:
                 return old_val[1:]
 
-        try:
-            fieldwalker.go(field).set(value, pop, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, pop, array_filters)
 
     return _pop
 
@@ -445,15 +471,15 @@ def parse_pull(field, value_or_conditions, array_filters):
         queryfilter = QueryFilter({field: value_or_conditions})
 
     def _pull(fieldwalker):
-        def pull(old_val, _, field_info):
-            if field_info["exists"] and not isinstance(old_val, list):
+        def pull(node, _):
+            old_val = node.value
+            if node.exists and not isinstance(old_val, list):
                 msg = "Cannot apply $pull to a non-array value"
                 raise WriteError(msg, code=2)
 
-            if not field_info["exists"]:
+            if not node.exists:
                 # do nothing
-                field_info["exec"] = False
-                return
+                return old_val
 
             new_array = []
             for elem in old_val:
@@ -463,35 +489,28 @@ def parse_pull(field, value_or_conditions, array_filters):
                     new_array.append(elem)
             return new_array
 
-        try:
-            fieldwalker.go(field).set(None, pull, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, None, pull, array_filters)
 
     return _pull
 
 
 def parse_push(field, value, array_filters):
     def _push(fieldwalker):
-        def push(old_val, new_elem, field_info):
-            if field_info["exists"] and not isinstance(old_val, list):
+        def push(node, new_elem):
+            old_val = node.value
+            if node.exists and not isinstance(old_val, list):
                 value_type = type(old_val).__name__
                 _id = fieldwalker.doc["_id"]
                 msg = ("The field {0!r} must be an array but is of type "
                        "{1} in document {{_id: {2}}}"
-                       "".format(field_info["field"], value_type, _id))
+                       "".format(str(node), value_type, _id))
                 raise WriteError(msg, code=2)
 
             new_array = (old_val or [])[:]
             new_array.append(new_elem)
             return new_array
 
-        try:
-            fieldwalker.go(field).set(value, push, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, push, array_filters)
 
     return _push
 
@@ -504,15 +523,15 @@ def parse_pull_all(field, value, array_filters):
         raise WriteError(msg, code=2)
 
     def _pull_all(fieldwalker):
-        def pull_all(old_val, pull_list, field_info):
-            if field_info["exists"] and not isinstance(old_val, list):
+        def pull_all(node, pull_list):
+            old_val = node.value
+            if node.exists and not isinstance(old_val, list):
                 msg = "Cannot apply $pull to a non-array value"
                 raise WriteError(msg, code=2)
 
-            if not field_info["exists"]:
+            if not node.exists:
                 # do nothing
-                field_info["exec"] = False
-                return
+                return old_val
 
             def convert(lst):
                 for val in lst:
@@ -527,10 +546,6 @@ def parse_pull_all(field, value, array_filters):
             new_array = [elem for elem in old_val if elem not in pull_list]
             return new_array
 
-        try:
-            fieldwalker.go(field).set(value, pull_all, array_filters)
-        except FieldWriteError as err:
-            msg = err.message if hasattr(err, 'message') else str(err)
-            raise WriteError(msg, code=err.code)
+        _update(fieldwalker, field, value, pull_all, array_filters)
 
     return _pull_all

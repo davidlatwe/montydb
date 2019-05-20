@@ -238,10 +238,11 @@ class Projector(object):
 
     def parse_positional(self, field_path):
         def _positional(fieldwalker):
-            matched_index = fieldwalker.log.matched_index(field_path)
+            top_matched = fieldwalker.value.first_matched()
+            matched_index = int(top_matched.split(".")[0])
             value = {}
             fieldwalker.go(field_path).get()
-            elements = fieldwalker.value.elements
+            elements = fieldwalker.value.values
             match = True
             paths = field_path.split(".")
             paths.reverse()

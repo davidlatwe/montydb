@@ -157,6 +157,24 @@ def test_update_positional_filtered_near_conflict(monty_update, mongo_update):
     assert next(monty_c) == {"a": [{"b": 5, "c": 1}, {"b": 6, "c": 0}]}
 
 
+def test_update_positional_filtered_multi(monty_update, mongo_update):
+    docs = [
+        {"a": [{"b": 0, "c": [{"d": 80}, {"d": 95}]},
+               {"b": 1, "c": [{"d": 90}, {"d": 85}]}]}
+    ]
+    spec = {"$inc": {"a.$[elem].c.$[deep].d": 1000}}
+    array_filters = [{"elem.b": {"$gt": 0}},
+                     {"deep.d": {"$lt": 90}}]
+
+    monty_c = monty_update(docs, spec, array_filters=array_filters)
+    mongo_c = mongo_update(docs, spec, array_filters=array_filters)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {"a": [{"b": 0, "c": [{"d": 80}, {"d": 95}]},
+                                   {"b": 1, "c": [{"d": 90}, {"d": 1085}]}]}
+
+
 def test_update_positional_filtered_has_conflict_1(monty_update, mongo_update):
     docs = [
         {"a": [{"b": 4, "c": 1}, {"b": 4, "c": 0}]}
@@ -205,6 +223,20 @@ def test_update_id(monty_update, mongo_update):
         monty_update(docs, spec, find)
 
     assert mongo_err.value.code == monty_err.value.code
+
+
+def test_update_id2(monty_update, mongo_update):
+    docs = [
+        {"a": {"b": {"_id": 0}}},
+    ]
+    spec = {"$inc": {"a.b._id": 3}}
+
+    monty_c = monty_update(docs, spec)
+    mongo_c = mongo_update(docs, spec)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {"a": {"b": {"_id": 3}}}
 
 
 def test_update_positional(monty_update, mongo_update):
@@ -268,6 +300,21 @@ def test_update_array_faild_2(monty_update, mongo_update):
     assert mongo_err.value.code == monty_err.value.code
 
 
+def test_update_array_faild_3(monty_update, mongo_update):
+    docs = [
+        {"a": {"1": 4}}
+    ]
+    spec = {"$inc": {"a.1.$[]": 1}}
+
+    with pytest.raises(mongo_write_err) as mongo_err:
+        mongo_update(docs, spec)
+
+    with pytest.raises(monty_write_err) as monty_err:
+        monty_update(docs, spec)
+
+    assert mongo_err.value.code == monty_err.value.code
+
+
 def test_update_with_dollar_prefixed_field(monty_update, mongo_update):
     docs = [
         {"a": {"1": 4}}
@@ -298,6 +345,23 @@ def test_update_complex_position_1(monty_update, mongo_update):
     assert next(monty_c) == {"a": [{"b": [1, 5], "2": 10},
                                    {"b": [2, 4], "2": 10},
                                    {"b": [3, 6], "2": 10}]}
+
+
+def test_update_complex_position_1_1(monty_update, mongo_update):
+    docs = [
+        {"a": {"1": [{"b": [1, 5]}, {"b": [2, 4]}, {"b": [3, 6]}]}}
+    ]
+    spec = {"$inc": {"a.1.$[].$": 10}}
+    find = {"a.1.b.1": {"$gt": 5}}
+
+    monty_c = monty_update(docs, spec, find)
+    mongo_c = mongo_update(docs, spec, find)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {"a": {"1": [{"b": [1, 5], "2": 10},
+                                         {"b": [2, 4], "2": 10},
+                                         {"b": [3, 6], "2": 10}]}}
 
 
 def test_update_complex_position_2(monty_update, mongo_update):

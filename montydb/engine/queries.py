@@ -36,7 +36,7 @@ from .helpers import (
 )
 
 
-def ordering(fieldwalkers, order):
+def ordering(fieldwalkers, order, doc_type=None):
     """
     """
     total = len(fieldwalkers)
@@ -48,10 +48,10 @@ def ordering(fieldwalkers, order):
 
         for indx, fieldwalker in enumerate(fieldwalkers):
             # get field value
-            fieldwalker = FieldWalker(fieldwalker.doc).go(path).get()
-            elements = fieldwalker.value.elements
-            if elements:
-                value = tuple([Weighted(val) for val in elements])
+            fieldwalker = FieldWalker(fieldwalker.doc, doc_type).go(path).get()
+            values = fieldwalker.value.values
+            if values:
+                value = tuple([Weighted(val) for val in values])
 
                 if len(value):
                     # list will firstly compare with other doc by it's smallest
@@ -176,13 +176,12 @@ class LogicBox(list):
 
     def __call_elemMatch(self, fieldwalker):
         """"""
-        field_value_array = fieldwalker.value.arrays
-        for value in field_value_array:
-            for v in value:
-                fieldwalker.value.elements = [v]
-                fieldwalker.value.arrays = []
-                if all(self.__gen(fieldwalker)):
-                    return True
+        with fieldwalker.value as field_value:
+            for value in field_value.iter_arrays():
+                for v in value:
+                    field_value._value_iter = lambda: iter([v])
+                    if all(self.__gen(fieldwalker)):
+                        return True
 
     def __call_and(self, fieldwalker):
         return all(self.__gen(fieldwalker))
@@ -264,7 +263,7 @@ class QueryFilter(object):
     def __repr__(self):
         return "QueryFilter({})".format(str(self.conditions))
 
-    def __call__(self, doc):
+    def __call__(self, doc, doc_type=None):
         """Recursively calling `LogicBox` or operators content within
 
         A short-circuit logic structure to determine the document can pass the
@@ -274,7 +273,7 @@ class QueryFilter(object):
             doc (dict): Document recived from database.
 
         """
-        self.__fieldwalker = FieldWalker(doc)
+        self.__fieldwalker = FieldWalker(doc, doc_type)
         return all(cond(self.__fieldwalker) for cond in self.conditions)
 
     @property
@@ -671,8 +670,9 @@ def parse_all(query):
         if go_match:
             for q in query:
                 queryfilter = QueryFilter(q["$elemMatch"])
-                for value in fieldwalker.value.arrays:
-                    if not any(queryfilter(v) for v in value):
+                doc_type = fieldwalker.doc_type
+                for value in fieldwalker.value.iter_arrays():
+                    if not any(queryfilter(v, doc_type) for v in value):
                         return False
             return True
         else:
@@ -693,9 +693,10 @@ def parse_elemMatch(query):
     @keep(query)
     def _elemMatch(fieldwalker):
         queryfilter = QueryFilter(query)
-        for value in fieldwalker.value.arrays:
+        doc_type = fieldwalker.doc_type
+        for value in fieldwalker.value.iter_arrays():
             for v in value:
-                if queryfilter(v):
+                if queryfilter(v, doc_type):
                     return True
 
     return _elemMatch
@@ -709,7 +710,7 @@ def parse_size(query):
 
     @keep(query)
     def _size(fieldwalker):
-        for value in fieldwalker.value.arrays:
+        for value in fieldwalker.value.iter_arrays():
             if len(value) == query:
                 return True
 

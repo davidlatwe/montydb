@@ -1,6 +1,4 @@
 
-from montydb.engine.core import FieldWalker
-
 
 def test_qop_exists_1(monty_find, mongo_find):
     docs = [
@@ -11,7 +9,6 @@ def test_qop_exists_1(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0]).go("a").get().value.exists is True
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
 
@@ -33,7 +30,6 @@ def test_qop_exists_2(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0]).go("a").get().value.exists is False
     assert mongo_c.count() == 0
     assert monty_c.count() == mongo_c.count()
 
@@ -55,7 +51,6 @@ def test_qop_exists_3(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0]).go("a").get().value.exists is True
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
 
@@ -77,7 +72,6 @@ def test_qop_exists_4(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0]).go("a.1").get().value.exists is False
     assert mongo_c.count() == 0
     assert monty_c.count() == mongo_c.count()
 
@@ -99,7 +93,6 @@ def test_qop_exists_5(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0]).go("a.b").get().value.exists is True
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
 
@@ -121,7 +114,6 @@ def test_qop_exists_6(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0]).go("a.b.1").get().value.exists is True
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
 
@@ -147,6 +139,5 @@ def test_qop_exists_7(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert FieldWalker(docs[0]).go("a.b.c.1.d.2").get().value.exists is False
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()

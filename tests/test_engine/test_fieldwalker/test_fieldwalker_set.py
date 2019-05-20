@@ -1,4 +1,9 @@
-from montydb.engine.core import FieldWalker
+
+import pytest
+from montydb.engine.core import (
+    FieldWalker,
+    FieldWriteError,
+)
 
 
 def test_fieldwalker_value_set_1():
@@ -10,7 +15,8 @@ def test_fieldwalker_value_set_1():
     fieldwalker = FieldWalker(doc)
     with fieldwalker.go(path):
         fieldwalker.set(value)
-    assert doc == {"a": 10}
+        fieldwalker.commit()
+    assert fieldwalker.doc == {"a": 10}
 
 
 def test_fieldwalker_value_set_2():
@@ -21,7 +27,8 @@ def test_fieldwalker_value_set_2():
     fieldwalker = FieldWalker(doc)
     with fieldwalker.go(path):
         fieldwalker.set(value)
-    assert doc == {"a": {"b": 10}}
+        fieldwalker.commit()
+    assert fieldwalker.doc == {"a": {"b": 10}}
 
 
 def test_fieldwalker_value_set_3():
@@ -32,7 +39,8 @@ def test_fieldwalker_value_set_3():
     fieldwalker = FieldWalker(doc)
     with fieldwalker.go(path):
         fieldwalker.set(value)
-    assert doc == {"a": [1, 20, 3]}
+        fieldwalker.commit()
+    assert fieldwalker.doc == {"a": [1, 20, 3]}
 
 
 def test_fieldwalker_value_set_4():
@@ -44,7 +52,8 @@ def test_fieldwalker_value_set_4():
     with fieldwalker.go(path):
         fieldwalker.set(value)
         assert doc == {"a": [1, 2, 3]}
-    assert doc == {"a": [1, 2, 3, None, None, 9]}
+        fieldwalker.commit()
+    assert fieldwalker.doc == {"a": [1, 2, 3, None, None, 9]}
 
 
 def test_fieldwalker_value_set_5():
@@ -57,7 +66,8 @@ def test_fieldwalker_value_set_5():
         fieldwalker.go("c")
         fieldwalker.set(99)
         assert doc == {}
-    assert doc == {"a": {"b": 10}, "c": 99}
+        fieldwalker.commit()
+    assert fieldwalker.doc == {"a": {"b": 10}, "c": 99}
 
 
 def test_fieldwalker_value_set_6():
@@ -68,4 +78,40 @@ def test_fieldwalker_value_set_6():
     fieldwalker = FieldWalker(doc)
     with fieldwalker.go(path):
         fieldwalker.set(value)
-    assert doc == {"a": [1, None, {"b": 20}]}
+        fieldwalker.commit()
+    assert fieldwalker.doc == {"a": [1, None, {"b": 20}]}
+
+
+def test_fieldwalker_value_set_7():
+    doc = {"a": [{"b": 0}, {"b": 1}]}
+    path = "a.b"
+    value = 10
+
+    fieldwalker = FieldWalker(doc)
+    with fieldwalker.go(path):
+        with pytest.raises(FieldWriteError):
+            fieldwalker.set(value)
+
+
+def test_fieldwalker_value_set_8():
+    doc = {}
+
+    fieldwalker = FieldWalker(doc)
+    with fieldwalker:
+        fieldwalker.go("a.b")
+        fieldwalker.set(1)
+        fieldwalker.go("a")
+        with pytest.raises(FieldWriteError):
+            fieldwalker.set(2)
+
+
+def test_fieldwalker_value_set_9():
+    doc = {"a": [{"b": 0}, {"b": 1}]}
+    path = "a.1.b"
+    value = 10
+
+    fieldwalker = FieldWalker(doc)
+    with fieldwalker.go(path):
+        fieldwalker.set(value)
+        fieldwalker.commit()
+    assert fieldwalker.doc == {"a": [{"b": 0}, {"b": 10}]}

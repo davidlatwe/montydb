@@ -28,9 +28,10 @@ class MontyList(list):
     pymongo's Collection and Cursor.
     """
 
-    def __init__(self, documents=None, name=None):
+    def __init__(self, documents=None, name=None, doc_type=None):
         super(MontyList, self).extend(documents or [])
         self.name = name or ObjectId()
+        self.doc_type = doc_type or dict  # Set `dict` as default doc type
         self.rewind()
 
     def __repr__(self):
@@ -97,7 +98,8 @@ class MontyList(list):
         qf = QueryFilter(spec)
         pj = Projector(proj, qf) if proj is not None else None
 
-        fieldwalkers = [qf.fieldwalker for doc in self[:] if qf(doc)]
+        fieldwalkers = [qf.fieldwalker for doc in self[:]
+                        if qf(doc, self.doc_type)]
         if sort:
             fieldwalkers = ordering(fieldwalkers, sort)
         if pj is not None:
@@ -109,8 +111,9 @@ class MontyList(list):
     def sort(self, key_or_list, direction=None):
         keys = _index_list(key_or_list, direction)
         sort = _index_document(keys)
-        fieldwalkers = [FieldWalker(doc) for doc in self[:]]
-        self[:] = [fw.doc for fw in ordering(fieldwalkers, sort)]
+        fieldwalkers = [FieldWalker(doc, self.doc_type) for doc in self[:]]
+        self[:] = [fw.doc for fw in
+                   ordering(fieldwalkers, sort, self.doc_type)]
         return self
 
     def replace_one(self):
