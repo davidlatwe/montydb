@@ -471,7 +471,7 @@ class FieldTree(object):
     def delete(self, fields, array_filters=None):
         self.write(fields, _no_val, array_filters=array_filters)
 
-    def extract(self):
+    def extract(self, visited_only=False):
         ON_DELETE = False
         if isinstance(self.handler, FieldTreeWriter):
             ON_DELETE = self.handler.on_delete
@@ -487,12 +487,14 @@ class FieldTree(object):
                     try:
                         child = node[field]
                     except KeyError:
+                        if visited_only:
+                            continue
                         value = doc[field]
                     else:
                         value = _extract(child)
-                    finally:
-                        if value is not _no_val:
-                            new_doc[field] = value
+
+                    if value is not _no_val:
+                        new_doc[field] = value
 
                 return new_doc
 
@@ -508,13 +510,15 @@ class FieldTree(object):
                     try:
                         child = node[str(index)]
                     except KeyError:
+                        if visited_only:
+                            continue
                         value = doc[index] if index < len(doc) else None
                     else:
                         value = _extract(child)
-                    finally:
-                        if value is _no_val:
-                            value = None
-                        new_doc.append(value)
+
+                    if value is _no_val:
+                        value = None
+                    new_doc.append(value)
 
                 return new_doc
 
@@ -571,6 +575,9 @@ class FieldWalker(object):
         if has_change:
             self.doc = self.tree.extract()
         return has_change
+
+    def touched(self):
+        return self.tree.extract(visited_only=True)
 
     def __enter__(self):
         return self
