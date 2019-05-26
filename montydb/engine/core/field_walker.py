@@ -555,10 +555,12 @@ class FieldWalker(object):
         self.steps = path.split(".")
         return self
 
-    def step(self, field, restart=False):
-        if restart:
-            self.tree.restart()
+    def step(self, field):
         self.steps = [field]
+        return self
+
+    def restart(self):
+        self.tree.restart()
         return self
 
     def get(self):
