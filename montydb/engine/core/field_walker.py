@@ -332,9 +332,12 @@ class FieldTree(object):
     def __init__(self, doc, doc_type=None):
         self.map_cls = doc_type or type(doc)
         self.root = FieldNode("", doc, exists=True)
+        self._reset()
+
+    def _reset(self):
         self.handler = None
-        self.previous = None
-        self.picked = None
+        self.previous = set([""])
+        self.picked = [self.root]
         self.changes = list()
 
     def __str__(self):
@@ -359,6 +362,7 @@ class FieldTree(object):
 
     def clear(self):
         self.root.children = list()
+        self._reset()
 
     def grow(self, fields):
         self.picked = [self.root]
