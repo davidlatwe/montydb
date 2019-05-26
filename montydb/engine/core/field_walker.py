@@ -332,13 +332,7 @@ class FieldTree(object):
     def __init__(self, doc, doc_type=None):
         self.map_cls = doc_type or type(doc)
         self.root = FieldNode("", doc, exists=True)
-        self._reset()
-
-    def _reset(self):
-        self.handler = None
-        self.previous = set([""])
-        self.picked = [self.root]
-        self.changes = list()
+        self.clear()
 
     def __str__(self):
         def print_tree(node, level=0):
@@ -362,11 +356,15 @@ class FieldTree(object):
 
     def clear(self):
         self.root.children = list()
-        self._reset()
+        self.handler = None
+        self.changes = list()
+        self.restart()
 
-    def grow(self, fields):
+    def restart(self):
         self.picked = [self.root]
         self.previous = set([""])
+
+    def grow(self, fields):
 
         for field in fields:
 
@@ -553,7 +551,14 @@ class FieldWalker(object):
         self.value = None
 
     def go(self, path):
+        self.tree.restart()
         self.steps = path.split(".")
+        return self
+
+    def step(self, field, restart=False):
+        if restart:
+            self.tree.restart()
+        self.steps = [field]
         return self
 
     def get(self):
