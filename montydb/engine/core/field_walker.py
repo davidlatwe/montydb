@@ -163,8 +163,9 @@ class FieldNode(str):
         return str(self)
 
     def spawn(self, value, field, located=False, exists=True, in_array=False):
-        self.children.append(
-            FieldNode(field, value, located, exists, in_array, self))
+        new_node = FieldNode(field, value, located, exists, in_array, self)
+        self.children.append(new_node)
+        return new_node
 
 
 class FieldTreeReader(object):
@@ -177,15 +178,21 @@ class FieldTreeReader(object):
         if node.exists is False:
             return [node]
 
-        if isinstance(node.value, self.map_cls):
-            self.read_map(node, field)
-        elif isinstance(node.value, list):
-            self.read_array(node, field)
-        else:
-            node.spawn(_no_val, field, exists=False,
-                       located=node.located, in_array=node.in_array)
+        result = list()
 
-        return node.children
+        if isinstance(node.value, self.map_cls):
+            result.append(self.read_map(node, field))
+        elif isinstance(node.value, list):
+            result += self.read_array(node, field)
+        else:
+            new_node = node.spawn(_no_val,
+                                  field,
+                                  exists=False,
+                                  located=node.located,
+                                  in_array=node.in_array)
+            result.append(new_node)
+
+        return result
 
     def read_map(self, node, field, index=None, elem=None):
         doc = node.value if elem is None else elem
@@ -201,14 +208,15 @@ class FieldTreeReader(object):
             field = index + "." + field
 
         self.trace.add(field)
-        node.spawn(val, field, exists=exists, in_array=bool(index))
+        return node.spawn(val, field, exists=exists, in_array=bool(index))
 
     def read_array(self, node, field):
+        new_nodes = list()
         doc = node.value
 
         for i, elem in enumerate(doc):
             if isinstance(elem, self.map_cls):
-                self.read_map(node, field, str(i), elem)
+                new_nodes.append(self.read_map(node, field, str(i), elem))
 
         if field.isdigit():
             try:
@@ -219,7 +227,12 @@ class FieldTreeReader(object):
                 exists = False
 
             self.trace.add(field)
-            node.spawn(val, field, located=True, exists=exists, in_array=True)
+            new_nodes.append(node.spawn(val,
+                                        field,
+                                        located=True,
+                                        exists=exists,
+                                        in_array=True))
+        return new_nodes
 
 
 def is_multi_position_operator(field):
@@ -239,6 +252,8 @@ class FieldTreeWriter(object):
         self.trace = set()
 
     def operate(self, node, field):
+        result = list()
+
         if field.startswith("$") and not field.startswith("$["):
             full_path = node.full_path + "." + field
             msg = ("The dollar ($) prefixed field {0!r} in {1!r} is not "
@@ -258,19 +273,19 @@ class FieldTreeWriter(object):
 
         if isinstance(node.value, self.map_cls):
 
-            self.write_map(node, field)
+            result.append(self.write_map(node, field))
 
         elif (isinstance(node.value, list) and
                 (field.isdigit() or is_multi_position_operator(field))):
 
-            self.write_array(node, field)
+            result += self.write_array(node, field)
 
         elif not self.on_delete:
             msg = ("Cannot create field {0!r} in element "
                    "{1}".format(field, {str(node): node.value}))
             raise FieldWriteError(msg, code=28)
 
-        return node.children
+        return result
 
     def write_map(self, node, field, index=None, elem=None):
         doc = node.value if elem is None else elem
@@ -286,9 +301,10 @@ class FieldTreeWriter(object):
             field = index + "." + field
 
         self.trace.add(field)
-        node.spawn(val, field, exists=exists, in_array=bool(index))
+        return node.spawn(val, field, exists=exists, in_array=bool(index))
 
     def write_array(self, node, field):
+        new_nodes = list()
         doc = node.value
 
         if is_multi_position_operator(field):
@@ -301,14 +317,20 @@ class FieldTreeWriter(object):
                         field = str(i)
 
                         self.trace.add(field)
-                        node.spawn(elem, field, exists=True, in_array=True)
+                        new_nodes.append(node.spawn(elem,
+                                                    field,
+                                                    exists=True,
+                                                    in_array=True))
             else:
                 # all
                 for i, elem in enumerate(doc):
                     field = str(i)
 
                     self.trace.add(field)
-                    node.spawn(elem, field, exists=True, in_array=True)
+                    new_nodes.append(node.spawn(elem,
+                                                field,
+                                                exists=True,
+                                                in_array=True))
         else:
             try:
                 val = doc[int(field)]
@@ -318,7 +340,11 @@ class FieldTreeWriter(object):
                 exists = False
 
             self.trace.add(field)
-            node.spawn(val, field, exists=exists, in_array=True)
+            new_nodes.append(node.spawn(val,
+                                        field,
+                                        exists=exists,
+                                        in_array=True))
+        return new_nodes
 
 
 def is_conflict(path_a, path_b):
