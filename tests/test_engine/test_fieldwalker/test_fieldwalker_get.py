@@ -285,3 +285,14 @@ def test_fieldwalker_touched_1():
         fieldwalker.go("b.g").get()
         result = fieldwalker.touched()
         assert result == {"a": 5, "b": {"g": 0}, "x": [2]}
+
+
+def test_fieldwalker_touched_2():
+    doc = {"a": {"b": {"c": [{"x": 1}, {"x": 2}], "d": [1, 2]}}}
+
+    fieldwalker = FieldWalker(doc)
+
+    with fieldwalker:
+        fieldwalker.go("a.b.c").get()
+        result = fieldwalker.touched()
+        assert result == {"a": {"b": {"c": [{"x": 1}, {"x": 2}]}}}
