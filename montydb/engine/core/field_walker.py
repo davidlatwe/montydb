@@ -341,6 +341,7 @@ class FieldTreeWriter(object):
                         self.trace.add(field)
                         new_nodes.append(node.spawn(elem,
                                                     field,
+                                                    located=True,
                                                     exists=True,
                                                     in_array=True))
             else:
@@ -351,6 +352,7 @@ class FieldTreeWriter(object):
                     self.trace.add(field)
                     new_nodes.append(node.spawn(elem,
                                                 field,
+                                                located=True,
                                                 exists=True,
                                                 in_array=True))
         else:
@@ -364,6 +366,7 @@ class FieldTreeWriter(object):
             self.trace.add(field)
             new_nodes.append(node.spawn(val,
                                         field,
+                                        located=True,
                                         exists=exists,
                                         in_array=True))
         return new_nodes
