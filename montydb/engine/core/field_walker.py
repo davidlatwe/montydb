@@ -70,6 +70,7 @@ class FieldValues(object):
         if matched is None:
             return
 
+        first = None
         while matched.parent is not None:
             if not matched.in_array:
                 break
