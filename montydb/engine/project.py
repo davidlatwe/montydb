@@ -94,7 +94,8 @@ class Projector(object):
             if is_duckument_type(val):
                 if not len(val) == 1:
                     _v = _perr_doc(val)
-                    raise OperationFailure(">1 field in obj: {}".format(_v))
+                    raise OperationFailure(">1 field in obj: {}".format(_v),
+                                           code=2)
 
                 # Array field options
                 sub_k, sub_v = next(iter(val.items()))
@@ -168,7 +169,7 @@ class Projector(object):
                 if not _is_include(val):
                     raise OperationFailure(
                         "Cannot exclude array elements with the positional "
-                        "operator.")
+                        "operator.", code=2)
                 if self.array_op_type == self.ARRAY_OP_POSITIONAL:
                     raise OperationFailure(
                         "Cannot specify more than one positional proj. "
