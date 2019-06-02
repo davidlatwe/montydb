@@ -274,30 +274,6 @@ def test_fieldwalker_value_get_29():
     assert fw.value == value
 
 
-def test_fieldwalker_touched_1():
-    doc = {"a": 5, "b": {"c": 5, "g": 0}, "x": [1, 2]}
-
-    fieldwalker = FieldWalker(doc)
-
-    with fieldwalker:
-        fieldwalker.go("a").get()
-        fieldwalker.go("x.1").get()
-        fieldwalker.go("b.g").get()
-        result = fieldwalker.touched()
-        assert result == {"a": 5, "b": {"g": 0}, "x": [2]}
-
-
-def test_fieldwalker_touched_2():
-    doc = {"a": {"b": {"c": [{"x": 1}, {"x": 2}], "d": [1, 2]}}}
-
-    fieldwalker = FieldWalker(doc)
-
-    with fieldwalker:
-        fieldwalker.go("a.b.c").get()
-        result = fieldwalker.touched()
-        assert result == {"a": {"b": {"c": [{"x": 1}, {"x": 2}]}}}
-
-
 def test_fieldwalker_clean_result_1():
     doc = {"a": 5, "b": 8}
 

@@ -613,11 +613,119 @@ class FieldWalker(object):
             self.doc = self.tree.extract()
         return has_change
 
-    def touched(self):
-        return self.tree.extract(visited_only=True)
-
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
         self.tree.clear()
+
+
+def inclusion(fieldwalker, located=False):
+    tree = fieldwalker.tree
+
+    def _inclusion(node):
+        doc = node.value
+
+        if not node.children:
+            return doc
+
+        if isinstance(doc, tree.map_cls):
+            new_doc = tree.map_cls()
+
+            for field in doc:
+                if field in node.children:
+                    child = node[field]
+                    value = _inclusion(child)
+                    if value is not _no_val:
+                        new_doc[field] = value
+
+            return new_doc
+
+        elif isinstance(doc, list):
+            new_doc = list()
+
+            if located:
+                for child in node.children:
+                    if child.located:
+                        new_doc.append(child.value)
+                return new_doc
+
+            for index, elem in enumerate(doc):
+                if not isinstance(elem, tree.map_cls):
+                    continue
+                emb_doc = tree.map_cls()
+
+                for field in elem:
+                    embed_field = str(index) + "." + field
+                    if embed_field in node.children:
+                        child = node[embed_field]
+                        if not any(str(gch) for gch in child.children):
+                            value = elem[field]
+                            emb_doc[field] = value
+                        else:
+                            value = _inclusion(child)
+                            if value is not _no_val:
+                                emb_doc[field] = value
+
+                new_doc.append(emb_doc)
+
+            return new_doc
+
+        else:
+            if not any(c.exists for c in node.children):
+                return _no_val
+            return doc
+
+    return _inclusion(tree.root)
+
+
+def exclusion(fieldwalker):
+    tree = fieldwalker.tree
+
+    def _exclusion(node):
+        doc = node.value
+
+        if isinstance(doc, tree.map_cls):
+            new_doc = tree.map_cls()
+
+            for field in doc:
+                if field in node.children:
+                    child = node[field]
+                    if child.children:
+                        value = _exclusion(child)
+                        if value is not _no_val:
+                            new_doc[field] = value
+                else:
+                    new_doc[field] = doc[field]
+
+            return new_doc
+
+        elif isinstance(doc, list):
+            new_doc = list()
+
+            for index, elem in enumerate(doc):
+                if not isinstance(elem, tree.map_cls):
+                    new_doc.append(elem)
+                    continue
+                emb_doc = tree.map_cls()
+
+                for field in elem:
+                    embed_field = str(index) + "." + field
+                    if embed_field in node.children:
+                        child = node[embed_field]
+                        if (child.children and
+                                any(str(gch) for gch in child.children)):
+                            value = _exclusion(child)
+                            if value is not _no_val:
+                                emb_doc[field] = value
+                    else:
+                        emb_doc[field] = elem[field]
+
+                new_doc.append(emb_doc)
+
+            return new_doc
+
+        else:
+            return doc
+
+    return _exclusion(tree.root)
