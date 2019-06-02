@@ -111,12 +111,11 @@ class FieldValues(object):
 
 
 class FieldNode(str):
-    __slots__ = ("value", "located", "exists", "full_path", "in_array",
-                 "embed_index", "embed_field", "parent", "children")
+    __slots__ = ("value", "located", "exists", "full_path",
+                 "in_array", "parent", "children")
 
     def __new__(cls, field, doc, located=False, exists=False,
-                in_array=False, embed_index=None, embed_field=None,
-                parent=None):
+                in_array=False, parent=None):
         obj = str.__new__(cls, field)
         obj.value = doc
         obj.located = located
@@ -124,9 +123,6 @@ class FieldNode(str):
         obj.in_array = in_array
         obj.parent = parent
         obj.children = []
-
-        obj.embed_index = embed_index
-        obj.embed_field = embed_field
 
         if getattr(field, "in_array", False):
             obj.in_array = True
@@ -167,11 +163,8 @@ class FieldNode(str):
             return forepath + "." + str(self)
         return str(self)
 
-    def spawn(self, value, field, located=False, exists=True,
-              in_array=False, embed_index=None, embed_field=None):
-        new_node = FieldNode(field, value, located, exists,
-                             in_array, embed_index, embed_field,
-                             parent=self)
+    def spawn(self, value, field, located=False, exists=True, in_array=False):
+        new_node = FieldNode(field, value, located, exists, in_array, self)
         self.children.append(new_node)
         return new_node
 
@@ -204,7 +197,6 @@ class FieldTreeReader(object):
 
     def read_map(self, node, field, index=None, elem=None):
         doc = node.value if elem is None else elem
-        embed_field = None
 
         try:
             val = doc[field]
@@ -214,16 +206,10 @@ class FieldTreeReader(object):
             exists = False
 
         if index:
-            embed_field = field
             field = index + "." + field
 
         self.trace.add(field)
-        return node.spawn(val,
-                          field,
-                          exists=exists,
-                          in_array=bool(index),
-                          embed_index=index,
-                          embed_field=embed_field)
+        return node.spawn(val, field, exists=exists, in_array=bool(index))
 
     def read_array(self, node, field):
         new_nodes = list()
@@ -304,7 +290,6 @@ class FieldTreeWriter(object):
 
     def write_map(self, node, field, index=None, elem=None):
         doc = node.value if elem is None else elem
-        embed_field = None
 
         try:
             val = doc[field]
@@ -314,16 +299,10 @@ class FieldTreeWriter(object):
             exists = False
 
         if index:
-            embed_field = field
             field = index + "." + field
 
         self.trace.add(field)
-        return node.spawn(val,
-                          field,
-                          exists=exists,
-                          in_array=bool(index),
-                          embed_index=index,
-                          embed_field=embed_field)
+        return node.spawn(val, field, exists=exists, in_array=bool(index))
 
     def write_array(self, node, field):
         new_nodes = list()
