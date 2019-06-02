@@ -627,6 +627,8 @@ def inclusion(fieldwalker, located=False):
         doc = node.value
 
         if not node.children:
+            if located and isinstance(doc, tree.map_cls):
+                return tree.map_cls()
             return doc
 
         if isinstance(doc, tree.map_cls):
@@ -646,9 +648,9 @@ def inclusion(fieldwalker, located=False):
 
             if located:
                 for child in node.children:
-                    if child.located:
+                    if child.exists and child.located:
                         new_doc.append(child.value)
-                return new_doc
+                return new_doc or _no_val
 
             for index, elem in enumerate(doc):
                 if not isinstance(elem, tree.map_cls):

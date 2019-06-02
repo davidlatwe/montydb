@@ -65,9 +65,9 @@ class Projector(object):
     def __init__(self, spec, qfilter):
         self.proj_with_id = True
         self.include_flag = None
-        self.matched_index = None
         self.regular_field = []
         self.array_field = {}
+        self.matched = None
 
         self.parser(spec, qfilter)
 
@@ -77,7 +77,7 @@ class Projector(object):
         if fieldwalker.value is not None:
             top_matched = fieldwalker.value.first_matched()
             if top_matched is not None:
-                self.matched_index = top_matched.split(".")[0]
+                self.matched = top_matched
 
         with fieldwalker:
 
@@ -261,18 +261,22 @@ class Projector(object):
             for field in field_path.split("."):
                 fieldwalker.step(field).get()
                 fieldvalue = fieldwalker.value
+                node = fieldvalue.nodes[0]
 
-                in_array = isinstance(fieldvalue.nodes[0].value, list)
+                in_array = isinstance(node.value, list)
                 if in_array:
                     # Reach array field
-                    elem_count = len(fieldvalue.nodes[0].value)
-                    if int(self.matched_index) >= elem_count:
+                    elem_count = len(node.value)
+                    matched_index = self.matched.split(".")[0]
+
+                    if (int(matched_index) >= elem_count and
+                            self.matched.full_path.startswith(node.full_path)):
                         raise OperationFailure(
                             "Executor error during find command: BadValue: "
                             "positional operator element mismatch",
                             code=96)
 
-                    fieldwalker.step(self.matched_index).get()
+                    fieldwalker.step(matched_index).get()
                     break
 
         return _positional

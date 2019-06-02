@@ -330,7 +330,7 @@ def test_projection_positional_err_2(monty_proj, mongo_proj):
         {"a": [{"b": [0, 1, 2]}, {"b": [3, 2, 4]}],
          "b": [{"b": [0, 1, 2]}, {"b": [3, 2, 4]}]}
     ]
-    spec = {"b.0.b": 2}  # a.b not matched with a.0
+    spec = {"b.0.b": 2}
     proj = {"a.b.$": 1}
 
     with pytest.raises(mongo_op_fail) as mongo_err:
@@ -340,3 +340,56 @@ def test_projection_positional_err_2(monty_proj, mongo_proj):
         next(monty_proj(docs, spec, proj))
 
     assert mongo_err.value.code == monty_err.value.code
+
+
+def test_projection_positional_err_96_1(monty_proj, mongo_proj):
+    docs = [
+        {"a": [{"b": [0, 1, 2]}, {"b": [3, 2, 4]}]}
+    ]
+    spec = {"a.0.b": 2}
+    proj = {"a.b.$": 1}
+
+    with pytest.raises(mongo_op_fail) as mongo_err:
+        next(mongo_proj(docs, spec, proj))
+
+    with pytest.raises(monty_op_fail) as monty_err:
+        next(monty_proj(docs, spec, proj))
+
+    assert mongo_err.value.code == monty_err.value.code
+
+
+def test_projection_positional_err_96_2(monty_proj, mongo_proj):
+    docs = [
+        {"a": [{"b": [0, 1, 2]}, {"b": [3, 2, 4]}]}
+    ]
+    spec = {"a.0.b": 2}
+    proj = {"a.$": 1}
+
+    with pytest.raises(mongo_op_fail) as mongo_err:
+        next(mongo_proj(docs, spec, proj))
+
+    with pytest.raises(monty_op_fail) as monty_err:
+        next(monty_proj(docs, spec, proj))
+
+    assert mongo_err.value.code == monty_err.value.code
+
+
+def test_projection_positional_16(monty_proj, mongo_proj):
+    docs = [
+        {"a": {"b": {"c": [1, 2, 3]}, "d": [1]}}
+    ]
+    spec = {"a.b.c": 2}
+
+    def run(proj):
+        monty_c = monty_proj(docs, spec, proj)
+        mongo_c = mongo_proj(docs, spec, proj)
+
+        assert mongo_c.count() == 1
+        assert monty_c.count() == mongo_c.count()
+        assert next(mongo_c) == next(monty_c)
+
+    proj = {"a.b.$": 1}
+    run(proj)
+
+    proj = {"a.d.$": 1}
+    run(proj)
