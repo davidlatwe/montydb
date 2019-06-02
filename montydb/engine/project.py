@@ -186,7 +186,7 @@ class Projector(object):
                 if not _is_positional_match(conditions, path):
                     raise OperationFailure(
                         "Positional projection '{}' does not match the query "
-                        "document.".format(key))
+                        "document.".format(key), code=2)
 
                 self.array_op_type = self.ARRAY_OP_POSITIONAL
 
