@@ -269,6 +269,14 @@ class Projector(object):
                     elem_count = len(node.value)
                     matched_index = self.matched.split(".")[0]
 
+                    if not self.matched.full_path.count(".") > 1:
+                        raise OperationFailure(
+                            "Executor error during find command: BadValue: "
+                            "positional operator (%s.$) requires "
+                            "corresponding field in query specifier"
+                            % field,
+                            code=96)
+
                     if (int(matched_index) >= elem_count and
                             self.matched.full_path.startswith(node.full_path)):
                         raise OperationFailure(

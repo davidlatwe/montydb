@@ -374,6 +374,22 @@ def test_projection_positional_err_96_2(monty_proj, mongo_proj):
     assert mongo_err.value.code == monty_err.value.code
 
 
+def test_projection_positional_err_96_3(monty_proj, mongo_proj):
+    docs = [
+        {"a": [0, 1]}
+    ]
+    spec = {"a.1": 1}
+    proj = {"a.$": 1}
+
+    with pytest.raises(mongo_op_fail) as mongo_err:
+        next(mongo_proj(docs, spec, proj))
+
+    with pytest.raises(monty_op_fail) as monty_err:
+        next(monty_proj(docs, spec, proj))
+
+    assert mongo_err.value.code == monty_err.value.code
+
+
 def test_projection_positional_16(monty_proj, mongo_proj):
     docs = [
         {"a": {"b": {"c": [1, 2, 3]}, "d": [1]}}
