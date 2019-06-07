@@ -89,6 +89,27 @@ def test_projection_elemMatch_3(monty_proj, mongo_proj):
     run(proj)
 
 
+def test_projection_elemMatch_4(monty_proj, mongo_proj):
+    docs = [
+        {"a": [{"b": 1}, {"b": 3}], "x": 100}
+    ]
+    spec = {}
+
+    def run(proj):
+        monty_c = monty_proj(docs, spec, proj)
+        mongo_c = mongo_proj(docs, spec, proj)
+
+        assert mongo_c.count() == 1
+        assert monty_c.count() == mongo_c.count()
+        assert next(mongo_c) == next(monty_c)
+
+    proj = {"a": {"$elemMatch": {"b": 3}}, "x": 1}
+    run(proj)
+
+    proj = {"a": {"$elemMatch": {"b": 3}}, "x": 0}
+    run(proj)
+
+
 def test_projection_elemMatch_mix_with_slice_1(monty_proj, mongo_proj):
     docs = [
         {"a": [0, 1, 2, 5, 6]}

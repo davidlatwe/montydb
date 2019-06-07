@@ -74,6 +74,9 @@ class Projector(object):
 
         self.parser(spec, qfilter)
 
+        if self.array_field and not self.regular_field:
+            self.include_flag = True
+
     def __call__(self, fieldwalker):
         """
         """
@@ -90,24 +93,27 @@ class Projector(object):
                 operation = self.array_field[path]
                 operation(fieldwalker)
 
+            if self.proj_with_id:
+                fieldwalker.go("_id").get()
+            else:
+                fieldwalker.go("_id").drop()
+
+            init_doc = fieldwalker.touched()
+
             for path in self.regular_field:
                 fieldwalker.go(path).get()
 
             if self.include_flag:
-                if self.proj_with_id:
-                    fieldwalker.go("_id").get()
-
                 located_match = None
                 if self.matched is not None:
                     located_match = self.matched.located
 
-                projected = inclusion(fieldwalker, positioned, located_match)
-
+                projected = inclusion(fieldwalker,
+                                      positioned,
+                                      located_match,
+                                      init_doc)
             else:
-                if not self.proj_with_id:
-                    fieldwalker.go("_id").get()
-
-                projected = exclusion(fieldwalker)
+                projected = exclusion(fieldwalker, init_doc)
 
             fieldwalker.doc = projected
 
@@ -158,7 +164,6 @@ class Projector(object):
                             "Cannot use $elemMatch projection on a nested "
                             "field.", code=2)
 
-                    self.include_flag = True
                     self.array_op_type = self.ARRAY_OP_ELEM_MATCH
                     self.array_field[key] = self.parse_elemMatch(key, sub_v)
 
@@ -236,12 +241,13 @@ class Projector(object):
                         if key not in emb_doc:
                             continue
                         if isinstance(emb_doc[key], list):
-                            emb_doc[key] = emb_doc[key][slicing]
+                            fieldwalker.step(key).set(emb_doc[key][slicing])
             else:
                 doc = fieldwalker.doc
                 if field_path in doc:
                     if isinstance(doc[field_path], list):
-                        doc[field_path] = doc[field_path][slicing]
+                        sliced = doc[field_path][slicing]
+                        fieldwalker.go(field_path).set(sliced)
 
         return _slice
 
@@ -258,11 +264,12 @@ class Projector(object):
             if field_path in doc and isinstance(doc[field_path], list):
                 for index, emb_doc in enumerate(doc[field_path]):
                     if wrapped_field_op:
-                        emb_doc = {field_path: emb_doc}
+                        query_doc = {field_path: emb_doc}
+                    else:
+                        query_doc = emb_doc
 
-                    if qfilter_(emb_doc):
-                        fieldwalker.restart()
-                        fieldwalker.go(field_path + "." + str(index)).get()
+                    if qfilter_(query_doc):
+                        fieldwalker.go(field_path).set([emb_doc])
                         break
 
         return _elemMatch

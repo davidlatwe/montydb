@@ -621,6 +621,9 @@ class FieldWalker(object):
             self.doc = self.tree.extract()
         return has_change
 
+    def touched(self):
+        return self.tree.extract(visited_only=True)
+
     def __enter__(self):
         return self
 
@@ -628,10 +631,10 @@ class FieldWalker(object):
         self.tree.clear()
 
 
-def inclusion(fieldwalker, positioned, located_match):
+def inclusion(fieldwalker, positioned, located_match, init_doc):
     tree = fieldwalker.tree
 
-    def _inclusion(node):
+    def _inclusion(node, init_doc=None):
         doc = node.value
 
         if not node.children:
@@ -640,7 +643,7 @@ def inclusion(fieldwalker, positioned, located_match):
             return doc
 
         if isinstance(doc, tree.map_cls):
-            new_doc = tree.map_cls()
+            new_doc = init_doc or tree.map_cls()
 
             for field in doc:
                 if field in node.children:
@@ -698,17 +701,17 @@ def inclusion(fieldwalker, positioned, located_match):
                 return _no_val
             return doc
 
-    return _inclusion(tree.root)
+    return _inclusion(tree.root, init_doc)
 
 
-def exclusion(fieldwalker):
+def exclusion(fieldwalker, init_doc):
     tree = fieldwalker.tree
 
-    def _exclusion(node):
+    def _exclusion(node, init_doc=None):
         doc = node.value
 
         if isinstance(doc, tree.map_cls):
-            new_doc = tree.map_cls()
+            new_doc = init_doc or tree.map_cls()
 
             for field in doc:
                 if field in node.children:
@@ -750,4 +753,4 @@ def exclusion(fieldwalker):
         else:
             return doc
 
-    return _exclusion(tree.root)
+    return _exclusion(tree.root, init_doc)
