@@ -2,8 +2,7 @@
 from .field_walker import (
     FieldWalker,
     FieldWriteError,
-    inclusion,
-    exclusion,
+    _no_val,
 )
 
 from .weighted import (
@@ -18,8 +17,7 @@ from .weighted import (
 __all__ = [
     "FieldWalker",
     "FieldWriteError",
-    "inclusion",
-    "exclusion",
+    "_no_val",
 
     "Weighted",
     "gravity",

@@ -3,7 +3,7 @@ from bson.py3compat import string_type
 
 from ..errors import OperationFailure
 from .queries import QueryFilter
-from .core import inclusion, exclusion
+from .core import _no_val
 from .helpers import (
     is_duckument_type,
 )
@@ -308,3 +308,128 @@ class Projector(object):
                     break
 
         return _positional
+
+
+def inclusion(fieldwalker, positioned, located_match, init_doc):
+    _doc_type = fieldwalker.doc_type
+
+    def _inclusion(node, init_doc=None):
+        doc = node.value
+
+        if not node.children:
+            if positioned and isinstance(doc, _doc_type):
+                return _doc_type()
+            return doc
+
+        if isinstance(doc, _doc_type):
+            new_doc = init_doc or _doc_type()
+
+            for field in doc:
+                if field in node.children:
+                    child = node[field]
+                    value = _inclusion(child)
+                    if value is not _no_val:
+                        new_doc[field] = value
+
+            return new_doc
+
+        elif isinstance(doc, list):
+            new_doc = list()
+
+            if positioned:
+                for child in node.children:
+                    if not (child.exists and child.located):
+                        continue
+
+                    if located_match:
+                        if isinstance(child.value, _doc_type):
+                            new_doc.append(child.value)
+                    else:
+                        new_doc.append(child.value)
+
+                return new_doc or _no_val
+
+            for index, elem in enumerate(doc):
+                if isinstance(elem, list):
+                    emb_doc = list()
+                    new_doc.append(emb_doc)
+                    continue
+
+                if not isinstance(elem, _doc_type):
+                    continue
+                emb_doc = _doc_type()
+
+                for field in elem:
+                    embed_field = str(index) + "." + field
+                    if embed_field in node.children:
+                        child = node[embed_field]
+                        if not any(str(gch) for gch in child.children):
+                            value = elem[field]
+                            emb_doc[field] = value
+                        else:
+                            value = _inclusion(child)
+                            if value is not _no_val:
+                                emb_doc[field] = value
+
+                new_doc.append(emb_doc)
+
+            return new_doc
+
+        else:
+            if not any(c.exists for c in node.children):
+                return _no_val
+            return doc
+
+    return _inclusion(fieldwalker.tree.root, init_doc)
+
+
+def exclusion(fieldwalker, init_doc):
+    _doc_type = fieldwalker.doc_type
+
+    def _exclusion(node, init_doc=None):
+        doc = node.value
+
+        if isinstance(doc, _doc_type):
+            new_doc = init_doc or _doc_type()
+
+            for field in doc:
+                if field in node.children:
+                    child = node[field]
+                    if child.children:
+                        value = _exclusion(child)
+                        if value is not _no_val:
+                            new_doc[field] = value
+                else:
+                    new_doc[field] = doc[field]
+
+            return new_doc
+
+        elif isinstance(doc, list):
+            new_doc = list()
+
+            for index, elem in enumerate(doc):
+                if not isinstance(elem, _doc_type):
+                    new_doc.append(elem)
+                    continue
+                emb_doc = _doc_type()
+
+                for field in elem:
+                    embed_field = str(index) + "." + field
+                    if embed_field in node.children:
+                        child = node[embed_field]
+                        if (child.children and
+                                any(str(gch) for gch in child.children)):
+                            value = _exclusion(child)
+                            if value is not _no_val:
+                                emb_doc[field] = value
+                    else:
+                        emb_doc[field] = elem[field]
+
+                new_doc.append(emb_doc)
+
+            return new_doc
+
+        else:
+            return doc
+
+    return _exclusion(fieldwalker.tree.root, init_doc)
