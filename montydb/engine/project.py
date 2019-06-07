@@ -3,6 +3,7 @@ from bson.py3compat import string_type
 
 from ..errors import OperationFailure
 from .queries import QueryFilter
+from .core import _no_val
 from .helpers import (
     is_duckument_type,
 )
@@ -47,7 +48,10 @@ def _perr_doc(val):
             if isinstance(_v, list):
                 _ = []
                 for v in _v:
-                    _.append(_perr_doc(v))
+                    if is_duckument_type(v):
+                        _.append(_perr_doc(v))
+                    else:
+                        _.append(str(v))
                 _v = "[ " + ", ".join(_) + " ]"
             v_lis.append("{0}: {1}".format(_k, _v))
     return "{ " + ", ".join(v_lis) + " }"
@@ -66,23 +70,52 @@ class Projector(object):
         self.include_flag = None
         self.regular_field = []
         self.array_field = {}
+        self.matched = None
 
         self.parser(spec, qfilter)
+
+        if self.array_field and not self.regular_field:
+            self.include_flag = True
 
     def __call__(self, fieldwalker):
         """
         """
-        if not self.proj_with_id:
-            del fieldwalker.doc["_id"]
+        positioned = self.array_op_type != self.ARRAY_OP_NORMAL
 
-        for field_path in self.array_field:
-            self.array_field[field_path](fieldwalker)
+        if positioned and fieldwalker.value is not None:
+            top_matched = fieldwalker.value.first_matched()
+            if top_matched is not None:
+                self.matched = top_matched
 
-        if self.include_flag:
-            self.regular_field += list(self.array_field.keys())
-            self.inclusion(fieldwalker, self.regular_field)
-        else:
-            self.exclusion(fieldwalker, self.regular_field)
+        with fieldwalker:
+
+            for path in self.array_field:
+                operation = self.array_field[path]
+                operation(fieldwalker)
+
+            if self.proj_with_id:
+                fieldwalker.go("_id").get()
+            else:
+                fieldwalker.go("_id").drop()
+
+            init_doc = fieldwalker.touched()
+
+            for path in self.regular_field:
+                fieldwalker.go(path).get()
+
+            if self.include_flag:
+                located_match = None
+                if self.matched is not None:
+                    located_match = self.matched.located
+
+                projected = inclusion(fieldwalker,
+                                      positioned,
+                                      located_match,
+                                      init_doc)
+            else:
+                projected = exclusion(fieldwalker, init_doc)
+
+            fieldwalker.doc = projected
 
     def parser(self, spec, qfilter):
         """
@@ -94,7 +127,8 @@ class Projector(object):
             if is_duckument_type(val):
                 if not len(val) == 1:
                     _v = _perr_doc(val)
-                    raise OperationFailure(">1 field in obj: {}".format(_v))
+                    raise OperationFailure(">1 field in obj: {}".format(_v),
+                                           code=2)
 
                 # Array field options
                 sub_k, sub_v = next(iter(val.items()))
@@ -128,10 +162,9 @@ class Projector(object):
                     if "." in key:
                         raise OperationFailure(
                             "Cannot use $elemMatch projection on a nested "
-                            "field.")
+                            "field.", code=2)
 
                     self.array_op_type = self.ARRAY_OP_ELEM_MATCH
-
                     self.array_field[key] = self.parse_elemMatch(key, sub_v)
 
                 elif sub_k == "$meta":
@@ -143,7 +176,7 @@ class Projector(object):
                     _v = _perr_doc(val)
                     raise OperationFailure(
                         "Unsupported projection option: "
-                        "{0}: {1}".format(key, _v))
+                        "{0}: {1}".format(key, _v), code=2)
 
             elif key == "_id" and not _is_include(val):
                 self.proj_with_id = False
@@ -159,7 +192,8 @@ class Projector(object):
                             "Projection cannot have a mix of inclusion and "
                             "exclusion.")
 
-                self.regular_field.append(key)
+                if ".$" not in key:
+                    self.regular_field.append(key)
 
             # Is positional ?
             bad_ops = [".$ref", ".$id", ".$db"]
@@ -168,7 +202,7 @@ class Projector(object):
                 if not _is_include(val):
                     raise OperationFailure(
                         "Cannot exclude array elements with the positional "
-                        "operator.")
+                        "operator.", code=2)
                 if self.array_op_type == self.ARRAY_OP_POSITIONAL:
                     raise OperationFailure(
                         "Cannot specify more than one positional proj. "
@@ -186,7 +220,7 @@ class Projector(object):
                 if not _is_positional_match(conditions, path):
                     raise OperationFailure(
                         "Positional projection '{}' does not match the query "
-                        "document.".format(key))
+                        "document.".format(key), code=2)
 
                 self.array_op_type = self.ARRAY_OP_POSITIONAL
 
@@ -207,124 +241,195 @@ class Projector(object):
                         if key not in emb_doc:
                             continue
                         if isinstance(emb_doc[key], list):
-                            emb_doc[key] = emb_doc[key][slicing]
+                            fieldwalker.step(key).set(emb_doc[key][slicing])
             else:
                 doc = fieldwalker.doc
                 if field_path in doc:
                     if isinstance(doc[field_path], list):
-                        doc[field_path] = doc[field_path][slicing]
+                        sliced = doc[field_path][slicing]
+                        fieldwalker.go(field_path).set(sliced)
 
         return _slice
 
     def parse_elemMatch(self, field_path, sub_v):
+        wrapped_field_op = False
+        if next(iter(sub_v)).startswith("$"):
+            wrapped_field_op = True
+            sub_v = {field_path: sub_v}
+
         qfilter_ = QueryFilter(sub_v)
 
         def _elemMatch(fieldwalker):
             doc = fieldwalker.doc
-            has_match = False
             if field_path in doc and isinstance(doc[field_path], list):
-                for emb_doc in doc[field_path]:
-                    if qfilter_(emb_doc):
-                        doc[field_path] = [emb_doc]
-                        has_match = True
-                        break
-            if not has_match:
-                del fieldwalker.doc[field_path]
+                for index, emb_doc in enumerate(doc[field_path]):
+                    if wrapped_field_op:
+                        query_doc = {field_path: emb_doc}
+                    else:
+                        query_doc = emb_doc
 
-            if not self.include_flag:
-                self.inclusion(fieldwalker, [field_path])
+                    if qfilter_(query_doc):
+                        fieldwalker.go(field_path).set([emb_doc])
+                        break
 
         return _elemMatch
 
     def parse_positional(self, field_path):
         def _positional(fieldwalker):
-            top_matched = fieldwalker.value.first_matched()
-            matched_index = int(top_matched.split(".")[0])
-            value = {}
-            fieldwalker.go(field_path).get()
-            elements = fieldwalker.value.values
-            match = True
-            paths = field_path.split(".")
-            paths.reverse()
-            doc = fieldwalker.doc
-            path = ""
-            while paths:
-                path = paths.pop()
-                if isinstance(doc[path], list):
-                    if matched_index is None:
-                        match = False
-                    elif matched_index >= len(doc[path]):
-                        match = False
-                    else:
-                        if len(elements) == 0:
-                            raise OperationFailure(
-                                "Executor error during find command: "
-                                "BadValue: positional operator ({}.$) "
-                                "requires corresponding field in query "
-                                "specifier".format(field_path))
-                        value = [doc[path][matched_index]]
+            # Project first array doc's element
+            fieldwalker.restart()
+            for field in field_path.split("."):
+                fieldwalker.step(field).get()
+                fieldvalue = fieldwalker.value
+                node = fieldvalue.nodes[0]
+
+                in_array = isinstance(node.value, list)
+                if in_array:
+                    # Reach array field
+                    elem_count = len(node.value)
+                    matched_index = self.matched.split(".")[0]
+
+                    if not self.matched.full_path.count(".") > 1:
+                        raise OperationFailure(
+                            "Executor error during find command: BadValue: "
+                            "positional operator (%s.$) requires "
+                            "corresponding field in query specifier"
+                            % field,
+                            code=96)
+
+                    if (int(matched_index) >= elem_count and
+                            self.matched.full_path.startswith(node.full_path)):
+                        raise OperationFailure(
+                            "Executor error during find command: BadValue: "
+                            "positional operator element mismatch",
+                            code=96)
+
+                    fieldwalker.step(matched_index).get()
                     break
-                if not len(paths):
-                    value = {}
-                    break
-                doc = doc[path]
-            if match:
-                doc[path] = value
-            else:
-                del doc[path]
 
         return _positional
 
-    def drop_doc(self, fieldwalker, key):
-        if fieldwalker.value.exists:
-            for emb_doc in fieldwalker.value:
-                if key in emb_doc:
-                    del emb_doc[key]
 
-    def inclusion(self, fieldwalker, include_field, fore_path=""):
-        if fore_path:
-            key_list = []
-            for val in fieldwalker.value:
-                if is_duckument_type(val):
-                    key_list += list(val.keys())
-            key_list = list(set(key_list))
+def inclusion(fieldwalker, positioned, located_match, init_doc):
+    _doc_type = fieldwalker.doc_type
+
+    def _inclusion(node, init_doc=None):
+        doc = node.value
+
+        if not node.children:
+            if positioned and isinstance(doc, _doc_type):
+                return _doc_type()
+            return doc
+
+        if isinstance(doc, _doc_type):
+            new_doc = init_doc or _doc_type()
+
+            for field in doc:
+                if field in node.children:
+                    child = node[field]
+                    value = _inclusion(child)
+                    if value is not _no_val:
+                        new_doc[field] = value
+
+            return new_doc
+
+        elif isinstance(doc, list):
+            new_doc = list()
+
+            if positioned:
+                for child in node.children:
+                    if not (child.exists and child.located):
+                        continue
+
+                    if located_match:
+                        if isinstance(child.value, _doc_type):
+                            new_doc.append(child.value)
+                    else:
+                        new_doc.append(child.value)
+
+                return new_doc or _no_val
+
+            for index, elem in enumerate(doc):
+                if isinstance(elem, list):
+                    emb_doc = list()
+                    new_doc.append(emb_doc)
+                    continue
+
+                if not isinstance(elem, _doc_type):
+                    continue
+                emb_doc = _doc_type()
+
+                for field in elem:
+                    embed_field = str(index) + "." + field
+                    if embed_field in node.children:
+                        child = node[embed_field]
+                        if not any(str(gch) for gch in child.children):
+                            value = elem[field]
+                            emb_doc[field] = value
+                        else:
+                            value = _inclusion(child)
+                            if value is not _no_val:
+                                emb_doc[field] = value
+
+                new_doc.append(emb_doc)
+
+            return new_doc
+
         else:
-            key_list = list(fieldwalker.doc.keys())
+            if not any(c.exists for c in node.children):
+                return _no_val
+            return doc
 
-        if "_id" in key_list:
-            key_list.remove("_id")
+    return _inclusion(fieldwalker.tree.root, init_doc)
 
-        for key in key_list:
-            current_path = fore_path + key
 
-            if current_path in include_field:
-                # skip included field
-                continue
+def exclusion(fieldwalker, init_doc):
+    _doc_type = fieldwalker.doc_type
 
-            drop = True
-            for field_path in include_field:
-                if field_path.startswith(current_path):
-                    drop = False
-                    break
+    def _exclusion(node, init_doc=None):
+        doc = node.value
 
-            if drop:
-                if fore_path:
-                    fieldwalker.go(fore_path[:-1]).get()
-                    self.drop_doc(fieldwalker, key)
+        if isinstance(doc, _doc_type):
+            new_doc = init_doc or _doc_type()
+
+            for field in doc:
+                if field in node.children:
+                    child = node[field]
+                    if child.children:
+                        value = _exclusion(child)
+                        if value is not _no_val:
+                            new_doc[field] = value
                 else:
-                    if key in fieldwalker.doc:
-                        del fieldwalker.doc[key]
-            else:
-                fore_path = current_path + "."
-                fieldwalker.go(current_path).get()
-                self.inclusion(fieldwalker, include_field, fore_path)
+                    new_doc[field] = doc[field]
 
-    def exclusion(self, fieldwalker, exclude_field):
-        for field_path in exclude_field:
-            if "." in field_path:
-                fore_path, key = field_path.rsplit(".", 1)
-                fieldwalker.go(fore_path).get()
-                self.drop_doc(fieldwalker, key)
-            else:
-                if field_path in fieldwalker.doc:
-                    del fieldwalker.doc[field_path]
+            return new_doc
+
+        elif isinstance(doc, list):
+            new_doc = list()
+
+            for index, elem in enumerate(doc):
+                if not isinstance(elem, _doc_type):
+                    new_doc.append(elem)
+                    continue
+                emb_doc = _doc_type()
+
+                for field in elem:
+                    embed_field = str(index) + "." + field
+                    if embed_field in node.children:
+                        child = node[embed_field]
+                        if (child.children and
+                                any(str(gch) for gch in child.children)):
+                            value = _exclusion(child)
+                            if value is not _no_val:
+                                emb_doc[field] = value
+                    else:
+                        emb_doc[field] = elem[field]
+
+                new_doc.append(emb_doc)
+
+            return new_doc
+
+        else:
+            return doc
+
+    return _exclusion(fieldwalker.tree.root, init_doc)

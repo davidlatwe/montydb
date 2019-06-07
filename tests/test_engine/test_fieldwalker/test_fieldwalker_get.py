@@ -272,3 +272,15 @@ def test_fieldwalker_value_get_29():
     value = [True]
     fw = FieldWalker(doc).go(path).get()
     assert fw.value == value
+
+
+def test_fieldwalker_clean_result_1():
+    doc = {"a": 5, "b": 8}
+
+    fieldwalker = FieldWalker(doc)
+
+    with fieldwalker:
+        fieldwalker.go("b").get()
+        fieldwalker.go("a").get()
+
+        assert fieldwalker.value == [5]

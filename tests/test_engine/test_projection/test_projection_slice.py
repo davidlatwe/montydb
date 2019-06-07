@@ -79,3 +79,24 @@ def test_projection_slice_5(monty_proj, mongo_proj):
     assert mongo_c.count() == 1
     assert monty_c.count() == mongo_c.count()
     assert next(mongo_c) == next(monty_c)
+
+
+def test_projection_slice_6(monty_proj, mongo_proj):
+    docs = [
+        {"a": [0, 1, 2, 3, 4, 5, 6, 7], "x": 100}
+    ]
+    spec = {}
+
+    def run(proj):
+        monty_c = monty_proj(docs, spec, proj)
+        mongo_c = mongo_proj(docs, spec, proj)
+
+        assert mongo_c.count() == 1
+        assert monty_c.count() == mongo_c.count()
+        assert next(mongo_c) == next(monty_c)
+
+    proj = {"a": {"$slice": [-5, 4]}, "x": 1}
+    run(proj)
+
+    proj = {"a": {"$slice": [-5, 4]}, "x": 0}
+    run(proj)
