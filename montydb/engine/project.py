@@ -153,7 +153,7 @@ class Projector(object):
                     if "." in key:
                         raise OperationFailure(
                             "Cannot use $elemMatch projection on a nested "
-                            "field.")
+                            "field.", code=2)
 
                     self.array_op_type = self.ARRAY_OP_ELEM_MATCH
 
@@ -168,7 +168,7 @@ class Projector(object):
                     _v = _perr_doc(val)
                     raise OperationFailure(
                         "Unsupported projection option: "
-                        "{0}: {1}".format(key, _v))
+                        "{0}: {1}".format(key, _v), code=2)
 
             elif key == "_id" and not _is_include(val):
                 self.proj_with_id = False

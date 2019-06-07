@@ -1,4 +1,41 @@
 
+import pytest
+
+from pymongo.errors import OperationFailure as mongo_op_fail
+from montydb.errors import OperationFailure as monty_op_fail
+
+
+def test_projection_elemMatch_unsupported_option(monty_proj, mongo_proj):
+    docs = [
+        {"x": {"a": [{"b": 1}, {"b": 3}]}},
+    ]
+    spec = {}
+    proj = {"x": {"a": {"$elemMatch": {"b": 3}}}}
+
+    with pytest.raises(mongo_op_fail) as mongo_err:
+        next(mongo_proj(docs, spec, proj))
+
+    with pytest.raises(monty_op_fail) as monty_err:
+        next(monty_proj(docs, spec, proj))
+
+    assert mongo_err.value.code == monty_err.value.code
+
+
+def test_projection_elemMatch_nested_field(monty_proj, mongo_proj):
+    docs = [
+        {"x": {"a": [{"b": 1}, {"b": 3}]}},
+    ]
+    spec = {}
+    proj = {"x.a": {"$elemMatch": {"b": 3}}}
+
+    with pytest.raises(mongo_op_fail) as mongo_err:
+        next(mongo_proj(docs, spec, proj))
+
+    with pytest.raises(monty_op_fail) as monty_err:
+        next(monty_proj(docs, spec, proj))
+
+    assert mongo_err.value.code == monty_err.value.code
+
 
 def test_projection_elemMatch_1(monty_proj, mongo_proj):
     docs = [
