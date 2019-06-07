@@ -620,14 +620,14 @@ class FieldWalker(object):
         self.tree.clear()
 
 
-def inclusion(fieldwalker, located=False):
+def inclusion(fieldwalker, positioned, located_match):
     tree = fieldwalker.tree
 
     def _inclusion(node):
         doc = node.value
 
         if not node.children:
-            if located and isinstance(doc, tree.map_cls):
+            if positioned and isinstance(doc, tree.map_cls):
                 return tree.map_cls()
             return doc
 
@@ -646,13 +646,25 @@ def inclusion(fieldwalker, located=False):
         elif isinstance(doc, list):
             new_doc = list()
 
-            if located:
+            if positioned:
                 for child in node.children:
-                    if child.exists and child.located:
+                    if not (child.exists and child.located):
+                        continue
+
+                    if located_match:
+                        if isinstance(child.value, tree.map_cls):
+                            new_doc.append(child.value)
+                    else:
                         new_doc.append(child.value)
+
                 return new_doc or _no_val
 
             for index, elem in enumerate(doc):
+                if isinstance(elem, list):
+                    emb_doc = list()
+                    new_doc.append(emb_doc)
+                    continue
+
                 if not isinstance(elem, tree.map_cls):
                     continue
                 emb_doc = tree.map_cls()

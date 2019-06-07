@@ -409,3 +409,84 @@ def test_projection_positional_16(monty_proj, mongo_proj):
 
     proj = {"a.d.$": 1}
     run(proj)
+
+
+def test_projection_positional_17(monty_proj, mongo_proj):
+    docs = [
+        {"a": {"b": [0, 1]}},
+    ]
+    spec = {"a.b.1": 1}
+
+    def run(proj):
+        monty_c = monty_proj(docs, spec, proj)
+        mongo_c = mongo_proj(docs, spec, proj)
+
+        assert mongo_c.count() == 1
+        assert monty_c.count() == mongo_c.count()
+        assert next(mongo_c) == next(monty_c)
+
+    proj = {"a.b.$": 1}
+    run(proj)
+
+    proj = {"a.b.1": 1}
+    run(proj)
+
+
+def test_projection_positional_18(monty_proj, mongo_proj):
+    docs = [
+        {"a": {"b": [[1], 1]}},
+    ]
+    spec = {"a.b.1": 1}
+
+    def run(proj):
+        monty_c = monty_proj(docs, spec, proj)
+        mongo_c = mongo_proj(docs, spec, proj)
+
+        assert mongo_c.count() == 1
+        assert monty_c.count() == mongo_c.count()
+        assert next(mongo_c) == next(monty_c)
+
+    proj = {"a.b.$": 1}
+    run(proj)
+
+    proj = {"a.b.1": 1}
+    run(proj)
+
+
+def test_projection_positional_19(monty_proj, mongo_proj):
+    docs = [
+        {"a": {"b": {"c": [0, 1]}}},
+    ]
+    spec = {"a.b.c.1": 1}
+
+    def run(proj):
+        monty_c = monty_proj(docs, spec, proj)
+        mongo_c = mongo_proj(docs, spec, proj)
+
+        assert mongo_c.count() == 1
+        assert monty_c.count() == mongo_c.count()
+        assert next(mongo_c) == next(monty_c)
+
+    proj = {"a.b.c.$": 1}
+    run(proj)
+
+    proj = {"a.b.c.1": 1}
+    run(proj)
+
+
+def test_projection_positional_20(monty_proj, mongo_proj):
+    docs = [
+        {"a": [{"1": 1}, 1]},
+    ]
+    spec = {"a.1": 1}
+
+    def run(proj):
+        monty_c = monty_proj(docs, spec, proj)
+        mongo_c = mongo_proj(docs, spec, proj)
+
+        assert mongo_c.count() == 1
+        assert monty_c.count() == mongo_c.count()
+        assert next(mongo_c) == next(monty_c)
+
+    proj = {"a.$": 1}
+    run(proj)

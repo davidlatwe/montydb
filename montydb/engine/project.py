@@ -74,7 +74,9 @@ class Projector(object):
     def __call__(self, fieldwalker):
         """
         """
-        if fieldwalker.value is not None:
+        positioned = self.array_op_type != self.ARRAY_OP_NORMAL
+
+        if positioned and fieldwalker.value is not None:
             top_matched = fieldwalker.value.first_matched()
             if top_matched is not None:
                 self.matched = top_matched
@@ -91,11 +93,17 @@ class Projector(object):
             if self.include_flag:
                 if self.proj_with_id:
                     fieldwalker.go("_id").get()
-                located = self.array_op_type != self.ARRAY_OP_NORMAL
-                projected = inclusion(fieldwalker, located)
+
+                located_match = None
+                if self.matched is not None:
+                    located_match = self.matched.located
+
+                projected = inclusion(fieldwalker, positioned, located_match)
+
             else:
                 if not self.proj_with_id:
                     fieldwalker.go("_id").get()
+
                 projected = exclusion(fieldwalker)
 
             fieldwalker.doc = projected
