@@ -48,7 +48,10 @@ def _perr_doc(val):
             if isinstance(_v, list):
                 _ = []
                 for v in _v:
-                    _.append(_perr_doc(v))
+                    if is_duckument_type(v):
+                        _.append(_perr_doc(v))
+                    else:
+                        _.append(str(v))
                 _v = "[ " + ", ".join(_) + " ]"
             v_lis.append("{0}: {1}".format(_k, _v))
     return "{ " + ", ".join(v_lis) + " }"

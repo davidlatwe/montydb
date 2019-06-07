@@ -69,3 +69,18 @@ def test_projection_elemMatch_2(monty_proj, mongo_proj):
     assert monty_c.count() == mongo_c.count()
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
+
+def test_projection_elemMatch_mix_with_slice_1(monty_proj, mongo_proj):
+    docs = [
+        {"a": [0, 1, 2, 5, 6]}
+    ]
+    spec = {}
+    proj = {"a": {"$elemMatch": {"$eq": 2}, "$slice": [1, 4]}}
+
+    with pytest.raises(mongo_op_fail) as mongo_err:
+        next(mongo_proj(docs, spec, proj))
+
+    with pytest.raises(monty_op_fail) as monty_err:
+        next(monty_proj(docs, spec, proj))
+
+    assert mongo_err.value.code == monty_err.value.code
