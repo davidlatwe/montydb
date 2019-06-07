@@ -246,12 +246,20 @@ class Projector(object):
         return _slice
 
     def parse_elemMatch(self, field_path, sub_v):
+        wrapped_field_op = False
+        if next(iter(sub_v)).startswith("$"):
+            wrapped_field_op = True
+            sub_v = {field_path: sub_v}
+
         qfilter_ = QueryFilter(sub_v)
 
         def _elemMatch(fieldwalker):
             doc = fieldwalker.doc
             if field_path in doc and isinstance(doc[field_path], list):
                 for index, emb_doc in enumerate(doc[field_path]):
+                    if wrapped_field_op:
+                        emb_doc = {field_path: emb_doc}
+
                     if qfilter_(emb_doc):
                         fieldwalker.restart()
                         fieldwalker.go(field_path + "." + str(index)).get()

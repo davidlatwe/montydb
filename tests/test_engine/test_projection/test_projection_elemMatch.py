@@ -70,6 +70,25 @@ def test_projection_elemMatch_2(monty_proj, mongo_proj):
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
+
+def test_projection_elemMatch_3(monty_proj, mongo_proj):
+    docs = [
+        {"a": [0, 1, 2, 5, 6]}
+    ]
+    spec = {}
+
+    def run(proj):
+        monty_c = monty_proj(docs, spec, proj)
+        mongo_c = mongo_proj(docs, spec, proj)
+
+        assert mongo_c.count() == 1
+        assert monty_c.count() == mongo_c.count()
+        assert next(mongo_c) == next(monty_c)
+
+    proj = {"a": {"$elemMatch": {"$eq": 2}}}
+    run(proj)
+
+
 def test_projection_elemMatch_mix_with_slice_1(monty_proj, mongo_proj):
     docs = [
         {"a": [0, 1, 2, 5, 6]}
