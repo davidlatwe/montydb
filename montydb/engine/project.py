@@ -155,8 +155,8 @@ class Projector(object):
                             "Cannot use $elemMatch projection on a nested "
                             "field.", code=2)
 
+                    self.include_flag = True
                     self.array_op_type = self.ARRAY_OP_ELEM_MATCH
-
                     self.array_field[key] = self.parse_elemMatch(key, sub_v)
 
                 elif sub_k == "$meta":
@@ -247,18 +247,12 @@ class Projector(object):
 
         def _elemMatch(fieldwalker):
             doc = fieldwalker.doc
-            has_match = False
             if field_path in doc and isinstance(doc[field_path], list):
-                for emb_doc in doc[field_path]:
+                for index, emb_doc in enumerate(doc[field_path]):
                     if qfilter_(emb_doc):
-                        doc[field_path] = [emb_doc]
-                        has_match = True
+                        fieldwalker.restart()
+                        fieldwalker.go(field_path + "." + str(index)).get()
                         break
-            if not has_match:
-                del fieldwalker.doc[field_path]
-
-            if not self.include_flag:
-                self.inclusion(fieldwalker, [field_path])
 
         return _elemMatch
 
