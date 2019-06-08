@@ -39,7 +39,7 @@ steps:
 - script: 
     mkdir ${PWD}/mongodb-linux-x86_64-${MONGODB}/data
     ${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongod --dbpath ${PWD}/mongodb-linux-x86_64-${MONGODB}/data --logpath ${PWD}/mongodb-linux-x86_64-${MONGODB}/mongodb.log --fork
-    ${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongo --eval "db.adminCommand( { setFeatureCompatibilityVersion: '3.6' } )"
+    "${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongo --eval 'db.adminCommand( { setFeatureCompatibilityVersion: \"3.6\" }' )"
 
 - script: |
     pip install pytest pytest-azurepipelines pytest-cov
