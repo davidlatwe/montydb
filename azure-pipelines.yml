@@ -52,7 +52,7 @@ steps:
    original_directory=$PWD
    setups=$(find $AGENT_TOOLSDIRECTORY/Python -name setup.sh)
    for setup in $setups; do
-       # chmod +x $setup;
+       chmod +x $setup;
        cd $(dirname $setup);
        ./$(basename $setup);
        cd $original_directory;
@@ -67,7 +67,7 @@ steps:
 
 - script: |
     python -m pip install --upgrade pip
-    python -m pip install pyyaml jsonschema pymongo
+    python -m pip install --user pyyaml jsonschema pymongo
   displayName: 'Install dependencies'
 
 - script: |
@@ -75,6 +75,6 @@ steps:
     mongodb-linux-x86_64-3.6.4/bin/mongod --dbpath mongodb-linux-x86_64-3.6.4/data --logpath mongodb-linux-x86_64-3.6.4/mongodb.log --fork
 
 - script: |
-    pip install pytest pytest-azurepipelines pytest-cov
+    pip install --user pytest pytest-azurepipelines pytest-cov
     pytest
   displayName: 'pytest'
