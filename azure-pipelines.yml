@@ -1,0 +1,47 @@
+# Python package
+# Create and test a Python package on multiple Python versions.
+# Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/python
+
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+strategy:
+  matrix:
+    Python27:
+      python.version: '2.7'
+    Python35:
+      python.version: '3.5'
+    Python36:
+      python.version: '3.6'
+    Python37:
+      python.version: '3.7'
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '$(python.version)'
+  displayName: 'Use Python $(python.version)'
+
+- script: 
+    wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-${MONGODB}.tgz
+    tar xzf mongodb-linux-x86_64-${MONGODB}.tgz
+    ${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongod --version
+  displayName: 'Install MongoDB'
+
+- script: |
+    python -m pip install --upgrade pip
+    python -m pip install pyyaml jsonschema pymongo
+  displayName: 'Install dependencies'
+
+- script: 
+    mkdir ${PWD}/mongodb-linux-x86_64-${MONGODB}/data
+    ${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongod --dbpath ${PWD}/mongodb-linux-x86_64-${MONGODB}/data --logpath ${PWD}/mongodb-linux-x86_64-${MONGODB}/mongodb.log --fork
+    ${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongo --eval "db.adminCommand( { setFeatureCompatibilityVersion: '3.6' } )"
+
+- script: |
+    pip install pytest pytest-azurepipelines pytest-cov
+    pytest
+  displayName: 'pytest'
