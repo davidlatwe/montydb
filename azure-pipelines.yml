@@ -75,6 +75,8 @@ steps:
     mongodb-linux-x86_64-3.6.4/bin/mongod --dbpath mongodb-linux-x86_64-3.6.4/data --logpath mongodb-linux-x86_64-3.6.4/mongodb.log --fork
 
 - script: |
-    pip install --user pytest pytest-azurepipelines pytest-cov
-    pytest
+    python -m pip install --user pytest pytest-azurepipelines pytest-cov
+    python -m pytest --cov montydb --storage sqlite
+    python -m pytest --cov montydb --storage flatfile --cov-append
+    python -m pytest --cov montydb --storage memory --cov-append
   displayName: 'pytest'
