@@ -28,7 +28,7 @@ steps:
 - script: |
     wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.6.4.tgz
     tar xzf mongodb-linux-x86_64-3.6.4.tgz
-    ./mongodb-linux-x86_64-3.6.4/bin/mongod --version
+    mongodb-linux-x86_64-3.6.4/bin/mongod --version
   displayName: 'Install MongoDB'
 
 - script: |
@@ -37,9 +37,9 @@ steps:
   displayName: 'Install dependencies'
 
 - script: |
-    mkdir ./mongodb-linux-x86_64-3.6.4/data
-    ./mongodb-linux-x86_64-3.6.4/bin/mongod --dbpath ./mongodb-linux-x86_64-3.6.4/data --logpath ./mongodb-linux-x86_64-3.6.4/mongodb.log --fork
-    ./mongodb-linux-x86_64-3.6.4/bin/mongo --eval "db.adminCommand( { setFeatureCompatibilityVersion:'3.6'}" )
+    mkdir mongodb-linux-x86_64-3.6.4/data
+    mongodb-linux-x86_64-3.6.4/bin/mongod --dbpath mongodb-linux-x86_64-3.6.4/data --logpath mongodb-linux-x86_64-3.6.4/mongodb.log --fork
+    mongodb-linux-x86_64-3.6.4/bin/mongo --eval "db.adminCommand({setFeatureCompatibilityVersion:'3.6'}")
 
 - script: |
     pip install pytest pytest-azurepipelines pytest-cov
