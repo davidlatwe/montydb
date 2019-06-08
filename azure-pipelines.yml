@@ -39,7 +39,6 @@ steps:
 - script: |
     mkdir mongodb-linux-x86_64-3.6.4/data
     mongodb-linux-x86_64-3.6.4/bin/mongod --dbpath mongodb-linux-x86_64-3.6.4/data --logpath mongodb-linux-x86_64-3.6.4/mongodb.log --fork
-    mongodb-linux-x86_64-3.6.4/bin/mongo --eval "db.adminCommand({setFeatureCompatibilityVersion:'3.6'}")
 
 - script: |
     pip install pytest pytest-azurepipelines pytest-cov
