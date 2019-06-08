@@ -25,7 +25,7 @@ steps:
     versionSpec: '$(python.version)'
   displayName: 'Use Python $(python.version)'
 
-- script: 
+- script: |
     wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.6.4.tgz
     tar xzf mongodb-linux-x86_64-3.6.4.tgz
     ./mongodb-linux-x86_64-3.6.4/bin/mongod --version
