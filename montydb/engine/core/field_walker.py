@@ -558,15 +558,7 @@ class FieldTree(object):
 
 
 class FieldWalker(object):
-    """Document traversal context manager
-
-    __slots__ = (
-        "doc",
-        "doc_type",
-        "value",
-        "log",
-    )
-    """
+    """Document traversal context manager"""
 
     def __init__(self, doc, doc_type=None):
         """
