@@ -291,18 +291,20 @@ class Projector(object):
 
                     if not self.matched.full_path.count(".") > 1:
                         raise OperationFailure(
-                            "Executor error during find command: BadValue: "
-                            "positional operator (%s.$) requires "
-                            "corresponding field in query specifier"
+                            "Executor error during find command "
+                            ":: caused by :: errmsg: "
+                            "\"positional operator (%s.$) requires "
+                            "corresponding field in query specifier\""
                             % field,
-                            code=96)
+                            code=2)
 
                     if (int(matched_index) >= elem_count and
                             self.matched.full_path.startswith(node.full_path)):
                         raise OperationFailure(
-                            "Executor error during find command: BadValue: "
-                            "positional operator element mismatch",
-                            code=96)
+                            "Executor error during find command "
+                            ":: caused by :: errmsg: "
+                            "\"positional operator element mismatch\"",
+                            code=2)
 
                     fieldwalker.step(matched_index).get()
                     break
