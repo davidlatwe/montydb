@@ -32,6 +32,8 @@ before_install:
   - python setup.py install
 
 install:
+  - pip uninstall -y six  # Reinstall six to avoid jsonschema dependency errors
+  - pip install six>=1.11.0
   - pip install pyyaml
   - pip install jsonschema
   - pip install pymongo
