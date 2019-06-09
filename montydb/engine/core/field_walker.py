@@ -27,22 +27,24 @@ class FieldWriteError(FieldWalkError):
 
 class FieldValues(object):
     __slots__ = ("nodes", "values", "exists", "null_or_missing",
-                 "matched_node", "_value_iter", "__iter")
+                 "_fieldwalker", "_value_iter", "__iter")
 
-    def __init__(self, nodes):
+    def __init__(self, nodes, fieldwalker):
         self.nodes = nodes
+        self._fieldwalker = fieldwalker
+
         self.values = list(self._iter(False, True, False))
         self.exists = any(nd.exists for nd in nodes)
         self.null_or_missing = (any(nd.is_missing() for nd in nodes) or
                                 self.exists and None in self.values)
 
-        self.matched_node = None
         self._value_iter = self.iter_full
         self.__iter = self.iter_full()
 
     def _iter(self, array_only, unpack, pack):
+        fieldwalker = self._fieldwalker
         for node in self.nodes:
-            self.matched_node = node
+            fieldwalker._put_matched(node)
 
             doc = node.value
             if isinstance(doc, list):
@@ -50,11 +52,12 @@ class FieldValues(object):
                 if unpack and not node.located:
                     for i, elem in enumerate(doc):
                         if elem is not _no_val:
-                            self.matched_node = FieldNode(str(i),
-                                                          elem,
-                                                          exists=True,
-                                                          in_array=True,
-                                                          parent=node)
+                            matched = FieldNode(str(i),
+                                                elem,
+                                                exists=True,
+                                                in_array=True,
+                                                parent=node)
+                            fieldwalker._put_matched(matched)
                             yield elem
                 if pack:
                     yield doc
@@ -63,21 +66,8 @@ class FieldValues(object):
                 if not array_only and doc is not _no_val:
                     yield doc
 
-        self.matched_node = None
-
-    def first_matched(self):
-        matched = self.matched_node
-        if matched is None:
-            return
-
-        first = None
-        while matched.parent is not None:
-            if not matched.in_array:
-                break
-            first = matched
-            matched = matched.parent
-
-        return first
+        # Reset to `None` if the iter loop did not *break* in query
+        fieldwalker._put_matched(None)
 
     def iter_plain(self):
         return self._iter(False, False, True)
@@ -430,7 +420,7 @@ class FieldTree(object):
     def read(self, fields):
         self.handler = FieldTreeReader(self)
         self.grow(fields)
-        return FieldValues(self.picked)
+        return self.picked
 
     def stage(self, value, evaluator=None):
         """Internal method, for staging the changes
@@ -455,15 +445,12 @@ class FieldTree(object):
 
         self.changes += updates
 
-    def fields_positioning(self, fields, fieldvalues=None, array_filters=None):
+    def fields_positioning(self, fieldwalker, array_filters=None):
+        fields = fieldwalker.steps
+
         if "$" in fields:
 
-            if fieldvalues is None:
-                matched = None
-            else:
-                matched = fieldvalues.matched_node
-
-            if matched is None or not matched.in_array:
+            if not fieldwalker.has_matched():
                 # If hasn't queried or not matched in array
                 msg = ("The positional operator did not find the match needed "
                        "from the query.")
@@ -476,7 +463,8 @@ class FieldTree(object):
 
             else:
                 # Replace "$" into top matched array element index
-                top_matched = fieldvalues.first_matched()
+                position_path = ".".join(fields).split(".$", 1)[0]
+                top_matched = fieldwalker.top_matched(position_path)
                 position = top_matched.split(".")[0]
                 fields[fields.index("$")] = position
 
@@ -583,36 +571,40 @@ class FieldWalker(object):
         self.steps = None
         self.tree = FieldTree(doc, doc_type)
         self.value = None
+        self.path = None
+        self.matched = dict()
 
     def go(self, path):
         self.tree.restart()
+        self.path = path
         self.steps = path.split(".")
         return self
 
     def step(self, field):
+        if self.path is None:
+            self.path = field
+        else:
+            self.path += "." + field
         self.steps = [field]
         return self
 
     def restart(self):
         self.tree.restart()
+        self.path = None
         return self
 
     def get(self):
         """Walk through document and acquire value with given key-path
         """
-        self.value = self.tree.read(self.steps)
+        self.value = FieldValues(self.tree.read(self.steps), self)
         return self
 
     def set(self, value, evaluator=None, array_filters=None):
-        steps = self.tree.fields_positioning(self.steps,
-                                             self.value,
-                                             array_filters)
+        steps = self.tree.fields_positioning(self, array_filters)
         self.tree.write(steps, value, evaluator, array_filters)
 
     def drop(self, array_filters=None):
-        steps = self.tree.fields_positioning(self.steps,
-                                             self.value,
-                                             array_filters)
+        steps = self.tree.fields_positioning(self, array_filters)
         self.tree.delete(steps, array_filters)
 
     def commit(self):
@@ -623,6 +615,32 @@ class FieldWalker(object):
 
     def touched(self):
         return self.tree.extract(visited_only=True)
+
+    def top_matched(self, position_path):
+        for path, node in self.matched.items():
+            if path.startswith(position_path + "."):
+                matched = node
+                break
+        else:
+            return
+
+        first = None
+        while matched.parent is not None:
+            if not matched.in_array:
+                break
+            first = matched
+            matched = matched.parent
+
+        return first
+
+    def has_matched(self):
+        return any(node.in_array for node in self.matched.values())
+
+    def _put_matched(self, node):
+        if node is None:
+            self.matched.pop(self.path, None)
+        else:
+            self.matched[self.path] = node
 
     def __enter__(self):
         return self

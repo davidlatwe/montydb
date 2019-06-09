@@ -26,15 +26,21 @@ def test_projection_positional_2(monty_proj, mongo_proj):
         {"a": 60, "b": [{"x": 4, "y": 8}, {"x": 0, "y": 6}]},
         {"a": 90, "b": [{"x": 2, "y": 12}, {"x": 3, "y": 7}]},
     ]
-    spec = {"a": {"$gt": 80}, "b.x": {"$gt": 4}}
     proj = {"b.$": 1}
 
-    monty_c = monty_proj(docs, spec, proj)
-    mongo_c = mongo_proj(docs, spec, proj)
+    def run(spec):
+        monty_c = monty_proj(docs, spec, proj)
+        mongo_c = mongo_proj(docs, spec, proj)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
-    assert next(mongo_c) == next(monty_c)
+        assert mongo_c.count() == 1
+        assert monty_c.count() == mongo_c.count()
+        assert next(mongo_c) == next(monty_c)
+
+    spec = {"a": {"$gt": 80}, "b.x": {"$gt": 4}}
+    run(spec)
+
+    spec = {"b.x": {"$gt": 4}, "a": {"$gt": 80}}
+    run(spec)
 
 
 def test_projection_positional_3(monty_proj, mongo_proj):

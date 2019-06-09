@@ -25,13 +25,18 @@ def _is_positional_match(conditions, match_field):
     theme = conditions.theme
     if theme.startswith("$"):
         for con in conditions:
-            if _is_positional_match(con, match_field):
-                return True
-        return False
+            matched = _is_positional_match(con, match_field)
+            if matched is not None:
+                return matched
+        return None
     else:
         if not theme:
-            return False
-        return match_field.split(".", 1)[0] == theme.split(".", 1)[0]
+            return None
+
+        matched = match_field.split(".", 1)[0]
+        if matched == theme.split(".", 1)[0]:
+            return matched
+        return None
 
 
 def _perr_doc(val):
@@ -71,6 +76,7 @@ class Projector(object):
         self.regular_field = []
         self.array_field = {}
         self.matched = None
+        self.position_path = None
 
         self.parser(spec, qfilter)
 
@@ -80,10 +86,10 @@ class Projector(object):
     def __call__(self, fieldwalker):
         """
         """
-        positioned = self.array_op_type != self.ARRAY_OP_NORMAL
+        positioned = self.array_op_type == self.ARRAY_OP_POSITIONAL
 
-        if positioned and fieldwalker.value is not None:
-            top_matched = fieldwalker.value.first_matched()
+        if positioned:
+            top_matched = fieldwalker.top_matched(self.position_path)
             if top_matched is not None:
                 self.matched = top_matched
 
@@ -217,13 +223,14 @@ class Projector(object):
 
                 path = key.split(".$", 1)[0]
                 conditions = qfilter.conditions
-                if not _is_positional_match(conditions, path):
+                match_query = _is_positional_match(conditions, path)
+                if match_query is None:
                     raise OperationFailure(
                         "Positional projection '{}' does not match the query "
                         "document.".format(key), code=2)
 
+                self.position_path = match_query
                 self.array_op_type = self.ARRAY_OP_POSITIONAL
-
                 self.array_field[path] = self.parse_positional(path)
 
         if self.include_flag is None:
