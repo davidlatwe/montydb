@@ -101,8 +101,13 @@ class FieldValues(object):
 
 
 class FieldNode(str):
+    """
+    # (NOTE) `__slots__` not supported for `str` in Python 2.7,
+    #        drop it for now.
+
     __slots__ = ("value", "located", "exists", "full_path",
                  "in_array", "parent", "children")
+    """
 
     def __new__(cls, field, doc, located=False, exists=False,
                 in_array=False, parent=None):
