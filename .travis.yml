@@ -29,14 +29,11 @@ before_install:
   - pip install pytest-env-info
   - pip install coveralls
   - pip install codecov
-  - python setup.py install
 
 install:
   - pip uninstall -y six  # Reinstall six to avoid jsonschema dependency errors
   - pip install six>=1.11.0
-  - pip install pyyaml
-  - pip install jsonschema
-  - pip install pymongo
+  - python setup.py install
 
 before_script:
   - mkdir ${PWD}/mongodb-linux-x86_64-${MONGODB}/data
