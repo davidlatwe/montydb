@@ -315,11 +315,41 @@ def test_update_array_faild_3(monty_update, mongo_update):
     assert mongo_err.value.code == monty_err.value.code
 
 
-def test_update_with_dollar_prefixed_field(monty_update, mongo_update):
+def test_update_with_dollar_prefixed_field_1(monty_update, mongo_update):
     docs = [
         {"a": {"1": 4}}
     ]
     spec = {"$inc": {"a.$a": 1}}
+
+    with pytest.raises(mongo_write_err) as mongo_err:
+        mongo_update(docs, spec)
+
+    with pytest.raises(monty_write_err) as monty_err:
+        monty_update(docs, spec)
+
+    assert mongo_err.value.code == monty_err.value.code
+
+
+def test_update_with_dollar_prefixed_field_2(monty_update, mongo_update):
+    docs = [
+        {"a": 1}
+    ]
+    spec = {"$set": {"b": {"$ey": [5]}}}
+
+    with pytest.raises(mongo_write_err) as mongo_err:
+        mongo_update(docs, spec)
+
+    with pytest.raises(monty_write_err) as monty_err:
+        monty_update(docs, spec)
+
+    assert mongo_err.value.code == monty_err.value.code
+
+
+def test_update_with_dollar_prefixed_field_3(monty_update, mongo_update):
+    docs = [
+        {"a": 1}
+    ]
+    spec = {"$set": {"a": {"b": [{"$a": 5}]}}}
 
     with pytest.raises(mongo_write_err) as mongo_err:
         mongo_update(docs, spec)
@@ -446,6 +476,36 @@ def test_update_rename_conflict_2(monty_update, mongo_update):
         {"a": {"b": "some"}, "d": {"e": 5}}
     ]
     spec = {"$rename": {"a.b": "c.b.f", "d.e": "c.b"}}
+
+    with pytest.raises(mongo_write_err) as mongo_err:
+        mongo_update(docs, spec)
+
+    with pytest.raises(monty_write_err) as monty_err:
+        monty_update(docs, spec)
+
+    assert mongo_err.value.code == monty_err.value.code
+
+
+def test_update_with_empty_field_1(monty_update, mongo_update):
+    docs = [
+        {"": 1}
+    ]
+    spec = {"$inc": {"": 5}}
+
+    with pytest.raises(mongo_write_err) as mongo_err:
+        mongo_update(docs, spec)
+
+    with pytest.raises(monty_write_err) as monty_err:
+        monty_update(docs, spec)
+
+    assert mongo_err.value.code == monty_err.value.code
+
+
+def test_update_with_empty_field_2(monty_update, mongo_update):
+    docs = [
+        {"": 1}
+    ]
+    spec = {"$inc": {".": 5}}
 
     with pytest.raises(mongo_write_err) as mongo_err:
         mongo_update(docs, spec)
