@@ -4,6 +4,14 @@ from bson import BSON
 from ..engine.helpers import with_metaclass
 
 
+class StorageError(Exception):
+    """Base class for all storage exceptions."""
+
+
+class StorageDuplicateKeyError(StorageError):
+    """Raise when an insert or update fails due to a duplicate key error."""
+
+
 class StorageConfig(object):
     """Base class of storage config"""
     config = NotImplemented

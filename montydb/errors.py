@@ -56,3 +56,18 @@ class DocumentTooLarge(InvalidDocument):
 class WriteError(OperationFailure):
     """Base exception type for errors raised during write operations.
     """
+
+
+class DuplicateKeyError(WriteError):
+    """Raised when an insert or update fails due to a duplicate key error."""
+
+
+class BulkWriteError(OperationFailure):
+    """Exception class for bulk write errors.
+
+    .. versionadded:: 2.7
+    """
+
+    def __init__(self, results):
+        OperationFailure.__init__(
+            self, "batch op errors occurred", 65, results)
