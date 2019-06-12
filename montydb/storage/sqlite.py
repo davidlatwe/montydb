@@ -4,7 +4,7 @@ import shutil
 import sqlite3
 import contextlib
 
-from bson import BSON
+from bson import BSON, SON
 from bson.py3compat import _unicode
 
 from ..base import WriteConcern
@@ -14,6 +14,8 @@ from .abcs import (
     AbstractDatabase,
     AbstractCollection,
     AbstractCursor,
+
+    StorageDuplicateKeyError,
 )
 
 sqlite_324 = sqlite3.sqlite_version_info >= (3, 24, 0)
@@ -127,6 +129,10 @@ SELECT_LIMIT_RECORD = """
     SELECT v FROM [{0}] LIMIT {1};
 """
 
+SELECT_ALL_KEYS = """
+    SELECT k FROM [{}];
+"""
+
 
 class SQLiteKVEngine(object):
 
@@ -202,6 +208,14 @@ class SQLiteKVEngine(object):
                 else:
                     sql = SELECT_ALL_RECORD.format(SQLITE_RECORD_TABLE)
 
+                return conn.execute(sql).fetchall()
+
+    def read_all_keys(self, db_file):
+        if not os.path.isfile(db_file):
+            return []
+        with self._connect(db_file) as conn:
+            with conn:
+                sql = SELECT_ALL_KEYS.format(SQLITE_RECORD_TABLE)
                 return conn.execute(sql).fetchall()
 
 
@@ -342,11 +356,14 @@ class SQLiteCollection(AbstractCollection):
     def write_one(self, doc):
         """
         """
-        self._conn.write_one(
-            self._col_path,
-            (str(doc["_id"]), self._encode_doc(doc),),
-            self.wconcern
-        )
+        try:
+            self._conn.write_one(
+                self._col_path,
+                (str(doc["_id"]), self._encode_doc(doc),),
+                self.wconcern
+            )
+        except sqlite3.IntegrityError:
+            raise StorageDuplicateKeyError()
 
         return doc["_id"]
 
@@ -354,13 +371,29 @@ class SQLiteCollection(AbstractCollection):
     def write_many(self, docs, ordered=True):
         """
         """
+        _docs = SON()
+        ids = list()
+        keys = self._conn.read_all_keys(self._col_path)
+        has_duplicated_key = False
+        for doc in docs:
+            id = doc["_id"]
+            if str(id) in keys or str(id) in _docs:
+                has_duplicated_key = True
+                break
+
+            _docs[str(id)] = self._encode_doc(doc)
+            ids.append(id)
+
         self._conn.write_many(
             self._col_path,
-            [(str(doc["_id"]), self._encode_doc(doc)) for doc in docs],
+            _docs.iteritems(),
             self.wconcern
         )
 
-        return [doc["_id"] for doc in docs]
+        if has_duplicated_key:
+            raise StorageDuplicateKeyError()
+
+        return ids
 
     def update_one(self, doc):
         """
