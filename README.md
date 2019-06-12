@@ -4,7 +4,7 @@
 #### Monty, Mongo tinified. A literally serverless, Mongo-like database in Python
 
 [![Build Status](https://travis-ci.org/davidlatwe/MontyDB.svg?branch=master)](https://travis-ci.org/davidlatwe/MontyDB)
-[![Coverage Status](https://coveralls.io/repos/github/davidlatwe/MontyDB/badge.svg?branch=master)](https://coveralls.io/github/davidlatwe/MontyDB?branch=master)
+<a href='https://coveralls.io/github/davidlatwe/MontyDB?branch=master'><img src='https://coveralls.io/repos/github/davidlatwe/MontyDB/badge.svg?branch=master&kill_cache=1' alt='Coverage Status' /></a>
 [![Version](http://img.shields.io/pypi/v/MontyDB.svg?style=flat)](https://pypi.python.org/pypi/MontyDB)
 [![Maintainability](https://api.codeclimate.com/v1/badges/1adb14266d05ef3c9b17/maintainability)](https://codeclimate.com/github/davidlatwe/MontyDB/maintainability)
 
