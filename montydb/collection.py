@@ -15,7 +15,13 @@ from .cursor import MontyCursor
 from .engine.core import FieldWalker
 from .engine.queries import QueryFilter
 from .engine.update import Updator
-from .engine.helpers import is_duckument_type
+from .engine.helpers import is_duckument_type, Counter
+
+from .storage.abcs import StorageDuplicateKeyError
+from .errors import (
+    DuplicateKeyError,
+    BulkWriteError,
+)
 
 from .results import (BulkWriteResult,
                       DeleteResult,
@@ -96,8 +102,16 @@ class MontyCollection(BaseObject):
         if "_id" not in document:
             document["_id"] = ObjectId()
 
-        return InsertOneResult(
-            self.database.client._storage.write_one(self, document))
+        try:
+            result = self.database.client._storage.write_one(self, document)
+        except StorageDuplicateKeyError:
+            message = ("E11000 duplicate key error collection: %s index: "
+                       "_id_ dup key: { : \"%s\" }" % (self.full_name,
+                                                       str(document["_id"])))
+            details = {"index": 0, "code": 11000, "errmsg": message}
+            raise DuplicateKeyError(message, code=11000, details=details)
+
+        return InsertOneResult(result)
 
     def insert_many(self,
                     documents,
@@ -111,12 +125,39 @@ class MontyCollection(BaseObject):
         if bypass_document_validation:
             pass
 
-        for doc in documents:
+        def set_id(doc):
             if "_id" not in doc:
                 doc["_id"] = ObjectId()
+            # Keep _id in track for error message
+            return doc["_id"]
 
-        return InsertManyResult(
-            self.database.client._storage.write_many(self, documents, ordered))
+        counter = Counter(iter(documents), job_on_each=set_id)
+
+        try:
+            result = self.database.client._storage.write_many(self,
+                                                              counter,
+                                                              ordered)
+        except StorageDuplicateKeyError:
+            message = ("E11000 duplicate key error collection: %s index: "
+                       "_id_ dup key: { : \"%s\" }" % (self.full_name,
+                                                       str(counter.data)))
+            index = counter.count - 1
+            result = {
+                "writeErrors": [{"index": index,
+                                 "code": 11000,
+                                 "errmsg": message,
+                                 "op": documents[index]}],
+                "writeConcernErrors": [],
+                "nInserted": index,
+                "nUpserted": 0,
+                "nMatched": 0,
+                "nModified": 0,
+                "nRemoved": 0,
+                "upserted": [],
+            }
+            raise BulkWriteError(result)
+
+        return InsertManyResult(result)
 
     def replace_one(self,
                     filter,

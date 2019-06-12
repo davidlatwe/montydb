@@ -8,6 +8,8 @@ from .abcs import (
     AbstractDatabase,
     AbstractCollection,
     AbstractCursor,
+
+    StorageDuplicateKeyError,
 )
 
 
@@ -97,20 +99,31 @@ class MemoryCollection(AbstractCollection):
     def _col_exists(self):
         return self._database.collection_exists(self._name)
 
+    def _id_unique(self, id):
+        if id in self._col:
+            raise StorageDuplicateKeyError()
+
     def write_one(self, doc):
-        self._col[str(doc["_id"])] = self._encode_doc(doc)
-        return doc["_id"]
+        id = doc["_id"]
+        self._id_unique(str(id))
+        self._col[str(id)] = self._encode_doc(doc)
+        return id
 
     def write_many(self, docs, ordered=True):
+        ids = list()
         for doc in docs:
-            self._col[str(doc["_id"])] = self._encode_doc(doc)
-        return [doc["_id"] for doc in docs]
+            id = doc["_id"]
+            self._id_unique(str(id))
+            self._col[str(id)] = self._encode_doc(doc)
+            ids.append(id)
+        return ids
 
     def update_one(self, doc):
         self.write_one(doc)
 
     def update_many(self, docs):
-        self.write_many(docs)
+        for doc in docs:
+            self._col[str(doc["_id"])] = self._encode_doc(doc)
 
 
 MemoryDatabase.contractor_cls = MemoryCollection

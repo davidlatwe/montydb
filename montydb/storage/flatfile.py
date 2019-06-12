@@ -16,6 +16,8 @@ from .abcs import (
     AbstractDatabase,
     AbstractCollection,
     AbstractCursor,
+
+    StorageDuplicateKeyError,
 )
 
 
@@ -111,6 +113,10 @@ class FlatFileKVEngine(object):
 
     def read(self):
         return self.__cache
+
+    def _id_existed(self, id):
+        if id in self.__cache:
+            return True
 
     def write(self, documents):
         if not isinstance(documents, SON):
@@ -246,26 +252,45 @@ class FlatFileCollection(AbstractCollection):
     @_ensure_table
     def write_one(self, doc):
         _doc = SON()
-        _doc[doc["_id"]] = self._encode_doc(doc)
+        id = doc["_id"]
+        if self._flatfile._id_existed(id):
+            raise StorageDuplicateKeyError()
+
+        _doc[id] = self._encode_doc(doc)
         self._flatfile.write(_doc)
 
-        return doc["_id"]
+        return id
 
     @_ensure_table
     def write_many(self, docs, ordered=True):
         _docs = SON()
+        ids = list()
+        has_duplicated_key = False
         for doc in docs:
-            _docs[doc["_id"]] = self._encode_doc(doc)
+            id = doc["_id"]
+            if id in _docs or self._flatfile._id_existed(id):
+                has_duplicated_key = True
+                break
+
+            _docs[id] = self._encode_doc(doc)
+            ids.append(id)
 
         self._flatfile.write(_docs)
 
-        return [doc["_id"] for doc in docs]
+        if has_duplicated_key:
+            raise StorageDuplicateKeyError()
+
+        return ids
 
     def update_one(self, doc):
         self.write_one(doc)
 
     def update_many(self, docs):
-        self.write_many(docs)
+        _docs = SON()
+        for doc in docs:
+            _docs[doc["_id"]] = self._encode_doc(doc)
+
+        self._flatfile.write(_docs)
 
 
 FlatFileDatabase.contractor_cls = FlatFileCollection
