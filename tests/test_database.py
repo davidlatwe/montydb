@@ -54,6 +54,9 @@ def test_database_collection_names(monty_database, mongo_database):
     for col in monty_database.collection_names():
         monty_database.drop_collection(col)
 
+    for col in mongo_database.collection_names():
+        mongo_database.drop_collection(col)
+
     col_names = ["test1", "test2"]
 
     for col in col_names:
