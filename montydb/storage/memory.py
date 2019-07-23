@@ -3,7 +3,6 @@ from itertools import islice
 from bson import SON
 
 from .abcs import (
-    StorageConfig,
     AbstractStorage,
     AbstractDatabase,
     AbstractCollection,
@@ -13,26 +12,6 @@ from .abcs import (
 )
 
 
-MEMORY_CONFIG = """
-storage:
-  engine: MemoryStorage
-  config: MemoryConfig
-  module: {}
-""".format(__name__)
-
-
-class MemoryConfig(StorageConfig):
-    """Memory storage configuration settings
-
-    Default configuration of Memory storage
-    """
-    config = MEMORY_CONFIG
-    schema = None
-
-
-MEMORY_REPOSITORY = ":memory:"
-
-
 class MemoryStorage(AbstractStorage):
     """
     """
@@ -40,6 +19,10 @@ class MemoryStorage(AbstractStorage):
     def __init__(self, repository, storage_config):
         super(MemoryStorage, self).__init__(repository, storage_config)
         self._repo = SON()
+
+    @classmethod
+    def config(cls, **storage_kwargs):
+        return dict()
 
     def database_create(self, db_name):
         self._repo[db_name] = SON()
