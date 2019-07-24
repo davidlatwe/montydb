@@ -47,7 +47,7 @@ _storage_ident_fname = ".monty.storage"
 def set_storage(repository=None, storage=DEFAULT_STORAGE):
     """
     """
-    if repository == MEMORY_REPOSITORY:
+    if storage == MEMORY_STORAGE:
         raise ConfigurationError("Memory storage does not require setup.")
 
     repository = _provide_repository(repository)
