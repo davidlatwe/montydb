@@ -23,10 +23,10 @@ def find_storage_cls(storage_name):
     try:
         monty_storage = "montydb.storage." + storage_name
         module = importlib.import_module(monty_storage)
-    except ModuleNotFoundError:
+    except ImportError:
         try:
             module = importlib.import_module(storage_name)
-        except ModuleNotFoundError:
+        except ImportError:
             raise ConfigurationError("Storage module '%s' not found."
                                      "" % storage_name)
 
