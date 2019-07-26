@@ -130,7 +130,7 @@ class FlatFileStorage(AbstractStorage):
 
         """
         return {
-            "cache_modified": cache_modified,
+            "cache_modified": int(cache_modified),
         }
 
     def close(self):

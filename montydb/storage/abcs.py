@@ -97,7 +97,7 @@ class AbstractStorage(with_metaclass(ABCMeta, object)):
         config = cls.config(**storage_kwargs)
 
         for option, value in config.items():
-            parser.set(section, option, value)
+            parser.set(section, str(option), str(value))
 
         with open(config_file, "w") as fp:
             parser.write(fp)
