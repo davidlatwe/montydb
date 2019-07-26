@@ -79,6 +79,29 @@ class AbstractStorage(with_metaclass(ABCMeta, object)):
         # Return an instance
         return cls(repository, storage_config)
 
+    @classmethod
+    def save_config(cls, repository, **storage_kwargs):
+        """Save storage settings to a configuration file
+
+        The configurations will be saved by `configparser` and use storage
+        class name as config section name.
+
+        """
+        config_file = os.path.join(repository, cls.config_fname)
+        parser = ConfigParser()
+
+        section = cls.nice_name()
+        if not parser.has_section(section):
+            parser.add_section(section)
+
+        config = cls.config(**storage_kwargs)
+
+        for option, value in config.items():
+            parser.set(section, option, value)
+
+        with open(config_file, "w") as fp:
+            parser.write(fp)
+
     def _re_open(self):
         """Auto re-open"""
         self.is_opened = True

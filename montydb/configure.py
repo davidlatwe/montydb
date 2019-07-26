@@ -44,22 +44,38 @@ def find_storage_cls(storage_name):
 _storage_ident_fname = ".monty.storage"
 
 
-def set_storage(repository=None, storage=DEFAULT_STORAGE):
+def set_storage(repository=None, storage=None, use_default=True, **kwargs):
+    """Setup storage engine for the database repository
+
+    Args:
+        repository (str): A dir path for database to live on disk.
+                          Default to current working dir.
+        storage (str): Storage module name. Default "flatfile".
+        use_default (bool): Use default storage config. Default `True`.
+
+    keyword args:
+        Other keyword args will be parsed as storage config options.
+
     """
-    """
+    storage = storage or DEFAULT_STORAGE
+
     if storage == MEMORY_STORAGE:
         raise ConfigurationError("Memory storage does not require setup.")
 
     repository = _provide_repository(repository)
     setup = os.path.join(repository, _storage_ident_fname)
 
-    find_storage_cls(storage)
+    storage_cls = find_storage_cls(storage)
 
     if not os.path.isdir(repository):
         os.makedirs(repository)
 
     with open(setup, "w") as fp:
         fp.write(storage)
+
+    if kwargs or use_default:
+        storage_cls.save_config(repository, **kwargs)
+
 
 
 def provide_storage_for_repository(repository=None):
