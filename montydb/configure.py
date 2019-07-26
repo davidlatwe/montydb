@@ -20,6 +20,21 @@ def _provide_repository(dirname=None):
 
 
 def find_storage_cls(storage_name):
+    """Internal function to find storage engine class
+
+    This function use `importlib.import_module` to find storage module by
+    module name. And then it will try to find if there is a class that is
+    a subclass of `montydb.storage.abcs.AbstractStorage`.
+
+    Raise `montydb.errors.ConfigurationError` if not found.
+
+    Args:
+        storage_name (str): Storage module name
+
+    Returns:
+        cls: A subclass of `montydb.storage.abcs.AbstractStorage`
+
+    """
     try:
         monty_storage = "montydb.storage." + storage_name
         module = importlib.import_module(monty_storage)

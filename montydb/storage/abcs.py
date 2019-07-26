@@ -131,7 +131,12 @@ class AbstractStorage(with_metaclass(ABCMeta, object)):
     @classmethod
     @abstractmethod
     def config(cls, **storage_kwargs):
-        # Do not put write concern in config
+        """Storage engine's configurations
+
+        This should be implemented in subclass, and should return
+        configurations as a `dict`.
+
+        """
         return NotImplemented
 
     @abstractmethod
