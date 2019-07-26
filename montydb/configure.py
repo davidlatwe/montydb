@@ -77,9 +77,12 @@ def set_storage(repository=None, storage=None, use_default=True, **kwargs):
         storage_cls.save_config(repository, **kwargs)
 
 
+def provide_storage(repository=None):
+    """Internal function to get storage engine class from config
 
-def provide_storage_for_repository(repository=None):
-    """Get storage engine class from config
+    Args:
+        repository (str): A dir path for database to live on disk.
+
     """
     if repository == MEMORY_REPOSITORY:
         return find_storage_cls(MEMORY_STORAGE)
