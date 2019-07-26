@@ -9,11 +9,7 @@ from .cursor import (
     MontyCursor,
     CursorType
 )
-from .configure import (
-    set_storage,
-    find_storage_cls,
-    provide_storage_for_repository,
-)
+from .configure import set_storage
 
 from . import utils
 
@@ -33,8 +29,6 @@ __all__ = [
     "MontyCursor",
 
     "set_storage",
-    "find_storage_cls",
-    "provide_storage_for_repository",
 
     "ASCENDING",
     "DESCENDING",
