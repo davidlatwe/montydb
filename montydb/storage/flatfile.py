@@ -118,6 +118,10 @@ class FlatFileStorage(AbstractStorage):
         return os.path.join(self._repository, db_name)
 
     @classmethod
+    def nice_name(cls):
+        return "flatfile"
+
+    @classmethod
     def config(cls, cache_modified=0, **kwargs):
         """
 

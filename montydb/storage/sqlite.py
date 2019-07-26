@@ -214,6 +214,10 @@ class SQLiteStorage(AbstractStorage):
         return os.path.join(self._repository, db_name)
 
     @classmethod
+    def nice_name(cls):
+        return "sqlite"
+
+    @classmethod
     def config(cls, journal_mode="WAL", **kwargs):
         """
 
