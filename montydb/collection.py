@@ -7,6 +7,7 @@ from .base import (
     BaseObject,
     validate_is_mapping,
     validate_ok_for_update,
+    validate_ok_for_replace,
     validate_list_or_none,
     validate_boolean,
     command_coder,
@@ -167,10 +168,34 @@ class MontyCollection(BaseObject):
                     bypass_document_validation=False, *args, **kwargs):
         """
         """
+        validate_is_mapping("filter", filter)
+        validate_ok_for_replace(replacement)
+        validate_boolean("upsert", upsert)
+
+        filter, = command_coder(filter, codec_op=self._database.codec_options)
+
         if bypass_document_validation:
             pass
 
-        raise NotImplementedError("Not implemented.")
+        raw_result = {"n": 0, "nModified": 0}
+        # updator = Updator(replacement)
+        try:
+            fw = next(self._internal_scan_query(filter))
+        except StopIteration:
+            if upsert:
+                if "_id" not in replacement:
+                    replacement["_id"] = ObjectId()
+                raw_result["upserted"] = replacement["_id"]
+                raw_result["n"] = 1
+                self.database.client._storage.write_one(self, replacement)
+        else:
+            raw_result["n"] = 1
+            if fw.doc != replacement:
+                replacement["_id"] = fw.doc["_id"]
+                self.database.client._storage.update_one(self, replacement)
+                raw_result["nModified"] = 1
+
+        return UpdateResult(raw_result)
 
     def _internal_scan_query(self, query_spec):
         """An interanl document generator for update"""

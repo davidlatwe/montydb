@@ -95,6 +95,16 @@ def validate_ok_for_update(update):
         raise ValueError('update only works with $ operators')
 
 
+def validate_ok_for_replace(replacement):
+    """Validate a replacement document."""
+    validate_is_mapping("replacement", replacement)
+    # Replacement can be {}
+    if replacement and not isinstance(replacement, RawBSONDocument):
+        first = next(iter(replacement))
+        if first.startswith('$'):
+            raise ValueError('replacement can not include $ operators')
+
+
 def _fields_list_to_dict(fields, option_name):
     """Takes a sequence of field names and returns a matching dictionary.
     ["a", "b"] becomes {"a": 1, "b": 1}

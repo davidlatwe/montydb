@@ -101,7 +101,7 @@ class MemoryCollection(AbstractCollection):
         return ids
 
     def update_one(self, doc):
-        self.write_one(doc)
+        self._col[str(doc["_id"])] = self._encode_doc(doc)
 
     def update_many(self, docs):
         for doc in docs:

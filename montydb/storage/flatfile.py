@@ -262,7 +262,9 @@ class FlatFileCollection(AbstractCollection):
         return ids
 
     def update_one(self, doc):
-        self.write_one(doc)
+        _doc = SON()
+        _doc[doc["_id"]] = self._encode_doc(doc)
+        self._flatfile.write(_doc)
 
     def update_many(self, docs):
         _docs = SON()
