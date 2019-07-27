@@ -156,7 +156,7 @@ class Counter(object):
         job_on_each (func): The function to process each item in the iterable
                             during the iteration. `function(item)`
                             The return value of the function will be stored in
-                            `DocumentCounter.data` attribute.
+                            `Counter.data` attribute.
 
     Attributes:
         count (int): An int that indicate the progress of iteration.

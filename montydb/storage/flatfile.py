@@ -11,7 +11,6 @@ from bson.json_util import (
 )
 
 from .abcs import (
-    StorageConfig,
     AbstractStorage,
     AbstractDatabase,
     AbstractCollection,
@@ -19,41 +18,6 @@ from .abcs import (
 
     StorageDuplicateKeyError,
 )
-
-
-FALTFILE_CONFIG = """
-storage:
-  engine: FlatFileStorage
-  config: FlatFileConfig
-  module: {}
-connection:
-  cache_modified: 0
-""".format(__name__)
-
-
-FLATFILE_CONFIG_SCHEMA = """
-type: object
-required:
-    - connection
-properties:
-  connection:
-    type: object
-    required:
-        - cache_modified
-    properties:
-      cache_modified:
-        type: integer
-        minimum: 0
-"""
-
-
-class FlatFileConfig(StorageConfig):
-    """FaltFile storage configuration settings
-
-    Default configuration and schema of FaltFile storage
-    """
-    config = FALTFILE_CONFIG
-    schema = FLATFILE_CONFIG_SCHEMA
 
 
 FLATFILE_DB_EXT = ".json"
@@ -125,14 +89,14 @@ class FlatFileKVEngine(object):
         self.modified_count += len(documents)
         self.__cache.update(documents)
 
-        if self.modified_count > self.__conn_config.cache_modified:
+        if self.modified_count > self.__conn_config["cache_modified"]:
             self.flush()
 
     def delete(self, doc_id):
         self.modified_count += 1
         del self.__cache[doc_id]
 
-        if self.modified_count > self.__conn_config.cache_modified:
+        if self.modified_count > self.__conn_config["cache_modified"]:
             self.flush()
 
 
@@ -152,6 +116,22 @@ class FlatFileStorage(AbstractStorage):
         Get Monty database dir path.
         """
         return os.path.join(self._repository, db_name)
+
+    @classmethod
+    def nice_name(cls):
+        return "flatfile"
+
+    @classmethod
+    def config(cls, cache_modified=0, **kwargs):
+        """
+
+        Args:
+            cache_modified (int): Default 0
+
+        """
+        return {
+            "cache_modified": int(cache_modified),
+        }
 
     def close(self):
         for db in self._cache_manager:
@@ -236,7 +216,7 @@ class FlatFileCollection(AbstractCollection):
         self._col_path = self._database._col_path(self._name)
         if self._name not in database._cache_manager:
             database._cache_manager[self._name] = FlatFileKVEngine(
-                self._col_path, config.connection)
+                self._col_path, config)
 
     @property
     def _flatfile(self):

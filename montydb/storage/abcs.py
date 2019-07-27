@@ -1,7 +1,16 @@
+
+import os
+
 from abc import ABCMeta, abstractmethod
 from bson import BSON
+from bson.py3compat import PY3
 
 from ..engine.helpers import with_metaclass
+
+if PY3:
+    from configparser import ConfigParser
+else:
+    from ConfigParser import ConfigParser
 
 
 class StorageError(Exception):
@@ -12,15 +21,11 @@ class StorageDuplicateKeyError(StorageError):
     """Raise when an insert or update fails due to a duplicate key error."""
 
 
-class StorageConfig(object):
-    """Base class of storage config"""
-    config = NotImplemented
-    schema = NotImplemented
-
-
 class AbstractStorage(with_metaclass(ABCMeta, object)):
     """
     """
+
+    config_fname = "monty.storage.cfg"
 
     def __init__(self, repository, storage_config):
         self.is_opened = True
@@ -28,7 +33,7 @@ class AbstractStorage(with_metaclass(ABCMeta, object)):
         self._config = storage_config
 
     def __repr__(self):
-        return "MontyStorage(engine={!r})".format(self.__class__.__name__)
+        return "MontyStorage(engine: {!r})".format(self.__class__.__name__)
 
     def __getattribute__(self, attr):
         def obj_attr(attr_):
@@ -48,16 +53,64 @@ class AbstractStorage(with_metaclass(ABCMeta, object)):
             return getattr(delegator, attr)(*args, **kwargs)
         return delegate
 
+    @classmethod
+    def nice_name(cls):
+        return cls.__name__
+
+    @classmethod
+    def launch(cls, repository):
+        """Load config from repository and return a storage instance
+        """
+        config_file = os.path.join(repository, cls.config_fname)
+        config = dict()
+
+        # Load config from repo
+        if os.path.isfile(config_file):
+            parser = ConfigParser()
+            parser.read([config_file])
+
+            section = cls.nice_name()
+            if parser.has_section(section):
+                config = {k: v for k, v in parser.items(section)}
+
+        # Pass to cls.config
+        storage_config = cls.config(**config)
+
+        # Return an instance
+        return cls(repository, storage_config)
+
+    @classmethod
+    def save_config(cls, repository, **storage_kwargs):
+        """Save storage settings to a configuration file
+
+        The configurations will be saved by `configparser` and use storage
+        class name as config section name.
+
+        """
+        config_file = os.path.join(repository, cls.config_fname)
+        parser = ConfigParser()
+
+        section = cls.nice_name()
+        if not parser.has_section(section):
+            parser.add_section(section)
+
+        config = cls.config(**storage_kwargs)
+
+        for option, value in config.items():
+            parser.set(section, str(option), str(value))
+
+        with open(config_file, "w") as fp:
+            parser.write(fp)
+
     def _re_open(self):
         """Auto re-open"""
         self.is_opened = True
-        self._config.reload(repository=self._repository)
 
     def close(self):
         """Could do some clean up"""
         self.is_opened = False
 
-    def wconcern_parser(self, client_kwargs):
+    def wconcern_parser(self, **client_kwargs):
         """
         Parsing storage specific write concern
 
@@ -74,6 +127,17 @@ class AbstractStorage(with_metaclass(ABCMeta, object)):
     @property
     def contractor_cls(self):
         raise NotImplementedError("")
+
+    @classmethod
+    @abstractmethod
+    def config(cls, **storage_kwargs):
+        """Storage engine's configurations
+
+        This should be implemented in subclass, and should return
+        configurations as a `dict`.
+
+        """
+        return NotImplemented
 
     @abstractmethod
     def database_create(self):

@@ -9,7 +9,7 @@ from .cursor import (
     MontyCursor,
     CursorType
 )
-from .configure import MontyConfigure
+from .configure import set_storage
 
 from . import utils
 
@@ -28,7 +28,7 @@ __all__ = [
     "MontyCollection",
     "MontyCursor",
 
-    "MontyConfigure",
+    "set_storage",
 
     "ASCENDING",
     "DESCENDING",

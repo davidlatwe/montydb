@@ -1,11 +1,9 @@
 language: python
 python:
-  - pypy3
+  - pypy3.5
   - pypy
-  - 3.7-dev
+  - 3.7
   - 3.6
-  - 3.5
-  - 3.4
   - 2.7
   - nightly
 
@@ -17,7 +15,6 @@ env:
 matrix:
   fast_finish: true
   allow_failures:
-    - python: 3.7-dev
     - python: nightly
 
 before_install:

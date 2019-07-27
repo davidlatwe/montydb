@@ -45,8 +45,6 @@ setup(
         "Operating System :: OS Independent",
     ),
     install_requires=(
-        "pyyaml",
-        "jsonschema",
         "pymongo",
     ),
     tests_require=(

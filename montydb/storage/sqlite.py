@@ -9,7 +9,6 @@ from bson.py3compat import _unicode
 
 from ..base import WriteConcern
 from .abcs import (
-    StorageConfig,
     AbstractStorage,
     AbstractDatabase,
     AbstractCollection,
@@ -32,61 +31,6 @@ sqlite_324 = sqlite3.sqlite_version_info >= (3, 24, 0)
     - foreign_keys=OFF
     - automatic_index=ON
 """
-
-
-SQLITE_CONFIG = """
-storage:
-  engine: SQLiteStorage
-  config: SQLiteConfig
-  module: {}
-connection:
-  journal_mode: WAL
-write_concern:
-  # These will be picked up by wconcern
-  synchronous: 1
-  automatic_index: OFF
-  busy_timeout: 5000
-""".format(__name__)
-
-
-SQLITE_CONFIG_SCHEMA = """
-type: object
-required:
-  - connection
-  - write_concern
-properties:
-  connection:
-    type: object
-    properties:
-      journal_mode:
-        type: string
-        enum: [DELETE, TRUNCATE, PERSIST, MEMORY, WAL, "OFF"]
-  write_concern:
-    type: object
-    properties:
-      synchronous:
-        oneOf:
-          - type: string
-            enum: ["OFF", NORMAL, FULL, EXTRA, "0", "1", "2", "3"]
-          - type: integer
-            enum: [0, 1, 2, 3]
-      automatic_index:
-        oneOf:
-          - type: boolean
-          - type: string
-            enum: ["ON", "OFF"]
-      busy_timeout:
-        type: integer
-"""
-
-
-class SQLiteConfig(StorageConfig):
-    """SQLite storage configuration settings
-
-    Default configuration and schema of SQLite storage
-    """
-    config = SQLITE_CONFIG
-    schema = SQLITE_CONFIG_SCHEMA
 
 
 SQLITE_DB_EXT = ".collection"
@@ -221,14 +165,29 @@ class SQLiteKVEngine(object):
 
 class SQLiteWriteConcern(WriteConcern):
     """
+
+    Args:
+        busy_timeout (int): Default 5000
+
+        synchronous (int, str): Default "NORMAL"
+            - type: integer
+              enum: [0, 1, 2, 3]
+            - type: string
+              enum: ["OFF", NORMAL, FULL, EXTRA, "0", "1", "2", "3"]
+
+        automatic_index (bool, str): Default False
+            - type: boolean
+            - type: string
+              enum: ["ON", "OFF"]
+
     """
 
     def __init__(self,
-                 wtimeout=None,
-                 synchronous=None,
-                 automatic_index=None):
+                 busy_timeout=5000,
+                 synchronous="NORMAL",
+                 automatic_index=False):
 
-        super(SQLiteWriteConcern, self).__init__(wtimeout)
+        super(SQLiteWriteConcern, self).__init__(busy_timeout)
 
         if synchronous is not None:
             self._document["synchronous"] = synchronous
@@ -246,7 +205,7 @@ class SQLiteStorage(AbstractStorage):
 
     def __init__(self, repository, storage_config):
         super(SQLiteStorage, self).__init__(repository, storage_config)
-        self._conn = SQLiteKVEngine(self._config.connection)
+        self._conn = SQLiteKVEngine(self._config)
 
     def _db_path(self, db_name):
         """
@@ -254,21 +213,31 @@ class SQLiteStorage(AbstractStorage):
         """
         return os.path.join(self._repository, db_name)
 
-    def wconcern_parser(self, client_kwargs):
-        _client_btimeout = client_kwargs.get("busy_timeout")
-        # Default from config
-        wcon_pragmas = self._config.write_concern
-        wtimeout = client_kwargs.get(
-            "wtimeout",
-            _client_btimeout or wcon_pragmas.get("busy_timeout"))
-        synchronous = client_kwargs.get(
-            "synchronous",
-            wcon_pragmas.get("synchronous"))
-        automatic_index = client_kwargs.get(
-            "automatic_index",
-            wcon_pragmas.get("automatic_index"))
+    @classmethod
+    def nice_name(cls):
+        return "sqlite"
 
-        return SQLiteWriteConcern(wtimeout,
+    @classmethod
+    def config(cls, journal_mode="WAL", **kwargs):
+        """
+
+        Args:
+            journal_mode (str): Default "WAL"
+                type: string
+                enum: [DELETE, TRUNCATE, PERSIST, MEMORY, WAL, "OFF"]
+
+        """
+        return {
+            "journal_mode": journal_mode,
+        }
+
+    def wconcern_parser(self,
+                        wtimeout=None,
+                        busy_timeout=None,
+                        synchronous=None,
+                        automatic_index=None,
+                        **kwargs):
+        return SQLiteWriteConcern(wtimeout or busy_timeout,
                                   synchronous,
                                   automatic_index)
 
