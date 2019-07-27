@@ -69,6 +69,25 @@ def mongo_sort(mongo_database):
     return _insert_and_sort
 
 
+def insert_and_distinct(db, docs, key, filter):
+    col = insert(db, docs)
+    return col.distinct(key, filter)
+
+
+@pytest.fixture
+def monty_distinct(monty_database):
+    def _insert_and_distinct(docs, key, filter, db=monty_database):
+        return insert_and_distinct(db, docs, key, filter)
+    return _insert_and_distinct
+
+
+@pytest.fixture
+def mongo_distinct(mongo_database):
+    def _insert_and_distinct(docs, key, filter, db=mongo_database):
+        return insert_and_distinct(db, docs, key, filter)
+    return _insert_and_distinct
+
+
 def insert_and_update(db, docs, spec, find, upsert, array_filters):
     col = insert(db, docs)
     col.update_many(find or {}, spec, upsert, array_filters=array_filters)
