@@ -13,9 +13,9 @@ from .abcs import (
     AbstractDatabase,
     AbstractCollection,
     AbstractCursor,
-
-    StorageDuplicateKeyError,
 )
+from .errors import StorageDuplicateKeyError
+
 
 sqlite_324 = sqlite3.sqlite_version_info >= (3, 24, 0)
 

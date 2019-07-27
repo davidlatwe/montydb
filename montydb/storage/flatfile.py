@@ -15,9 +15,8 @@ from .abcs import (
     AbstractDatabase,
     AbstractCollection,
     AbstractCursor,
-
-    StorageDuplicateKeyError,
 )
+from .errors import StorageDuplicateKeyError
 
 
 FLATFILE_DB_EXT = ".json"

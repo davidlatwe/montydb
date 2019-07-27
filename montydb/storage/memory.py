@@ -7,9 +7,8 @@ from .abcs import (
     AbstractDatabase,
     AbstractCollection,
     AbstractCursor,
-
-    StorageDuplicateKeyError,
 )
+from .errors import StorageDuplicateKeyError
 
 
 class MemoryStorage(AbstractStorage):
