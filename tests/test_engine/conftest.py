@@ -89,3 +89,25 @@ def mongo_update(mongo_database):
                            array_filters=None, db=mongo_database):
         return insert_and_update(db, docs, spec, find, upsert, array_filters)
     return _insert_and_update
+
+
+def insert_and_replace(db, docs, find, replacement, upsert):
+    col = insert(db, docs)
+    col.replace_one(find or {}, replacement, upsert)
+    return col.find({}, {"_id": 0})
+
+
+@pytest.fixture
+def monty_replace(monty_database):
+    def _insert_and_replace(docs, find, replacement,
+                            upsert=False, db=monty_database):
+        return insert_and_replace(db, docs, find, replacement, upsert)
+    return _insert_and_replace
+
+
+@pytest.fixture
+def mongo_replace(mongo_database):
+    def _insert_and_replace(docs, find, replacement,
+                            upsert=False, db=mongo_database):
+        return insert_and_replace(db, docs, find, replacement, upsert)
+    return _insert_and_replace
