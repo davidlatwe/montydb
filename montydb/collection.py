@@ -1,6 +1,7 @@
 import collections
 from copy import deepcopy
 from bson import ObjectId
+from bson.py3compat import string_type
 
 from .base import (
     BaseObject,
@@ -12,7 +13,7 @@ from .base import (
 )
 
 from .cursor import MontyCursor
-from .engine.core import FieldWalker
+from .engine.core import FieldWalker, Weighted
 from .engine.queries import QueryFilter
 from .engine.update import Updator
 from .engine.helpers import is_duckument_type, Counter
@@ -363,8 +364,38 @@ class MontyCollection(BaseObject):
     def count(self, filter=None):
         raise NotImplementedError("Not implemented.")
 
-    def distinct(self, key, filter=None):
-        raise NotImplementedError("Not implemented.")
+    def distinct(self, key, filter=None, **kwargs):
+        """
+        """
+        if not isinstance(key, string_type):
+            raise TypeError("key must be an "
+                            "instance of %s" % (string_type.__name__,))
+
+        result = list()
+
+        def get_value(doc):
+            fieldwalker = FieldWalker(doc)
+            fieldvalues = fieldwalker.go(key).get().value
+            res = list()
+            for v in fieldvalues.values:
+                weighted = Weighted(v)
+                if weighted not in result:
+                    res.append(weighted)
+            return sorted(res)
+
+        storage = self.database.client._storage
+        documents = storage.query(MontyCursor(self), 0)
+
+        if filter:
+            queryfilter = QueryFilter(filter)
+            for doc in documents:
+                if queryfilter(doc):
+                    result += get_value(doc)
+        else:
+            for doc in documents:
+                result += get_value(doc)
+
+        return [weighted.value for weighted in result]
 
     def create_index(self, keys):
         raise NotImplementedError("Not implemented.")
@@ -389,7 +420,10 @@ class MontyCollection(BaseObject):
         raise NotImplementedError("Not implemented.")
 
     def drop(self):
-        raise NotImplementedError("Not implemented.")
+        pass
+
+    def save(self):
+        pass
 
     def rename(self, new_name, session=None, **kwargs):
         raise NotImplementedError("Not implemented.")
