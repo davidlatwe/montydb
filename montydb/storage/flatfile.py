@@ -273,6 +273,13 @@ class FlatFileCollection(AbstractCollection):
 
         self._flatfile.write(_docs)
 
+    def delete_one(self, id):
+        self._flatfile.delete(id)
+
+    def delete_many(self, ids):
+        for id in ids:
+            self._flatfile.delete(id)
+
 
 FlatFileDatabase.contractor_cls = FlatFileCollection
 

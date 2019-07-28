@@ -202,6 +202,14 @@ class AbstractCollection(with_metaclass(ABCMeta, object)):
     def update_many(self):
         return NotImplemented
 
+    @abstractmethod
+    def delete_one(self):
+        return NotImplemented
+
+    @abstractmethod
+    def delete_many(self):
+        return NotImplemented
+
 
 class AbstractCursor(with_metaclass(ABCMeta, object)):
 

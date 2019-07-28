@@ -325,10 +325,36 @@ class MontyCollection(BaseObject):
         return UpdateResult(raw_result)
 
     def delete_one(self, filter):
-        raise NotImplementedError("Not implemented.")
+        raw_result = {"n": 0}
+
+        queryfilter = QueryFilter(filter)
+        storage = self.database.client._storage
+        documents = storage.query(MontyCursor(self), 0)
+
+        for doc in documents:
+            if queryfilter(doc):
+                storage.delete_one(self, doc["_id"])
+                raw_result["n"] = 1
+                break
+
+        return DeleteResult(raw_result)
 
     def delete_many(self, filter):
-        raise NotImplementedError("Not implemented.")
+        raw_result = {"n": 0}
+
+        queryfilter = QueryFilter(filter)
+        storage = self.database.client._storage
+        documents = storage.query(MontyCursor(self), 0)
+
+        doc_ids = set()
+        for doc in documents:
+            if queryfilter(doc):
+                doc_ids.add(doc["_id"])
+                raw_result["n"] += 1
+
+        storage.delete_many(self, doc_ids)
+
+        return DeleteResult(raw_result)
 
     def aggregate(self, pipeline, session=None, **kwargs):
         # return CommandCursor

@@ -107,6 +107,13 @@ class MemoryCollection(AbstractCollection):
         for doc in docs:
             self._col[str(doc["_id"])] = self._encode_doc(doc)
 
+    def delete_one(self, id):
+        del self._col[str(id)]
+
+    def delete_many(self, ids):
+        for id in ids:
+            del self._col[str(id)]
+
 
 MemoryDatabase.contractor_cls = MemoryCollection
 
