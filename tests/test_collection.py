@@ -139,3 +139,30 @@ def test_collection_insert_many_has_duplicate_key(monty_collection,
             monty_err.value.details["nInserted"])
 
     assert mongo_collection.find().count() == monty_collection.find().count()
+
+
+def test_collection_drop(monty_database):
+    collection = monty_database.create_collection("drop_me")
+    assert "drop_me" in monty_database.collection_names()
+    collection.drop()
+    assert "drop_me" not in monty_database.collection_names()
+
+
+def test_collection_save(monty_collection, mongo_collection):
+    doc = {"some": "doc"}
+    new = {"add": "stuff"}
+    result = {"some": "doc", "add": "stuff"}
+
+    mongo_collection.insert_one(doc.copy())
+    existed_doc = mongo_collection.find_one(doc)
+    existed_doc.update(new)
+    mongo_collection.save(existed_doc)
+
+    assert mongo_collection.find_one(doc, {"_id": 0}) == result
+
+    monty_collection.insert_one(doc.copy())
+    existed_doc = monty_collection.find_one(doc)
+    existed_doc.update(new)
+    monty_collection.save(existed_doc)
+
+    assert monty_collection.find_one(doc, {"_id": 0}) == result

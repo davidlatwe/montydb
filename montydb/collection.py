@@ -471,10 +471,17 @@ class MontyCollection(BaseObject):
         raise NotImplementedError("Not implemented.")
 
     def drop(self):
-        pass
+        self._database.drop_collection(self._name)
 
-    def save(self):
-        pass
+    def save(self, to_save, *args, **kwargs):
+        # DEPRECATED
+        if "_id" in to_save:
+            self.replace_one({"_id": to_save["_id"]},
+                             to_save,
+                             upsert=True,
+                             *args, **kwargs)
+        else:
+            self.insert_one(to_save, *args, **kwargs)
 
     def rename(self, new_name, session=None, **kwargs):
         raise NotImplementedError("Not implemented.")
