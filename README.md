@@ -1,5 +1,5 @@
 
-<img src="https://raw.githubusercontent.com/davidlatwe/MontyDB/master/artwork/logo.png" alt="drawing" width="600"/>
+<img src="artwork/logo.png" alt="drawing" width="600"/>
 
 #### Monty, Mongo tinified. A literally serverless, Mongo-like database in Python
 
@@ -137,5 +137,5 @@ The configuration process only required on repository creation or modification.
 ---
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/davidlatwe/MontyDB/master/artwork/icon.png" alt="drawing" width="60"/>
+  <img src="artwork/icon.png" alt="drawing" width="60"/>
 </p>
