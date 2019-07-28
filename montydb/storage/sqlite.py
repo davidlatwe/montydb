@@ -65,6 +65,10 @@ INSORE_RECORD = """
     INSERT OR IGNORE INTO [{}](v, k) VALUES (?, ?);
 """  # for sqlite_version < 3.24, UPDATE + INSERT_IGNORE = UPSERT SCRIPT
 
+DELETE_RECORD = """
+    DELETE FROM [{}] WHERE k = (?);
+"""
+
 SELECT_ALL_RECORD = """
     SELECT v FROM [{}];
 """
@@ -139,6 +143,18 @@ class SQLiteKVEngine(object):
         with self._connect(db_file, wconcern) as conn:
             with conn:
                 sql = UPDATE_RECORD.format(SQLITE_RECORD_TABLE)
+                conn.executemany(sql, seq_params)
+
+    def delete_one(self, db_file, params, wconcern=None):
+        with self._connect(db_file, wconcern) as conn:
+            with conn:
+                sql = DELETE_RECORD.format(SQLITE_RECORD_TABLE)
+                conn.execute(sql, params)
+
+    def delete_many(self, db_file, seq_params, wconcern=None):
+        with self._connect(db_file, wconcern) as conn:
+            with conn:
+                sql = DELETE_RECORD.format(SQLITE_RECORD_TABLE)
                 conn.executemany(sql, seq_params)
 
     def read_all(self, db_file, limit):
@@ -379,6 +395,20 @@ class SQLiteCollection(AbstractCollection):
         self._conn.update_many(
             self._col_path,
             [(self._encode_doc(doc), str(doc["_id"])) for doc in docs],
+            self.wconcern
+        )
+
+    def delete_one(self, id):
+        self._conn.delete_one(
+            self._col_path,
+            (str(id),),
+            self.wconcern
+        )
+
+    def delete_many(self, ids):
+        self._conn.delete_many(
+            self._col_path,
+            [(str(id),) for id in ids],
             self.wconcern
         )
 
