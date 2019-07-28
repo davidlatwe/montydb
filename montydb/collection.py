@@ -187,7 +187,9 @@ class MontyCollection(BaseObject):
                     replacement["_id"] = ObjectId()
                 raw_result["upserted"] = replacement["_id"]
                 raw_result["n"] = 1
-                self.database.client._storage.write_one(self, replacement)
+                self.database.client._storage.write_one(self,
+                                                        replacement,
+                                                        check_keys=False)
         else:
             raw_result["n"] = 1
             if fw.doc != replacement:

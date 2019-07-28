@@ -229,19 +229,19 @@ class FlatFileCollection(AbstractCollection):
         return make_table
 
     @_ensure_table
-    def write_one(self, doc):
+    def write_one(self, doc, check_keys=True):
         _doc = SON()
         id = doc["_id"]
         if self._flatfile._id_existed(id):
             raise StorageDuplicateKeyError()
 
-        _doc[id] = self._encode_doc(doc)
+        _doc[id] = self._encode_doc(doc, check_keys)
         self._flatfile.write(_doc)
 
         return id
 
     @_ensure_table
-    def write_many(self, docs, ordered=True):
+    def write_many(self, docs, check_keys=True, ordered=True):
         _docs = SON()
         ids = list()
         has_duplicated_key = False
@@ -251,7 +251,7 @@ class FlatFileCollection(AbstractCollection):
                 has_duplicated_key = True
                 break
 
-            _docs[id] = self._encode_doc(doc)
+            _docs[id] = self._encode_doc(doc, check_keys)
             ids.append(id)
 
         self._flatfile.write(_docs)

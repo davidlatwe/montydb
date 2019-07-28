@@ -360,6 +360,16 @@ def test_update_with_dollar_prefixed_field_3(monty_update, mongo_update):
     assert mongo_err.value.code == monty_err.value.code
 
 
+def test_update_with_dot_prefixed_nest_field(monty_update, mongo_update):
+    docs = [
+        {"a": 1}
+    ]
+    spec = {"$set": {"b": {".ey": [5]}}}  # This will pass
+
+    mongo_update(docs, spec)
+    monty_update(docs, spec)
+
+
 def test_update_complex_position_1(monty_update, mongo_update):
     docs = [
         {"a": [{"b": [1, 5]}, {"b": [2, 4]}, {"b": [3, 6]}]}

@@ -85,18 +85,18 @@ class MemoryCollection(AbstractCollection):
         if id in self._col:
             raise StorageDuplicateKeyError()
 
-    def write_one(self, doc):
+    def write_one(self, doc, check_keys=True):
         id = doc["_id"]
         self._id_unique(str(id))
-        self._col[str(id)] = self._encode_doc(doc)
+        self._col[str(id)] = self._encode_doc(doc, check_keys)
         return id
 
-    def write_many(self, docs, ordered=True):
+    def write_many(self, docs, check_keys=True, ordered=True):
         ids = list()
         for doc in docs:
             id = doc["_id"]
             self._id_unique(str(id))
-            self._col[str(id)] = self._encode_doc(doc)
+            self._col[str(id)] = self._encode_doc(doc, check_keys)
             ids.append(id)
         return ids
 
