@@ -106,3 +106,23 @@ def test_client_context(monty_client, tmp_monty_repo):
 def test_client_wtimeout_type_error(monty_client):
     with pytest.raises(TypeError):
         montydb.MontyClient(monty_client.address, wtimeout=0.5)
+
+
+def test_client_server_info(monty_client):
+    server_info = monty_client.server_info()
+
+    entries = [
+        "version",
+        "versionArray",
+        "mongoVersion",
+        "mongoVersionArray",
+        "storageEngine",
+        "python",
+        "platform",
+        "machine",
+    ]
+
+    for key in entries:
+        server_info.pop(key)
+
+    assert len(server_info) == 0

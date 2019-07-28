@@ -4,17 +4,18 @@ import shutil
 import sqlite3
 import contextlib
 
-from bson import BSON
+from bson import BSON, SON
 from bson.py3compat import _unicode
 
 from ..base import WriteConcern
 from .abcs import (
-    StorageConfig,
     AbstractStorage,
     AbstractDatabase,
     AbstractCollection,
     AbstractCursor,
 )
+from .errors import StorageDuplicateKeyError
+
 
 sqlite_324 = sqlite3.sqlite_version_info >= (3, 24, 0)
 
@@ -30,61 +31,6 @@ sqlite_324 = sqlite3.sqlite_version_info >= (3, 24, 0)
     - foreign_keys=OFF
     - automatic_index=ON
 """
-
-
-SQLITE_CONFIG = """
-storage:
-  engine: SQLiteStorage
-  config: SQLiteConfig
-  module: {}
-connection:
-  journal_mode: WAL
-write_concern:
-  # These will be picked up by wconcern
-  synchronous: 1
-  automatic_index: OFF
-  busy_timeout: 5000
-""".format(__name__)
-
-
-SQLITE_CONFIG_SCHEMA = """
-type: object
-required:
-  - connection
-  - write_concern
-properties:
-  connection:
-    type: object
-    properties:
-      journal_mode:
-        type: string
-        enum: [DELETE, TRUNCATE, PERSIST, MEMORY, WAL, "OFF"]
-  write_concern:
-    type: object
-    properties:
-      synchronous:
-        oneOf:
-          - type: string
-            enum: ["OFF", NORMAL, FULL, EXTRA, "0", "1", "2", "3"]
-          - type: integer
-            enum: [0, 1, 2, 3]
-      automatic_index:
-        oneOf:
-          - type: boolean
-          - type: string
-            enum: ["ON", "OFF"]
-      busy_timeout:
-        type: integer
-"""
-
-
-class SQLiteConfig(StorageConfig):
-    """SQLite storage configuration settings
-
-    Default configuration and schema of SQLite storage
-    """
-    config = SQLITE_CONFIG
-    schema = SQLITE_CONFIG_SCHEMA
 
 
 SQLITE_DB_EXT = ".collection"
@@ -119,12 +65,20 @@ INSORE_RECORD = """
     INSERT OR IGNORE INTO [{}](v, k) VALUES (?, ?);
 """  # for sqlite_version < 3.24, UPDATE + INSERT_IGNORE = UPSERT SCRIPT
 
+DELETE_RECORD = """
+    DELETE FROM [{}] WHERE k = (?);
+"""
+
 SELECT_ALL_RECORD = """
     SELECT v FROM [{}];
 """
 
 SELECT_LIMIT_RECORD = """
     SELECT v FROM [{0}] LIMIT {1};
+"""
+
+SELECT_ALL_KEYS = """
+    SELECT k FROM [{}];
 """
 
 
@@ -191,6 +145,18 @@ class SQLiteKVEngine(object):
                 sql = UPDATE_RECORD.format(SQLITE_RECORD_TABLE)
                 conn.executemany(sql, seq_params)
 
+    def delete_one(self, db_file, params, wconcern=None):
+        with self._connect(db_file, wconcern) as conn:
+            with conn:
+                sql = DELETE_RECORD.format(SQLITE_RECORD_TABLE)
+                conn.execute(sql, params)
+
+    def delete_many(self, db_file, seq_params, wconcern=None):
+        with self._connect(db_file, wconcern) as conn:
+            with conn:
+                sql = DELETE_RECORD.format(SQLITE_RECORD_TABLE)
+                conn.executemany(sql, seq_params)
+
     def read_all(self, db_file, limit):
         if not os.path.isfile(db_file):
             return []
@@ -204,17 +170,40 @@ class SQLiteKVEngine(object):
 
                 return conn.execute(sql).fetchall()
 
+    def read_all_keys(self, db_file):
+        if not os.path.isfile(db_file):
+            return []
+        with self._connect(db_file) as conn:
+            with conn:
+                sql = SELECT_ALL_KEYS.format(SQLITE_RECORD_TABLE)
+                return conn.execute(sql).fetchall()
+
 
 class SQLiteWriteConcern(WriteConcern):
     """
+
+    Args:
+        busy_timeout (int): Default 5000
+
+        synchronous (int, str): Default "NORMAL"
+            - type: integer
+              enum: [0, 1, 2, 3]
+            - type: string
+              enum: ["OFF", NORMAL, FULL, EXTRA, "0", "1", "2", "3"]
+
+        automatic_index (bool, str): Default False
+            - type: boolean
+            - type: string
+              enum: ["ON", "OFF"]
+
     """
 
     def __init__(self,
-                 wtimeout=None,
-                 synchronous=None,
-                 automatic_index=None):
+                 busy_timeout=5000,
+                 synchronous="NORMAL",
+                 automatic_index=False):
 
-        super(SQLiteWriteConcern, self).__init__(wtimeout)
+        super(SQLiteWriteConcern, self).__init__(busy_timeout)
 
         if synchronous is not None:
             self._document["synchronous"] = synchronous
@@ -232,7 +221,7 @@ class SQLiteStorage(AbstractStorage):
 
     def __init__(self, repository, storage_config):
         super(SQLiteStorage, self).__init__(repository, storage_config)
-        self._conn = SQLiteKVEngine(self._config.connection)
+        self._conn = SQLiteKVEngine(self._config)
 
     def _db_path(self, db_name):
         """
@@ -240,21 +229,31 @@ class SQLiteStorage(AbstractStorage):
         """
         return os.path.join(self._repository, db_name)
 
-    def wconcern_parser(self, client_kwargs):
-        _client_btimeout = client_kwargs.get("busy_timeout")
-        # Default from config
-        wcon_pragmas = self._config.write_concern
-        wtimeout = client_kwargs.get(
-            "wtimeout",
-            _client_btimeout or wcon_pragmas.get("busy_timeout"))
-        synchronous = client_kwargs.get(
-            "synchronous",
-            wcon_pragmas.get("synchronous"))
-        automatic_index = client_kwargs.get(
-            "automatic_index",
-            wcon_pragmas.get("automatic_index"))
+    @classmethod
+    def nice_name(cls):
+        return "sqlite"
 
-        return SQLiteWriteConcern(wtimeout,
+    @classmethod
+    def config(cls, journal_mode="WAL", **kwargs):
+        """
+
+        Args:
+            journal_mode (str): Default "WAL"
+                type: string
+                enum: [DELETE, TRUNCATE, PERSIST, MEMORY, WAL, "OFF"]
+
+        """
+        return {
+            "journal_mode": journal_mode,
+        }
+
+    def wconcern_parser(self,
+                        wtimeout=None,
+                        busy_timeout=None,
+                        synchronous=None,
+                        automatic_index=None,
+                        **kwargs):
+        return SQLiteWriteConcern(wtimeout or busy_timeout,
                                   synchronous,
                                   automatic_index)
 
@@ -331,7 +330,10 @@ class SQLiteCollection(AbstractCollection):
 
     def _encode_doc(self, doc):
         # Preserve BSON types
-        encoded = BSON.encode(doc, False, self.coptions)
+        encoded = BSON.encode(doc,
+                              # Check if keys start with '$' or contain '.'
+                              check_keys=True,
+                              codec_options=self.coptions)
         return sqlite3.Binary(encoded)
 
     @property
@@ -342,11 +344,14 @@ class SQLiteCollection(AbstractCollection):
     def write_one(self, doc):
         """
         """
-        self._conn.write_one(
-            self._col_path,
-            (str(doc["_id"]), self._encode_doc(doc),),
-            self.wconcern
-        )
+        try:
+            self._conn.write_one(
+                self._col_path,
+                (str(doc["_id"]), self._encode_doc(doc),),
+                self.wconcern
+            )
+        except sqlite3.IntegrityError:
+            raise StorageDuplicateKeyError()
 
         return doc["_id"]
 
@@ -354,13 +359,29 @@ class SQLiteCollection(AbstractCollection):
     def write_many(self, docs, ordered=True):
         """
         """
+        _docs = SON()
+        ids = list()
+        keys = self._conn.read_all_keys(self._col_path)
+        has_duplicated_key = False
+        for doc in docs:
+            id = doc["_id"]
+            if str(id) in keys or str(id) in _docs:
+                has_duplicated_key = True
+                break
+
+            _docs[str(id)] = self._encode_doc(doc)
+            ids.append(id)
+
         self._conn.write_many(
             self._col_path,
-            [(str(doc["_id"]), self._encode_doc(doc)) for doc in docs],
+            _docs.iteritems(),
             self.wconcern
         )
 
-        return [doc["_id"] for doc in docs]
+        if has_duplicated_key:
+            raise StorageDuplicateKeyError()
+
+        return ids
 
     def update_one(self, doc):
         """
@@ -377,6 +398,20 @@ class SQLiteCollection(AbstractCollection):
         self._conn.update_many(
             self._col_path,
             [(self._encode_doc(doc), str(doc["_id"])) for doc in docs],
+            self.wconcern
+        )
+
+    def delete_one(self, id):
+        self._conn.delete_one(
+            self._col_path,
+            (str(id),),
+            self.wconcern
+        )
+
+    def delete_many(self, ids):
+        self._conn.delete_many(
+            self._col_path,
+            [(str(id),) for id in ids],
             self.wconcern
         )
 

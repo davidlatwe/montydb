@@ -6,12 +6,26 @@ from montydb.results import (
     InsertOneResult,
     InsertManyResult,
 )
+from pymongo.errors import (
+    DuplicateKeyError as mongo_dup_key_err,
+    BulkWriteError as mongo_bulkw_err,
+)
+from montydb.errors import (
+    DuplicateKeyError as monty_dup_key_err,
+    BulkWriteError as monty_bulkw_err,
+)
 
 
 @pytest.fixture
 def monty_collection(monty_database):
     monty_database.drop_collection("test_col")
     return monty_database.test_col
+
+
+@pytest.fixture
+def mongo_collection(mongo_database):
+    mongo_database.drop_collection("test_col")
+    return mongo_database.test_col
 
 
 def test_collection_name(monty_collection):
@@ -91,3 +105,64 @@ def test_collection_get_collection(monty_collection):
 def test_collection_get_collection_faild(monty_collection):
     with pytest.raises(AttributeError):
         monty_collection._sub_col
+
+
+def test_collection_insert_one_has_duplicate_key(monty_collection,
+                                                 mongo_collection):
+    doc = {"_id": 1, "foo": "bar"}
+
+    mongo_collection.insert_one(doc)
+    monty_collection.insert_one(doc)
+
+    with pytest.raises(mongo_dup_key_err) as mongo_err:
+        mongo_collection.insert_one(doc)
+
+    with pytest.raises(monty_dup_key_err) as monty_err:
+        monty_collection.insert_one(doc)
+
+    assert mongo_err.value.code == monty_err.value.code
+
+
+def test_collection_insert_many_has_duplicate_key(monty_collection,
+                                                  mongo_collection):
+    docs = [{"_id": 1, "foo1": "bar"},
+            {"_id": 1, "foo2": "bar"}]
+
+    with pytest.raises(mongo_bulkw_err) as mongo_err:
+        mongo_collection.insert_many(docs)
+
+    with pytest.raises(monty_bulkw_err) as monty_err:
+        monty_collection.insert_many(docs)
+
+    assert mongo_err.value.code == monty_err.value.code
+    assert (mongo_err.value.details["nInserted"] ==
+            monty_err.value.details["nInserted"])
+
+    assert mongo_collection.find().count() == monty_collection.find().count()
+
+
+def test_collection_drop(monty_database):
+    collection = monty_database.create_collection("drop_me")
+    assert "drop_me" in monty_database.collection_names()
+    collection.drop()
+    assert "drop_me" not in monty_database.collection_names()
+
+
+def test_collection_save(monty_collection, mongo_collection):
+    doc = {"some": "doc"}
+    new = {"add": "stuff"}
+    result = {"some": "doc", "add": "stuff"}
+
+    mongo_collection.insert_one(doc.copy())
+    existed_doc = mongo_collection.find_one(doc)
+    existed_doc.update(new)
+    mongo_collection.save(existed_doc)
+
+    assert mongo_collection.find_one(doc, {"_id": 0}) == result
+
+    monty_collection.insert_one(doc.copy())
+    existed_doc = monty_collection.find_one(doc)
+    existed_doc.update(new)
+    monty_collection.save(existed_doc)
+
+    assert monty_collection.find_one(doc, {"_id": 0}) == result

@@ -146,3 +146,37 @@ def keep(query):
     def _(func):
         return query
     return _
+
+
+class Counter(object):
+    """An iterator that could trace the progress of iteration
+
+    Args:
+        iterable (Iterable): An iterable object.
+        job_on_each (func): The function to process each item in the iterable
+                            during the iteration. `function(item)`
+                            The return value of the function will be stored in
+                            `Counter.data` attribute.
+
+    Attributes:
+        count (int): An int that indicate the progress of iteration.
+        data: The value returned from the `job_on_each` function.
+
+    """
+
+    def __init__(self, iterable, job_on_each=None):
+        self._iterable = iterable
+        self._job = job_on_each or (lambda i: None)
+        self.count = 0
+        self.data = None
+
+    def __next__(self):
+        item = next(self._iterable)
+        self.data = self._job(item)
+        self.count += 1
+        return item
+
+    next = __next__
+
+    def __iter__(self):
+        return self

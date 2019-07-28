@@ -1,21 +1,29 @@
 import collections
 from copy import deepcopy
 from bson import ObjectId
+from bson.py3compat import string_type
 
 from .base import (
     BaseObject,
     validate_is_mapping,
     validate_ok_for_update,
+    validate_ok_for_replace,
     validate_list_or_none,
     validate_boolean,
     command_coder,
 )
 
 from .cursor import MontyCursor
-from .engine.core import FieldWalker
+from .engine.core import FieldWalker, Weighted
 from .engine.queries import QueryFilter
 from .engine.update import Updator
-from .engine.helpers import is_duckument_type
+from .engine.helpers import is_duckument_type, Counter
+
+from .storage.errors import StorageDuplicateKeyError
+from .errors import (
+    DuplicateKeyError,
+    BulkWriteError,
+)
 
 from .results import (BulkWriteResult,
                       DeleteResult,
@@ -96,8 +104,16 @@ class MontyCollection(BaseObject):
         if "_id" not in document:
             document["_id"] = ObjectId()
 
-        return InsertOneResult(
-            self.database.client._storage.write_one(self, document))
+        try:
+            result = self.database.client._storage.write_one(self, document)
+        except StorageDuplicateKeyError:
+            message = ("E11000 duplicate key error collection: %s index: "
+                       "_id_ dup key: { : \"%s\" }" % (self.full_name,
+                                                       str(document["_id"])))
+            details = {"index": 0, "code": 11000, "errmsg": message}
+            raise DuplicateKeyError(message, code=11000, details=details)
+
+        return InsertOneResult(result)
 
     def insert_many(self,
                     documents,
@@ -111,12 +127,39 @@ class MontyCollection(BaseObject):
         if bypass_document_validation:
             pass
 
-        for doc in documents:
+        def set_id(doc):
             if "_id" not in doc:
                 doc["_id"] = ObjectId()
+            # Keep _id in track for error message
+            return doc["_id"]
 
-        return InsertManyResult(
-            self.database.client._storage.write_many(self, documents, ordered))
+        counter = Counter(iter(documents), job_on_each=set_id)
+
+        try:
+            result = self.database.client._storage.write_many(self,
+                                                              counter,
+                                                              ordered)
+        except StorageDuplicateKeyError:
+            message = ("E11000 duplicate key error collection: %s index: "
+                       "_id_ dup key: { : \"%s\" }" % (self.full_name,
+                                                       str(counter.data)))
+            index = counter.count - 1
+            result = {
+                "writeErrors": [{"index": index,
+                                 "code": 11000,
+                                 "errmsg": message,
+                                 "op": documents[index]}],
+                "writeConcernErrors": [],
+                "nInserted": index,
+                "nUpserted": 0,
+                "nMatched": 0,
+                "nModified": 0,
+                "nRemoved": 0,
+                "upserted": [],
+            }
+            raise BulkWriteError(result)
+
+        return InsertManyResult(result)
 
     def replace_one(self,
                     filter,
@@ -125,10 +168,34 @@ class MontyCollection(BaseObject):
                     bypass_document_validation=False, *args, **kwargs):
         """
         """
+        validate_is_mapping("filter", filter)
+        validate_ok_for_replace(replacement)
+        validate_boolean("upsert", upsert)
+
+        filter, = command_coder(filter, codec_op=self._database.codec_options)
+
         if bypass_document_validation:
             pass
 
-        raise NotImplementedError("Not implemented.")
+        raw_result = {"n": 0, "nModified": 0}
+        # updator = Updator(replacement)
+        try:
+            fw = next(self._internal_scan_query(filter))
+        except StopIteration:
+            if upsert:
+                if "_id" not in replacement:
+                    replacement["_id"] = ObjectId()
+                raw_result["upserted"] = replacement["_id"]
+                raw_result["n"] = 1
+                self.database.client._storage.write_one(self, replacement)
+        else:
+            raw_result["n"] = 1
+            if fw.doc != replacement:
+                replacement["_id"] = fw.doc["_id"]
+                self.database.client._storage.update_one(self, replacement)
+                raw_result["nModified"] = 1
+
+        return UpdateResult(raw_result)
 
     def _internal_scan_query(self, query_spec):
         """An interanl document generator for update"""
@@ -258,10 +325,36 @@ class MontyCollection(BaseObject):
         return UpdateResult(raw_result)
 
     def delete_one(self, filter):
-        raise NotImplementedError("Not implemented.")
+        raw_result = {"n": 0}
+
+        queryfilter = QueryFilter(filter)
+        storage = self.database.client._storage
+        documents = storage.query(MontyCursor(self), 0)
+
+        for doc in documents:
+            if queryfilter(doc):
+                storage.delete_one(self, doc["_id"])
+                raw_result["n"] = 1
+                break
+
+        return DeleteResult(raw_result)
 
     def delete_many(self, filter):
-        raise NotImplementedError("Not implemented.")
+        raw_result = {"n": 0}
+
+        queryfilter = QueryFilter(filter)
+        storage = self.database.client._storage
+        documents = storage.query(MontyCursor(self), 0)
+
+        doc_ids = set()
+        for doc in documents:
+            if queryfilter(doc):
+                doc_ids.add(doc["_id"])
+                raw_result["n"] += 1
+
+        storage.delete_many(self, doc_ids)
+
+        return DeleteResult(raw_result)
 
     def aggregate(self, pipeline, session=None, **kwargs):
         # return CommandCursor
@@ -322,8 +415,38 @@ class MontyCollection(BaseObject):
     def count(self, filter=None):
         raise NotImplementedError("Not implemented.")
 
-    def distinct(self, key, filter=None):
-        raise NotImplementedError("Not implemented.")
+    def distinct(self, key, filter=None, **kwargs):
+        """
+        """
+        if not isinstance(key, string_type):
+            raise TypeError("key must be an "
+                            "instance of %s" % (string_type.__name__,))
+
+        result = list()
+
+        def get_value(doc):
+            fieldwalker = FieldWalker(doc)
+            fieldvalues = fieldwalker.go(key).get().value
+            res = list()
+            for v in fieldvalues.values:
+                weighted = Weighted(v)
+                if weighted not in result:
+                    res.append(weighted)
+            return sorted(res)
+
+        storage = self.database.client._storage
+        documents = storage.query(MontyCursor(self), 0)
+
+        if filter:
+            queryfilter = QueryFilter(filter)
+            for doc in documents:
+                if queryfilter(doc):
+                    result += get_value(doc)
+        else:
+            for doc in documents:
+                result += get_value(doc)
+
+        return [weighted.value for weighted in result]
 
     def create_index(self, keys):
         raise NotImplementedError("Not implemented.")
@@ -348,7 +471,17 @@ class MontyCollection(BaseObject):
         raise NotImplementedError("Not implemented.")
 
     def drop(self):
-        raise NotImplementedError("Not implemented.")
+        self._database.drop_collection(self._name)
+
+    def save(self, to_save, *args, **kwargs):
+        # DEPRECATED
+        if "_id" in to_save:
+            self.replace_one({"_id": to_save["_id"]},
+                             to_save,
+                             upsert=True,
+                             *args, **kwargs)
+        else:
+            self.insert_one(to_save, *args, **kwargs)
 
     def rename(self, new_name, session=None, **kwargs):
         raise NotImplementedError("Not implemented.")

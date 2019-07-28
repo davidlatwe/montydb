@@ -11,47 +11,12 @@ from bson.json_util import (
 )
 
 from .abcs import (
-    StorageConfig,
     AbstractStorage,
     AbstractDatabase,
     AbstractCollection,
     AbstractCursor,
 )
-
-
-FALTFILE_CONFIG = """
-storage:
-  engine: FlatFileStorage
-  config: FlatFileConfig
-  module: {}
-connection:
-  cache_modified: 0
-""".format(__name__)
-
-
-FLATFILE_CONFIG_SCHEMA = """
-type: object
-required:
-    - connection
-properties:
-  connection:
-    type: object
-    required:
-        - cache_modified
-    properties:
-      cache_modified:
-        type: integer
-        minimum: 0
-"""
-
-
-class FlatFileConfig(StorageConfig):
-    """FaltFile storage configuration settings
-
-    Default configuration and schema of FaltFile storage
-    """
-    config = FALTFILE_CONFIG
-    schema = FLATFILE_CONFIG_SCHEMA
+from .errors import StorageDuplicateKeyError
 
 
 FLATFILE_DB_EXT = ".json"
@@ -112,6 +77,10 @@ class FlatFileKVEngine(object):
     def read(self):
         return self.__cache
 
+    def _id_existed(self, id):
+        if id in self.__cache:
+            return True
+
     def write(self, documents):
         if not isinstance(documents, SON):
             raise TypeError("Expecting 'SON' type, got {!r}"
@@ -119,14 +88,14 @@ class FlatFileKVEngine(object):
         self.modified_count += len(documents)
         self.__cache.update(documents)
 
-        if self.modified_count > self.__conn_config.cache_modified:
+        if self.modified_count > self.__conn_config["cache_modified"]:
             self.flush()
 
     def delete(self, doc_id):
         self.modified_count += 1
         del self.__cache[doc_id]
 
-        if self.modified_count > self.__conn_config.cache_modified:
+        if self.modified_count > self.__conn_config["cache_modified"]:
             self.flush()
 
 
@@ -146,6 +115,22 @@ class FlatFileStorage(AbstractStorage):
         Get Monty database dir path.
         """
         return os.path.join(self._repository, db_name)
+
+    @classmethod
+    def nice_name(cls):
+        return "flatfile"
+
+    @classmethod
+    def config(cls, cache_modified=0, **kwargs):
+        """
+
+        Args:
+            cache_modified (int): Default 0
+
+        """
+        return {
+            "cache_modified": int(cache_modified),
+        }
 
     def close(self):
         for db in self._cache_manager:
@@ -230,7 +215,7 @@ class FlatFileCollection(AbstractCollection):
         self._col_path = self._database._col_path(self._name)
         if self._name not in database._cache_manager:
             database._cache_manager[self._name] = FlatFileKVEngine(
-                self._col_path, config.connection)
+                self._col_path, config)
 
     @property
     def _flatfile(self):
@@ -246,26 +231,54 @@ class FlatFileCollection(AbstractCollection):
     @_ensure_table
     def write_one(self, doc):
         _doc = SON()
-        _doc[doc["_id"]] = self._encode_doc(doc)
+        id = doc["_id"]
+        if self._flatfile._id_existed(id):
+            raise StorageDuplicateKeyError()
+
+        _doc[id] = self._encode_doc(doc)
         self._flatfile.write(_doc)
 
-        return doc["_id"]
+        return id
 
     @_ensure_table
     def write_many(self, docs, ordered=True):
+        _docs = SON()
+        ids = list()
+        has_duplicated_key = False
+        for doc in docs:
+            id = doc["_id"]
+            if id in _docs or self._flatfile._id_existed(id):
+                has_duplicated_key = True
+                break
+
+            _docs[id] = self._encode_doc(doc)
+            ids.append(id)
+
+        self._flatfile.write(_docs)
+
+        if has_duplicated_key:
+            raise StorageDuplicateKeyError()
+
+        return ids
+
+    def update_one(self, doc):
+        _doc = SON()
+        _doc[doc["_id"]] = self._encode_doc(doc)
+        self._flatfile.write(_doc)
+
+    def update_many(self, docs):
         _docs = SON()
         for doc in docs:
             _docs[doc["_id"]] = self._encode_doc(doc)
 
         self._flatfile.write(_docs)
 
-        return [doc["_id"] for doc in docs]
+    def delete_one(self, id):
+        self._flatfile.delete(id)
 
-    def update_one(self, doc):
-        self.write_one(doc)
-
-    def update_many(self, docs):
-        self.write_many(docs)
+    def delete_many(self, ids):
+        for id in ids:
+            self._flatfile.delete(id)
 
 
 FlatFileDatabase.contractor_cls = FlatFileCollection

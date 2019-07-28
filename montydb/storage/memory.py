@@ -3,32 +3,12 @@ from itertools import islice
 from bson import SON
 
 from .abcs import (
-    StorageConfig,
     AbstractStorage,
     AbstractDatabase,
     AbstractCollection,
     AbstractCursor,
 )
-
-
-MEMORY_CONFIG = """
-storage:
-  engine: MemoryStorage
-  config: MemoryConfig
-  module: {}
-""".format(__name__)
-
-
-class MemoryConfig(StorageConfig):
-    """Memory storage configuration settings
-
-    Default configuration of Memory storage
-    """
-    config = MEMORY_CONFIG
-    schema = None
-
-
-MEMORY_REPOSITORY = ":memory:"
+from .errors import StorageDuplicateKeyError
 
 
 class MemoryStorage(AbstractStorage):
@@ -38,6 +18,10 @@ class MemoryStorage(AbstractStorage):
     def __init__(self, repository, storage_config):
         super(MemoryStorage, self).__init__(repository, storage_config)
         self._repo = SON()
+
+    @classmethod
+    def config(cls, **storage_kwargs):
+        return dict()
 
     def database_create(self, db_name):
         self._repo[db_name] = SON()
@@ -97,20 +81,38 @@ class MemoryCollection(AbstractCollection):
     def _col_exists(self):
         return self._database.collection_exists(self._name)
 
+    def _id_unique(self, id):
+        if id in self._col:
+            raise StorageDuplicateKeyError()
+
     def write_one(self, doc):
-        self._col[str(doc["_id"])] = self._encode_doc(doc)
-        return doc["_id"]
+        id = doc["_id"]
+        self._id_unique(str(id))
+        self._col[str(id)] = self._encode_doc(doc)
+        return id
 
     def write_many(self, docs, ordered=True):
+        ids = list()
         for doc in docs:
-            self._col[str(doc["_id"])] = self._encode_doc(doc)
-        return [doc["_id"] for doc in docs]
+            id = doc["_id"]
+            self._id_unique(str(id))
+            self._col[str(id)] = self._encode_doc(doc)
+            ids.append(id)
+        return ids
 
     def update_one(self, doc):
-        self.write_one(doc)
+        self._col[str(doc["_id"])] = self._encode_doc(doc)
 
     def update_many(self, docs):
-        self.write_many(docs)
+        for doc in docs:
+            self._col[str(doc["_id"])] = self._encode_doc(doc)
+
+    def delete_one(self, id):
+        del self._col[str(id)]
+
+    def delete_many(self, ids):
+        for id in ids:
+            del self._col[str(id)]
 
 
 MemoryDatabase.contractor_cls = MemoryCollection

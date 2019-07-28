@@ -1,10 +1,11 @@
 import platform
+import sys
 
 from bson.py3compat import string_type
 
-from . import errors
+from . import errors, version
 from .base import BaseObject, ClientOptions
-from .configure import MontyConfigure
+from .configure import provide_storage
 from .database import MontyDatabase
 
 
@@ -17,9 +18,11 @@ class MontyClient(BaseObject):
                  **kwargs):
         """
         """
-        with MontyConfigure(repository) as conf:
-            self._storage = conf.load()._get_storage_engine()
-        wconcern = self._storage.wconcern_parser(kwargs)
+        storage_cls = provide_storage(repository)
+        storage_instance = storage_cls.launch(repository)
+
+        self._storage = storage_instance
+        wconcern = self._storage.wconcern_parser(**kwargs)
 
         options = kwargs
         options["document_class"] = document_class
@@ -111,3 +114,15 @@ class MontyClient(BaseObject):
             raise errors.OperationFailure("Invaild database name.")
         else:
             return MontyDatabase(self, name)
+
+    def server_info(self):
+        return {
+            "version": version.version,
+            "versionArray": list(version.version_info),
+            "mongoVersion": version.mongo_version,
+            "mongoVersionArray": list(version.mongo_version_info),
+            "storageEngine": repr(self._storage),
+            "python": sys.version,
+            "platform": platform.platform(),
+            "machine": platform.machine(),
+        }

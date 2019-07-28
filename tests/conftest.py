@@ -40,11 +40,9 @@ def monty_client(storage, tmp_monty_repo):
     if storage == "memory":
         return montydb.MontyClient(":memory:")
     elif storage == "sqlite":
-        with montydb.MontyConfigure(tmp_monty_repo) as conf:
-            conf.load(montydb.storage.SQLiteConfig)
+        montydb.set_storage(tmp_monty_repo, storage)
     elif storage == "flatfile":
-        with montydb.MontyConfigure(tmp_monty_repo) as conf:
-            conf.load(montydb.storage.FlatFileConfig)
+        montydb.set_storage(tmp_monty_repo, storage)
     else:
         pytest.fail("Unknown storage engine: {!r}".format(storage), False)
 
