@@ -5,7 +5,7 @@ from bson.py3compat import string_type
 
 from . import errors, version
 from .base import BaseObject, ClientOptions
-from .configure import provide_storage
+from .configure import provide_storage, provide_repository
 from .database import MontyDatabase
 
 
@@ -18,6 +18,7 @@ class MontyClient(BaseObject):
                  **kwargs):
         """
         """
+        repository = provide_repository(repository)
         storage_cls = provide_storage(repository)
         storage_instance = storage_cls.launch(repository)
 

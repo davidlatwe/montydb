@@ -15,7 +15,7 @@ DEFAULT_STORAGE = FALTFILE_STORAGE
 MEMORY_REPOSITORY = ":memory:"
 
 
-def _provide_repository(dirname=None):
+def provide_repository(dirname=None):
     return dirname or os.getcwd()
 
 
@@ -77,7 +77,7 @@ def set_storage(repository=None, storage=None, use_default=True, **kwargs):
     if storage == MEMORY_STORAGE:
         raise ConfigurationError("Memory storage does not require setup.")
 
-    repository = _provide_repository(repository)
+    repository = provide_repository(repository)
     setup = os.path.join(repository, _storage_ident_fname)
 
     storage_cls = find_storage_cls(storage)
@@ -92,7 +92,7 @@ def set_storage(repository=None, storage=None, use_default=True, **kwargs):
         storage_cls.save_config(repository, **kwargs)
 
 
-def provide_storage(repository=None):
+def provide_storage(repository):
     """Internal function to get storage engine class from config
 
     Args:
@@ -102,7 +102,6 @@ def provide_storage(repository=None):
     if repository == MEMORY_REPOSITORY:
         return find_storage_cls(MEMORY_STORAGE)
 
-    repository = _provide_repository(repository)
     setup = os.path.join(repository, _storage_ident_fname)
 
     if not os.path.isfile(setup):
