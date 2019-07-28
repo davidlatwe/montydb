@@ -330,7 +330,10 @@ class SQLiteCollection(AbstractCollection):
 
     def _encode_doc(self, doc):
         # Preserve BSON types
-        encoded = BSON.encode(doc, False, self.coptions)
+        encoded = BSON.encode(doc,
+                              # Check if keys start with '$' or contain '.'
+                              check_keys=True,
+                              codec_options=self.coptions)
         return sqlite3.Binary(encoded)
 
     @property

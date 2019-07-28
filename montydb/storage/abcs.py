@@ -180,7 +180,10 @@ class AbstractCollection(with_metaclass(ABCMeta, object)):
         self.coptions = subject.codec_options
 
     def _encode_doc(self, doc):
-        return BSON.encode(doc, False, self.coptions)
+        return BSON.encode(doc,
+                           # Check if keys start with '$' or contain '.'
+                           check_keys=True,
+                           codec_options=self.coptions)
 
     @property
     def contractor_cls(self):
