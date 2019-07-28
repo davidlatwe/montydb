@@ -239,6 +239,26 @@ def parse_identifier(field):
     return field[2:-1]  # $[identifier]
 
 
+_dollar_prefixed_err_msg = (
+    "The dollar ($) prefixed field {0!r} in {1!r} is not valid for storage."
+)
+
+
+def no_dollar_prefix_field(doc, map_cls, root_path):
+    if isinstance(doc, map_cls):
+        for field, value in doc.items():
+            if field.startswith("$"):
+                full_path = root_path + "." + field
+                msg = _dollar_prefixed_err_msg.format(field, full_path)
+                raise FieldWriteError(msg, code=52)
+
+            no_dollar_prefix_field(value, map_cls, root_path + "." + field)
+
+    if isinstance(doc, list):
+        for i, elem in enumerate(doc):
+            no_dollar_prefix_field(elem, map_cls, root_path + "." + str(i))
+
+
 class FieldTreeWriter(object):
 
     def __init__(self, tree):
@@ -252,8 +272,7 @@ class FieldTreeWriter(object):
 
         if field.startswith("$") and not field.startswith("$["):
             full_path = node.full_path + "." + field
-            msg = ("The dollar ($) prefixed field {0!r} in {1!r} is not "
-                   "valid for storage.".format(field, full_path))
+            msg = _dollar_prefixed_err_msg.format(field, full_path)
             raise FieldWriteError(msg, code=52)
 
         if not node.exists and is_multi_position_operator(field):
@@ -445,6 +464,7 @@ class FieldTree(object):
             new_value = evaluator(node, value)
 
             if node.value != new_value:
+                no_dollar_prefix_field(new_value, self.map_cls, node.full_path)
                 node.value = new_value
                 updates.append(update)
 
