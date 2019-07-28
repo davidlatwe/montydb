@@ -270,6 +270,14 @@ class FieldTreeWriter(object):
     def operate(self, node, field):
         result = list()
 
+        if not field:
+            raise FieldWriteError("An empty update path is not valid", code=56)
+
+        if field.startswith("."):
+            msg = ("The update path {} contains an empty field name, which is "
+                   "not allowed".format(field))
+            raise FieldWriteError(msg, code=56)
+
         if field.startswith("$") and not field.startswith("$["):
             full_path = node.full_path + "." + field
             msg = _dollar_prefixed_err_msg.format(field, full_path)
