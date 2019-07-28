@@ -13,7 +13,7 @@ with open("README.md", "r") as fh:
 setup(
     name="montydb",
     version=version,
-    packages=find_packages(exclude=("tests",)),
+    packages=find_packages(exclude=("tests", "tests.*")),
 
     # development metadata
     zip_safe=True,
