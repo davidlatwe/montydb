@@ -42,6 +42,8 @@ class MontyCollection(BaseObject):
             codec_options or database.codec_options,
             write_concern or database.write_concern)
 
+        self._storage = database.client._storage
+
         self._database = database
         self._name = name
         self._components = (database, self)
@@ -105,7 +107,7 @@ class MontyCollection(BaseObject):
             document["_id"] = ObjectId()
 
         try:
-            result = self.database.client._storage.write_one(self, document)
+            result = self._storage.write_one(self, document)
         except StorageDuplicateKeyError:
             message = ("E11000 duplicate key error collection: %s index: "
                        "_id_ dup key: { : \"%s\" }" % (self.full_name,
@@ -136,9 +138,7 @@ class MontyCollection(BaseObject):
         counter = Counter(iter(documents), job_on_each=set_id)
 
         try:
-            result = self.database.client._storage.write_many(self,
-                                                              counter,
-                                                              ordered)
+            result = self._storage.write_many(self, counter, ordered)
         except StorageDuplicateKeyError:
             message = ("E11000 duplicate key error collection: %s index: "
                        "_id_ dup key: { : \"%s\" }" % (self.full_name,
@@ -187,12 +187,12 @@ class MontyCollection(BaseObject):
                     replacement["_id"] = ObjectId()
                 raw_result["upserted"] = replacement["_id"]
                 raw_result["n"] = 1
-                self.database.client._storage.write_one(self, replacement)
+                self._storage.write_one(self, replacement, check_keys=False)
         else:
             raw_result["n"] = 1
             if fw.doc != replacement:
                 replacement["_id"] = fw.doc["_id"]
-                self.database.client._storage.update_one(self, replacement)
+                self._storage.update_one(self, replacement)
                 raw_result["nModified"] = 1
 
         return UpdateResult(raw_result)
@@ -200,8 +200,7 @@ class MontyCollection(BaseObject):
     def _internal_scan_query(self, query_spec):
         """An interanl document generator for update"""
         queryfilter = QueryFilter(query_spec)
-        storage = self.database.client._storage
-        documents = storage.query(MontyCursor(self), 0)
+        documents = self._storage.query(MontyCursor(self), 0)
         first_matched = None
         for doc in documents:
             if queryfilter(doc):
@@ -240,7 +239,7 @@ class MontyCollection(BaseObject):
 
         fieldwalker = FieldWalker(document)
         updator(fieldwalker, do_insert=True)
-        self.database.client._storage.write_one(self, fieldwalker.doc)
+        self._storage.write_one(self, fieldwalker.doc)
 
     def update_one(self,
                    filter,
@@ -274,7 +273,7 @@ class MontyCollection(BaseObject):
         else:
             raw_result["n"] = 1
             if updator(fw):
-                self.database.client._storage.update_one(self, fw.doc)
+                self._storage.update_one(self, fw.doc)
                 raw_result["nModified"] = 1
 
         return UpdateResult(raw_result)
@@ -320,7 +319,7 @@ class MontyCollection(BaseObject):
                 raw_result["n"] = n
                 raw_result["nModified"] = m
 
-            self.database.client._storage.update_many(self, update_docs())
+            self._storage.update_many(self, update_docs())
 
         return UpdateResult(raw_result)
 
@@ -328,7 +327,7 @@ class MontyCollection(BaseObject):
         raw_result = {"n": 0}
 
         queryfilter = QueryFilter(filter)
-        storage = self.database.client._storage
+        storage = self._storage
         documents = storage.query(MontyCursor(self), 0)
 
         for doc in documents:
@@ -343,7 +342,7 @@ class MontyCollection(BaseObject):
         raw_result = {"n": 0}
 
         queryfilter = QueryFilter(filter)
-        storage = self.database.client._storage
+        storage = self._storage
         documents = storage.query(MontyCursor(self), 0)
 
         doc_ids = set()
@@ -434,8 +433,7 @@ class MontyCollection(BaseObject):
                     res.append(weighted)
             return sorted(res)
 
-        storage = self.database.client._storage
-        documents = storage.query(MontyCursor(self), 0)
+        documents = self._storage.query(MontyCursor(self), 0)
 
         if filter:
             queryfilter = QueryFilter(filter)

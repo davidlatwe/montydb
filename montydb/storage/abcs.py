@@ -179,10 +179,10 @@ class AbstractCollection(with_metaclass(ABCMeta, object)):
         self.wconcern = subject.write_concern
         self.coptions = subject.codec_options
 
-    def _encode_doc(self, doc):
+    def _encode_doc(self, doc, check_keys=False):
         return BSON.encode(doc,
                            # Check if keys start with '$' or contain '.'
-                           check_keys=True,
+                           check_keys=check_keys,
                            codec_options=self.coptions)
 
     @property

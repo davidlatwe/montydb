@@ -328,11 +328,11 @@ class SQLiteCollection(AbstractCollection):
             return func(self, *args, **kwargs)
         return make_table
 
-    def _encode_doc(self, doc):
+    def _encode_doc(self, doc, check_keys=False):
         # Preserve BSON types
         encoded = BSON.encode(doc,
                               # Check if keys start with '$' or contain '.'
-                              check_keys=True,
+                              check_keys=check_keys,
                               codec_options=self.coptions)
         return sqlite3.Binary(encoded)
 
@@ -341,13 +341,13 @@ class SQLiteCollection(AbstractCollection):
         return self._database._conn
 
     @_ensure_table
-    def write_one(self, doc):
+    def write_one(self, doc, check_keys=True):
         """
         """
         try:
             self._conn.write_one(
                 self._col_path,
-                (str(doc["_id"]), self._encode_doc(doc),),
+                (str(doc["_id"]), self._encode_doc(doc, check_keys),),
                 self.wconcern
             )
         except sqlite3.IntegrityError:
@@ -356,7 +356,7 @@ class SQLiteCollection(AbstractCollection):
         return doc["_id"]
 
     @_ensure_table
-    def write_many(self, docs, ordered=True):
+    def write_many(self, docs, check_keys=True, ordered=True):
         """
         """
         _docs = SON()
@@ -369,7 +369,7 @@ class SQLiteCollection(AbstractCollection):
                 has_duplicated_key = True
                 break
 
-            _docs[str(id)] = self._encode_doc(doc)
+            _docs[str(id)] = self._encode_doc(doc, check_keys)
             ids.append(id)
 
         self._conn.write_many(
