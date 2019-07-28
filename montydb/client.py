@@ -1,8 +1,9 @@
 import platform
+import sys
 
 from bson.py3compat import string_type
 
-from . import errors
+from . import errors, version
 from .base import BaseObject, ClientOptions
 from .configure import provide_storage
 from .database import MontyDatabase
@@ -113,3 +114,15 @@ class MontyClient(BaseObject):
             raise errors.OperationFailure("Invaild database name.")
         else:
             return MontyDatabase(self, name)
+
+    def server_info(self):
+        return {
+            "version": version.version,
+            "versionArray": list(version.version_info),
+            "mongoVersion": version.mongo_version,
+            "mongoVersionArray": list(version.mongo_version_info),
+            "storageEngine": repr(self._storage),
+            "python": sys.version,
+            "platform": platform.platform(),
+            "machine": platform.machine(),
+        }
