@@ -130,3 +130,26 @@ def mongo_replace(mongo_database):
                             upsert=False, db=mongo_database):
         return insert_and_replace(db, docs, find, replacement, upsert)
     return _insert_and_replace
+
+
+def insert_and_delete(db, docs, spec, del_one):
+    col = insert(db, docs)
+    if del_one:
+        result = col.delete_one(spec)
+    else:
+        result = col.delete_many(spec)
+    return col.find({}, {"_id": 0}), result
+
+
+@pytest.fixture
+def monty_delete(monty_database):
+    def _insert_and_delete(docs, spec, del_one=False, db=monty_database):
+        return insert_and_delete(db, docs, spec, del_one)
+    return _insert_and_delete
+
+
+@pytest.fixture
+def mongo_delete(mongo_database):
+    def _insert_and_delete(docs, spec, del_one=False, db=mongo_database):
+        return insert_and_delete(db, docs, spec, del_one)
+    return _insert_and_delete
