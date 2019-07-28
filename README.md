@@ -8,17 +8,15 @@
 [![Version](http://img.shields.io/pypi/v/MontyDB.svg?style=flat)](https://pypi.python.org/pypi/MontyDB)
 [![Maintainability](https://api.codeclimate.com/v1/badges/1adb14266d05ef3c9b17/maintainability)](https://codeclimate.com/github/davidlatwe/MontyDB/maintainability)
 
-:construction: **Not Ready For Prime Time** :construction:
-
-###### Inspired by [TinyDB](https://github.com/msiemens/tinydb) and the extension [TinyMongo](https://github.com/schapman1974/tinymongo).
+###### Inspired by [TinyDB](https://github.com/msiemens/tinydb) and it's extension [TinyMongo](https://github.com/schapman1974/tinymongo).
 
 ---
 
 ### MontyDB is:
-* A serverless version of MongoDB, against to **MongoDB 3.6.4**
+* A serverless version of MongoDB, against to **MongoDB 3.6.4** *(4.0 soon)*
 * Document oriented, of course
 * Storage engine pluggable
-* Write in pure Python, works on **Python 2.7, 3.4, 3.5, 3.6**
+* Written in pure Python, testing on **Python 2.7, 3.6, 3.7, PyPy, PyPy3.5**
 
 ### Install
 `pip install montydb`
