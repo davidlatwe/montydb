@@ -1,8 +1,9 @@
 
 import os
 import shutil
+from collections import OrderedDict
 from itertools import islice
-from bson import BSON, SON
+from bson import BSON
 from bson.py3compat import _unicode
 from bson.json_util import (
     CANONICAL_JSON_OPTIONS,
@@ -53,7 +54,7 @@ class FlatFileKVEngine(object):
         self.file_path = file_path
 
         self.__conn_config = conn_config
-        self.__cache = SON()
+        self.__cache = OrderedDict()
         self.modified_count = 0
 
         if os.path.isfile(self.file_path):
@@ -82,8 +83,8 @@ class FlatFileKVEngine(object):
             return True
 
     def write(self, documents):
-        if not isinstance(documents, SON):
-            raise TypeError("Expecting 'SON' type, got {!r}"
+        if not isinstance(documents, OrderedDict):
+            raise TypeError("Expecting 'OrderedDict', got {!r}"
                             "".format(type(documents).__name__))
         self.modified_count += len(documents)
         self.__cache.update(documents)
@@ -230,7 +231,7 @@ class FlatFileCollection(AbstractCollection):
 
     @_ensure_table
     def write_one(self, doc, check_keys=True):
-        _doc = SON()
+        _doc = OrderedDict()
         id = doc["_id"]
         if self._flatfile._id_existed(id):
             raise StorageDuplicateKeyError()
@@ -242,7 +243,7 @@ class FlatFileCollection(AbstractCollection):
 
     @_ensure_table
     def write_many(self, docs, check_keys=True, ordered=True):
-        _docs = SON()
+        _docs = OrderedDict()
         ids = list()
         has_duplicated_key = False
         for doc in docs:
@@ -262,12 +263,12 @@ class FlatFileCollection(AbstractCollection):
         return ids
 
     def update_one(self, doc):
-        _doc = SON()
+        _doc = OrderedDict()
         _doc[doc["_id"]] = self._encode_doc(doc)
         self._flatfile.write(_doc)
 
     def update_many(self, docs):
-        _docs = SON()
+        _docs = OrderedDict()
         for doc in docs:
             _docs[doc["_id"]] = self._encode_doc(doc)
 

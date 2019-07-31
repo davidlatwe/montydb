@@ -1,6 +1,6 @@
 
 from itertools import islice
-from bson import SON
+from collections import OrderedDict
 
 from .abcs import (
     AbstractStorage,
@@ -17,14 +17,14 @@ class MemoryStorage(AbstractStorage):
 
     def __init__(self, repository, storage_config):
         super(MemoryStorage, self).__init__(repository, storage_config)
-        self._repo = SON()
+        self._repo = OrderedDict()
 
     @classmethod
     def config(cls, **storage_kwargs):
         return dict()
 
     def database_create(self, db_name):
-        self._repo[db_name] = SON()
+        self._repo[db_name] = OrderedDict()
 
     def database_drop(self, db_name):
         if db_name in self._repo:
@@ -53,7 +53,7 @@ class MemoryDatabase(AbstractDatabase):
     def collection_create(self, col_name):
         if not self.db_exists():
             self._storage.database_create(self._name)
-        self._db[col_name] = SON()
+        self._db[col_name] = OrderedDict()
 
     def collection_drop(self, col_name):
         if self.collection_exists(col_name):
@@ -126,7 +126,7 @@ class MemoryCursor(AbstractCursor):
     def _col(self):
         if self._collection._col_exists():
             return self._collection._col
-        return SON()
+        return OrderedDict()
 
     def query(self, max_scan):
         docs = (self._decode_doc(doc) for doc in self._col.values())

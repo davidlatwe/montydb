@@ -3,8 +3,9 @@ import os
 import shutil
 import sqlite3
 import contextlib
+from collections import OrderedDict
 
-from bson import BSON, SON
+from bson import BSON
 from bson.py3compat import _unicode
 
 from ..base import WriteConcern
@@ -359,7 +360,7 @@ class SQLiteCollection(AbstractCollection):
     def write_many(self, docs, check_keys=True, ordered=True):
         """
         """
-        _docs = SON()
+        _docs = OrderedDict()
         ids = list()
         keys = self._conn.read_all_keys(self._col_path)
         has_duplicated_key = False

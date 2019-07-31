@@ -1,4 +1,5 @@
 
+from collections import OrderedDict
 from datetime import datetime
 
 from bson import SON
@@ -77,7 +78,7 @@ class Updator(object):
         self.fields_to_update = []
         self.array_filters = self.array_filter_parser(array_filters or [])
         # sort by key (operator)
-        self.operations = SON(sorted(self.parser(spec).items()))
+        self.operations = OrderedDict(sorted(self.parser(spec).items()))
         self.__insert = None
         self.__fieldwalker = None
 
