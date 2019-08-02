@@ -1,8 +1,18 @@
 
 import os
+import base64
 import pytest
 
-from montydb.utils import monty_dump, monty_load, MontyList
+from montydb import open_repo, MontyClient
+
+from montydb.utils import (
+    montyimport,
+    montyexport,
+    montyrestore,
+    montydump,
+
+    MontyList,
+)
 
 from bson import BSON
 from bson.timestamp import Timestamp
@@ -17,73 +27,117 @@ from bson.code import Code
 
 
 DOCUMENTS = [
-    {"a": [False, True]},
-    {"a": None},
-    {"a": "appple"},
-    {"a": [{"s": 5.5}]},
-    {"a": {"s": [Int64(9)]}},
-    {"a": Decimal128("4.5")},
-    {"a": Binary(b"0")},
-    {"a": Regex("^b")},
-    {"a": Code("x", {"m": 0})},
-    {"a": MinKey()},
-    {"a": MaxKey()},
-    {"a": Timestamp(0, 1)},
-    {"a": ObjectId(b"000000000000")},
+    {"_id": 0, "a": [False, True]},
+    {"_id": 1, "a": None},
+    {"_id": 2, "a": "appple"},
+    {"_id": 3, "a": [{"s": 5.5}]},
+    {"_id": 4, "a": {"s": [Int64(9)]}},
+    {"_id": 5, "a": Decimal128("4.5")},
+    {"_id": 6, "a": Binary(b"0")},
+    {"_id": 7, "a": Regex("^b")},
+    {"_id": 8, "a": Code("x", {"m": 0})},
+    {"_id": 9, "a": MinKey()},
+    {"_id": 10, "a": MaxKey()},
+    {"_id": 11, "a": Timestamp(0, 1)},
+    {"_id": 12, "a": ObjectId(b"000000000000")},
 ]
 
 SERIALIZED = """
-{"a": [false, true]}
-{"a": null}
-{"a": "appple"}
-{"a": [{"s": 5.5}]}
-{"a": {"s": [9]}}
-{"a": {"$numberDecimal": "4.5"}}
-{"a": {"$binary": {"base64": "MA==", "subType": "00"}}}
-{"a": {"$regularExpression": {"pattern": "^b", "options": ""}}}
-{"a": {"$code": "x", "$scope": {"m": 0}}}
-{"a": {"$minKey": 1}}
-{"a": {"$maxKey": 1}}
-{"a": {"$timestamp": {"t": 0, "i": 1}}}
-{"a": {"$oid": "303030303030303030303030"}}
-"""
+{"_id": 0, "a": [false, true]}
+{"_id": 1, "a": null}
+{"_id": 2, "a": "appple"}
+{"_id": 3, "a": [{"s": 5.5}]}
+{"_id": 4, "a": {"s": [9]}}
+{"_id": 5, "a": {"$numberDecimal": "4.5"}}
+{"_id": 6, "a": {"$binary": {"base64": "MA==", "subType": "00"}}}
+{"_id": 7, "a": {"$regularExpression": {"pattern": "^b", "options": ""}}}
+{"_id": 8, "a": {"$code": "x", "$scope": {"m": 0}}}
+{"_id": 9, "a": {"$minKey": 1}}
+{"_id": 10, "a": {"$maxKey": 1}}
+{"_id": 11, "a": {"$timestamp": {"t": 0, "i": 1}}}
+{"_id": 12, "a": {"$oid": "303030303030303030303030"}}
+""".strip()
 
 
-def test_utils_monty_dump(tmp_monty_repo):
-    tmp_dump = os.path.join(tmp_monty_repo, "test_mkdirs", "dumped.json")
-    monty_dump(tmp_dump, DOCUMENTS)
-
-    with open(tmp_dump, "r") as dump:
-        data = dump.read()
-        assert data == SERIALIZED.strip()
-
-
-def test_utils_monty_dump_with_existed_dir(tmp_monty_repo):
-    tmp_dump = os.path.join(tmp_monty_repo, "existed_dir", "dumped.json")
-    if not os.path.isdir(os.path.dirname(tmp_dump)):
-        os.makedirs(os.path.dirname(tmp_dump))
-    monty_dump(tmp_dump, DOCUMENTS)
-
-    with open(tmp_dump, "r") as dump:
-        data = dump.read()
-        assert data == SERIALIZED.strip()
+BINARY = b"""
+HgAAABBfaWQAAAAAAARhAA0AAAAIMAAACDEAAQAAEQAAABBfaWQAAQAAAAphAAAcAAAAEF9pZAAC
+AAAAAmEABwAAAGFwcHBsZQAAKQAAABBfaWQAAwAAAARhABgAAAADMAAQAAAAAXMAAAAAAAAAFkAA
+AAApAAAAEF9pZAAEAAAAA2EAGAAAAARzABAAAAASMAAJAAAAAAAAAAAAACEAAAAQX2lkAAUAAAAT
+YQAtAAAAAAAAAAAAAAAAAD4wABcAAAAQX2lkAAYAAAAFYQABAAAAADAAFQAAABBfaWQABwAAAAth
+AF5iAAAAJwAAABBfaWQACAAAAA9hABYAAAACAAAAeAAMAAAAEG0AAAAAAAAAEQAAABBfaWQACQAA
+AP9hAAARAAAAEF9pZAAKAAAAf2EAABkAAAAQX2lkAAsAAAARYQABAAAAAAAAAAAdAAAAEF9pZAAM
+AAAAB2EAMDAwMDAwMDAwMDAwAA==
+""".lstrip()
 
 
-def test_utils_monty_load(tmp_monty_repo):
-    tmp_dump = os.path.join(tmp_monty_repo, "dumped.json")
+JSON_DUMP = "dumped.json"
+BSON_DUMP = "dumped.bson"
+
+
+def test_utils_montyimport(tmp_monty_repo):
+    database = "dump_db_JSON"
+    collection = "dump_col_JSON"
+
     if not os.path.isdir(tmp_monty_repo):
         os.makedirs(tmp_monty_repo)
-    with open(tmp_dump, "w") as dump:
-        dump.write(SERIALIZED.strip())
 
-    docs = monty_load(tmp_dump)
-    for i, doc in enumerate(docs):
-        assert doc == BSON.encode(DOCUMENTS[i]).decode()
+    with open_repo(tmp_monty_repo):
+        with open(JSON_DUMP, "w") as dump:
+            dump.write(SERIALIZED)
+
+        montyimport(database, collection, JSON_DUMP)
+
+        client = MontyClient()
+        for i, doc in enumerate(client[database][collection].find()):
+            assert doc == BSON.encode(DOCUMENTS[i]).decode()
+
+        os.remove(JSON_DUMP)
 
 
-def test_utils_monty_dump_err(tmp_monty_repo):
-    with pytest.raises(TypeError):
-        monty_dump("tmp.file", {"some": "doc"})
+def test_utils_montyexport(tmp_monty_repo):
+    database = "dump_db_JSON"
+    collection = "dump_col_JSON"
+
+    with open_repo(tmp_monty_repo):
+        montyexport(database, collection, JSON_DUMP)
+
+        with open(JSON_DUMP, "r") as dump:
+            data = dump.read().strip()
+            assert data == SERIALIZED
+
+        os.remove(JSON_DUMP)
+
+
+def test_utils_montyrestore(tmp_monty_repo):
+    database = "dump_db_BSON"
+    collection = "dump_col_BSON"
+
+    if not os.path.isdir(tmp_monty_repo):
+        os.makedirs(tmp_monty_repo)
+
+    with open_repo(tmp_monty_repo):
+        with open(BSON_DUMP, "wb") as dump:
+            dump.write(base64.decodebytes(BINARY))
+
+        montyrestore(database, collection, BSON_DUMP)
+
+        client = MontyClient()
+        for i, doc in enumerate(client[database][collection].find()):
+            assert doc == BSON.encode(DOCUMENTS[i]).decode()
+
+        os.remove(BSON_DUMP)
+
+
+def test_utils_montydump(tmp_monty_repo):
+    database = "dump_db_BSON"
+    collection = "dump_col_BSON"
+
+    with open_repo(tmp_monty_repo):
+        montydump(database, collection, BSON_DUMP)
+
+        with open(BSON_DUMP, "rb") as dump:
+            raw = dump.read()
+            assert base64.encodebytes(raw) == BINARY
 
 
 def test_MontyList_find():
