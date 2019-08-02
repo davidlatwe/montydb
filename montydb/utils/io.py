@@ -101,13 +101,14 @@ def montyexport(database,
     opt = json_options or _default_json_opts
     fileds = fileds or []
 
+    out = os.path.abspath(out)
     if not os.path.isdir(os.path.dirname(out)):
         os.makedirs(os.path.dirname(out))
 
     if isinstance(fileds, string_type):
         fileds = [fileds]
 
-    projection = {field: True for field in fileds}
+    projection = {field: True for field in fileds} or None
 
     with open(out, "w") as fp:
         for doc in collection.find(query, projection=projection):
@@ -161,6 +162,10 @@ def montydump(database, collection, dumpfile):
 
     """
     collection = _collection(database, collection)
+
+    dumpfile = os.path.abspath(dumpfile)
+    if not os.path.isdir(os.path.dirname(dumpfile)):
+        os.makedirs(os.path.dirname(dumpfile))
 
     raw = b""
     for doc in collection.find():
