@@ -9,7 +9,12 @@ from .cursor import (
     MontyCursor,
     CursorType
 )
-from .configure import set_storage
+from .configure import (
+    pin_repo,
+    current_repo,
+    open_repo,
+    set_storage,
+)
 
 from . import utils
 
@@ -28,6 +33,9 @@ __all__ = [
     "MontyCollection",
     "MontyCursor",
 
+    "pin_repo",
+    "current_repo",
+    "open_repo",
     "set_storage",
 
     "ASCENDING",
