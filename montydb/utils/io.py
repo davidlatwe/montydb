@@ -8,20 +8,43 @@ from bson.json_util import (
     dumps as _dumps,
     RELAXED_JSON_OPTIONS as _default_json_opts,
 )
-
-from ..collection import MontyCollection
+from ..client import MontyClient
 from ..errors import DuplicateKeyError
 
 
-def _validate_monty_collection(obj):
-    if not isinstance(obj, MontyCollection):
-        raise TypeError("Not a `MontyCollection` instance.")
+def _collection(database, collection):
+    client = MontyClient()
+    return client[database][collection]
 
 
-def montyimport(collection, file, mode="insert", json_options=None):
+def montyimport(database,
+                collection,
+                file,
+                mode="insert",
+                json_options=None):
+    """Imports content from an Extended JSON file into a MontyCollection instance
 
-    _validate_monty_collection(collection)
+    Example:
+        >>> from montydb import open_repo, utils
+        >>> with open_repo("foo/bar"):
+        >>>     utils.montyimport("db", "col", "/data/dump.json")
+        >>>
 
+    Args:
+        database (str): Database name
+        collection (str): Collection name to import to
+        file (str): Input file path
+        mode (str): Specifies how the import process should handle existing
+                    documents in the database that match documents in the
+                    import file.
+                    Options: ["insert", "upsert", "merge"]
+                    Default: "insert"
+        json_options (JSONOptions): A JSONOptions instance used to modify
+                                    the decoding of MongoDB Extended JSON
+                                    types. Default None.
+
+    """
+    collection = _collection(database, collection)
     opt = json_options or _default_json_opts
 
     with open(file, "r") as fp:
@@ -47,10 +70,34 @@ def montyimport(collection, file, mode="insert", json_options=None):
             collection.update_one({"_id": doc["_id"]}, update, upsert=True)
 
 
-def montyexport(collection, out, fileds=None, query=None, json_options=None):
+def montyexport(database,
+                collection,
+                out,
+                fileds=None,
+                query=None,
+                json_options=None):
+    """Produces a JSON export of data stored in a MontyDB instance
 
-    _validate_monty_collection(collection)
+    Example:
+        >>> from montydb import open_repo, utils
+        >>> with open_repo("foo/bar"):
+        >>>     utils.montyexport("db", "col", "/data/dump.json")
+        >>>
 
+    Args:
+        database (str): Database name
+        collection (str): Collection name to export from
+        out (str): Output file path
+        fields (str, list): Specifies a field name string or a list fields
+                            to include in the export.
+        query (dict): Provides a query document to return matching documents
+                      in the export.
+        json_options (JSONOptions): A JSONOptions instance used to modify
+                                    the decoding of MongoDB Extended JSON
+                                    types. Default None.
+
+    """
+    collection = _collection(database, collection)
     opt = json_options or _default_json_opts
     fileds = fileds or []
 
@@ -68,39 +115,52 @@ def montyexport(collection, out, fileds=None, query=None, json_options=None):
             fp.write(serialized + "\n")
 
 
-def montyrestore(collection, dumpfile):
+def montyrestore(database, collection, dumpfile):
     """Loads a binary database dump into a MontyCollection instance
 
     Should be able to accept the dump created by `mongodump`.
 
+    Example:
+        >>> from montydb import open_repo, utils
+        >>> with open_repo("foo/bar"):
+        >>>     utils.montyrestore("db", "col", "/data/dump.bson")
+        >>>
+
     Args:
-        collection (MontyCollection): Collection object to load into
+        database (str): Database name
+        collection (str): Collection name to load into
         dumpfile (str): File path to load from
 
     """
-    _validate_monty_collection(collection)
+    collection = _collection(database, collection)
 
     with open(dumpfile, "rb") as fp:
         raw = fp.read()
 
-    for doc in decode_all(raw):
-        try:
-            collection.insert_one(doc)
-        except DuplicateKeyError:
-            pass
+    try:
+        collection.insert_many(decode_all(raw))
+    except DuplicateKeyError:
+        pass
 
 
-def montydump(collection, dumpfile):
+def montydump(database, collection, dumpfile):
     """Creates a binary export from a MontyCollection instance
 
     The export should be able to be accepted by `mongorestore`.
 
+    Example:
+        >>> from montydb import open_repo, utils
+        >>> with open_repo("foo/bar"):
+        >>>     utils.montydump("db", "col", "/data/dump.bson")
+        >>>
+
     Args:
-        collection (MontyCollection): Collection object to export from
+        database (str): Database name
+        collection (str): Collection name to export from
         dumpfile (str): File path to export to
 
     """
-    _validate_monty_collection(collection)
+    collection = _collection(database, collection)
 
     raw = b""
     for doc in collection.find():
