@@ -15,7 +15,7 @@ from montydb.utils import (
     MontyList,
 )
 
-from bson import BSON
+from bson import BSON, json_util
 from bson.timestamp import Timestamp
 from bson.objectid import ObjectId
 from bson.min_key import MinKey
@@ -68,7 +68,7 @@ YQAtAAAAAAAAAAAAAAAAAD4wABcAAAAQX2lkAAYAAAAFYQABAAAAADAAFQAAABBfaWQABwAAAAth
 AF5iAAAAJwAAABBfaWQACAAAAA9hABYAAAACAAAAeAAMAAAAEG0AAAAAAAAAEQAAABBfaWQACQAA
 AP9hAAARAAAAEF9pZAAKAAAAf2EAABkAAAAQX2lkAAsAAAARYQABAAAAAAAAAAAdAAAAEF9pZAAM
 AAAAB2EAMDAwMDAwMDAwMDAwAA==
-""".lstrip()
+""".replace(b"\n", b"")
 
 
 JSON_DUMP = "dumped.json"
@@ -104,7 +104,8 @@ def test_utils_montyexport(tmp_monty_repo):
 
         with open(JSON_DUMP, "r") as dump:
             data = dump.read().strip()
-            assert data == SERIALIZED
+            for d, s in zip(data.split("\n"), SERIALIZED.split("\n")):
+                assert json_util.loads(d) == json_util.loads(s)
 
         os.remove(JSON_DUMP)
 
@@ -118,7 +119,7 @@ def test_utils_montyrestore(tmp_monty_repo):
 
     with open_repo(tmp_monty_repo):
         with open(BSON_DUMP, "wb") as dump:
-            dump.write(base64.decodebytes(BINARY))
+            dump.write(base64.b64decode(BINARY))
 
         montyrestore(database, collection, BSON_DUMP)
 
@@ -138,7 +139,7 @@ def test_utils_montydump(tmp_monty_repo):
 
         with open(BSON_DUMP, "rb") as dump:
             raw = dump.read()
-            assert base64.encodebytes(raw) == BINARY
+            assert base64.b64encode(raw) == BINARY
 
 
 def test_MongoQueryRecorder(mongo_client):
