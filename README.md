@@ -1,7 +1,7 @@
 
 <img src="artwork/logo.png" alt="drawing" width="600"/>
 
-#### Monty, Mongo tinified. A literally serverless, Mongo-like database in Python
+#### Monty, Mongo tinified. MongoDB implementated in Python !
 
 [![Build Status](https://travis-ci.org/davidlatwe/MontyDB.svg?branch=master)](https://travis-ci.org/davidlatwe/MontyDB)
 <a href='https://coveralls.io/github/davidlatwe/MontyDB?branch=master'><img src='https://coveralls.io/repos/github/davidlatwe/MontyDB/badge.svg?branch=master&kill_cache=1' alt='Coverage Status' /></a>
@@ -13,10 +13,12 @@
 ---
 
 ### MontyDB is:
-* A serverless version of MongoDB, against to **MongoDB 3.6.4** *(4.0 soon)*
-* Document oriented, of course
-* Storage engine pluggable
+* A tiny version of MongoDB, against to **MongoDB 3.6.4** *(4.0 soon)*
 * Written in pure Python, testing on **Python 2.7, 3.6, 3.7, PyPy, PyPy3.5**
+* Literally serverless.
+* Similar to [mongomock](https://github.com/mongomock/mongomock), but a bit more than that.
+
+> All those implemented functions and operators, should behaved just like you were working with MongoDB. Even raising error for same cause.
 
 ### Install
 `pip install montydb`
@@ -97,22 +99,71 @@ The configuration process only required on repository creation or modification.
 
 ### Utilities
 
-* #### `monty_dump`
+* #### `montyimport`
 
-  Write documents to disk, able to load by `monty_load` or `mongoimport`
+  Imports content from an Extended JSON file into a MontyCollection instance.
+  The JSON file could be generated from `montyexport` or `mongoexport`.
+
   ```python
-  >>> from montydb.utils import monty_dump
-  >>> documents = [{"a": 1}, {"doc": "some doc"}]
-  >>> monty_dump("/path/dump.json", documents)
+  >>> from montydb import open_repo, utils
+  >>> with open_repo("foo/bar"):
+  >>>     utils.montyimport("db", "col", "/path/dump.json")
+  >>>
   ```
 
-* ####  `monty_load`
+* ####  `montyexport`
 
-  Read documents from disk, able to read from `monty_dump` or `mongoexport`
+  Produces a JSON export of data stored in a MontyCollection instance.
+  The JSON file could be loaded by `montyimport` or `mongoimport`.
+
   ```python
-  >>> from montydb.utils import monty_load
-  >>> monty_load("/path/dump.json")
-  [{"a": 1}, {"doc": "some doc"}]
+  >>> from montydb import open_repo, utils
+  >>> with open_repo("foo/bar"):
+  >>>     utils.montyexport("db", "col", "/data/dump.json")
+  >>>
+  ```
+
+* #### `montyrestore`
+
+  Loads a binary database dump into a MontyCollection instance.
+  The BSON file could be generated from `montydump` or `mongodump`.
+
+  ```python
+  >>> from montydb import open_repo, utils
+  >>> with open_repo("foo/bar"):
+  >>>     utils.montyrestore("db", "col", "/path/dump.bson")
+  >>>
+  ```
+
+* ####  `montydump`
+
+  Creates a binary export from a MontyCollection instance.
+  The BSON file could be loaded by `montyrestore` or `mongorestore`.
+
+  ```python
+  >>> from montydb import open_repo, utils
+  >>> with open_repo("foo/bar"):
+  >>>     utils.montydump("db", "col", "/data/dump.bson")
+  >>>
+  ```
+
+* #### `MongoQueryRecorder`
+
+  Record MongoDB query results in a period of time.
+  *Requires to access databse profiler.*
+
+  This works via filtering the database profile data and reproduce the queries of `find` and `distinct` commands.
+
+  ```python
+  >>> from pymongo import MongoClient
+  >>> from montydb.utils import MongoQueryRecorder
+  >>> client = MongoClient()
+  >>> recorder = MongoQueryRecorder(client["mydb"])
+  >>> recorder.start()
+  >>> # Make some queries or run the App...
+  >>> recorder.stop()
+  >>> recorder.extract()
+  {<collection_1>: [<doc_1>, <doc_2>, ...], ...}
   ```
 
 * ####  `MontyList`
