@@ -80,7 +80,7 @@ def montyexport(database,
                 fileds=None,
                 query=None,
                 json_options=None):
-    """Produces a JSON export of data stored in a MontyDB instance
+    """Produces a JSON export of data stored in a MontyCollection instance
 
     Example:
         >>> from montydb import open_repo, utils
