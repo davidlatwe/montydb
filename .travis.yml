@@ -62,3 +62,5 @@ deploy:
   on:
     tags: true
     repo: davidlatwe/montydb
+    branch: master
+    python: 3.6
