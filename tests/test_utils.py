@@ -10,6 +10,7 @@ from montydb.utils import (
     montyexport,
     montyrestore,
     montydump,
+    MongoQueryRecorder,
 
     MontyList,
 )
@@ -138,6 +139,49 @@ def test_utils_montydump(tmp_monty_repo):
         with open(BSON_DUMP, "rb") as dump:
             raw = dump.read()
             assert base64.encodebytes(raw) == BINARY
+
+
+def test_MongoQueryRecorder(mongo_client):
+    db = mongo_client["recordTarget"]
+
+    _docs_ = [
+        {"_id": 1, "a": 1},
+        {"_id": 2, "a": 2},
+        {"_id": 3, "a": 3},
+        {"_id": 4, "a": 4},
+        {"_id": 5, "a": 5},
+        {"_id": 6, "b": 1},
+        {"_id": 7, "b": 2},
+        {"_id": 8, "b": 3},
+        {"_id": 9, "b": 4},
+    ]
+
+    # Put some docs
+    col = db["testCol"]
+    col.insert_many(_docs_)
+
+    # Start
+    recorder = MongoQueryRecorder(db)
+    recorder.start()
+    assert recorder.current_level() == 2
+
+    # Make some queries
+    # id: 2, 3, 4
+    list(col.find({"a": {"$gte": 2, "$lte": 4}}))
+    # id: 8, 9
+    col.distinct("b", filter={"b": {"$gte": 3}})
+
+    # End
+    recorder.stop()
+    assert recorder.current_level() == 0
+
+    results = recorder.extract()
+
+    assert len(results) == 1
+    assert "testCol" in results
+
+    ids = {doc["_id"] for doc in results["testCol"]}
+    assert ids == {2, 3, 4, 8, 9}
 
 
 def test_MontyList_find():

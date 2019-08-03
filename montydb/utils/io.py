@@ -1,7 +1,11 @@
 
 import os
+import time
+from collections import defaultdict, OrderedDict
+from datetime import datetime
 
 from bson import decode_all, BSON
+from bson.codec_options import CodecOptions
 from bson.py3compat import string_type
 from bson.json_util import (
     loads as _loads,
@@ -173,3 +177,160 @@ def montydump(database, collection, dumpfile):
 
     with open(dumpfile, "wb") as fp:
         fp.write(raw)
+
+
+class MongoQueryRecorder(object):
+    """Record MongoDB query results in a period of time
+
+    :Important: Requires to access databse profiler.
+
+    This works via filtering the database profile data and reproduce the
+    queries of `find` and `distinct` commands.
+
+    Example:
+        >>> from pymongo import MongoClient
+        >>> from montydb.utils import MongoQueryRecorder
+        >>> client = MongoClient()
+        >>> recorder = MongoQueryRecorder(client["mydb"])
+        >>> recorder.start()
+        >>> # Make some queries or run the App...
+        >>> recorder.stop()
+        >>> recorder.extract()
+        {<collection_1>: [<doc_1>, <doc_2>, ...], ...}
+
+    Args:
+        mongodb (pymongo.database.Database): An instance of mongo database
+        namespace (str or regex, optional): A MongoDB namespace string/regex.
+        user (str, optional): Name of authenticated user to record with.
+
+    """
+
+    def __init__(self, mongodb, namespace=None, user=None):
+        self._mongodb = mongodb
+        self._namespace = namespace or {"$regex": mongodb.name + "\..*"}
+        self._user = user
+
+        self._epoch = datetime(1970, 1, 1)
+        self._rec_stime = None
+        self._rec_etime = None
+
+    def __repr__(self):
+        return ("MongoQueryRecorder(mongodb=%s, namespace=%s, user=%s)"
+                "" % (self._mongodb.name, self._namespace, self._user))
+
+    def reset_profile(self, level=0):
+        """Drop and reset database profile
+
+        Args:
+            level (int): Database profile level, default 0.
+
+        """
+        self._mongodb.command({"profile": 0})
+        self._mongodb.system.profile.drop()
+        if level:
+            self._mongodb.command({"profile": level})
+
+    def current_level(self):
+        """Return current database's profile level"""
+        return self._mongodb.command({"profile": -1})["was"]
+
+    def start(self):
+        """Start recording and set database profile level to 2"""
+        self._mongodb.command({"profile": 2})
+        self._rec_stime = datetime.utcnow()
+        time.sleep(0.01)  # Wait for db
+
+    def stop(self):
+        """Stop recording and set database profile level to 0"""
+        time.sleep(0.01)  # Wait for db
+        self._rec_etime = datetime.utcnow()
+        self._mongodb.command({"profile": 0})
+
+    def extract(self):
+        """Collect documents via previous queries
+
+        Via filtering the `[databse].system.profile`, parsing previous
+        commands to reproduce the query results.
+
+        NOTE: Depend on the `namespace`, the result may across multiple
+              collections.
+
+        Returns:
+            dict: A dict of {collection: list of documents}
+
+        """
+        filter = {
+            "$or": [
+                {
+                    "op": "query",
+                    "command.find": {"$exists": True},
+                    "nreturned": {"$gte": 1}
+                },
+                {
+                    "op": "command",
+                    "command.distinct": {"$exists": True}
+                },
+            ],
+            "ns": self._namespace,
+            "ts": {"$gte": self._rec_stime, "$lte": self._rec_etime},
+        }
+
+        if self._user is not None:
+            filter.update({"user": self._user})
+
+        projection = {
+            "op": 1,
+
+            "command.find": 1,
+            "command.filter": 1,
+            "command.sort": 1,
+            "command.limit": 1,
+
+            "command.distinct": 1,
+            "command.key": 1,
+            "command.query": 1
+        }
+
+        profile = self._mongodb.system.profile
+        code_opt = CodecOptions(document_class=OrderedDict)
+        profile = profile.with_options(codec_options=code_opt)
+
+        history = defaultdict(list)
+        for log in profile.find(filter, projection=projection):
+            op = log.pop("op")
+            if log not in history[op]:
+                history[op].append(log)
+
+        documents = defaultdict(dict)
+
+        # Query - find
+        for cmd in (log["command"] for log in history["query"]):
+            col = cmd["find"]
+            filter = cmd["filter"]
+            limit = cmd.get("limit", 0)
+            sort = None
+
+            if limit:
+                sort = list()
+                for k, v in cmd.get("sort", dict()):
+                    sort.append((k, v))
+
+            for doc in self._mongodb[col].find(filter, sort=sort, limit=limit):
+                id = doc["_id"]
+                if id not in documents[col]:
+                    documents[col][id] = doc
+
+        # Command - distinct
+        for cmd in (log["command"] for log in history["command"]):
+            col = cmd["distinct"]
+            key = cmd["key"]
+            query = cmd.get("query")
+
+            for value in self._mongodb[col].distinct(key, query):
+                doc = self._mongodb[col].find_one({key: value})
+                id = doc["_id"]
+                if id not in documents[col]:
+                    documents[col][id] = doc
+
+        # Done
+        return {col: list(docs.values()) for col, docs in documents.items()}

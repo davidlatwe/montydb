@@ -4,6 +4,7 @@ from .io import (
     montyexport,
     montyrestore,
     montydump,
+    MongoQueryRecorder,
 )
 from .mt_list import MontyList
 
@@ -13,6 +14,7 @@ __all__ = [
     "montyexport",
     "montyrestore",
     "montydump",
+    "MongoQueryRecorder",
 
     "MontyList",
 ]
