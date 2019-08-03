@@ -176,12 +176,6 @@ The configuration process only required on repository creation or modification.
   >>> mtl.find({"a": {"$gt": 3}})
   MontyList([{'a': 5}, {'a': 8}])
   ```
-  You can dump it with `monty_dump` or read from `monty_load`
-  ```python
-  >>> monty_dump("/path/dump.json", mtl)
-  >>> MontyList(monty_load("/path/dump.json"))
-  MontyList([1, 2, {'a': 1}, {'a': 5}, {'a': 8}])
-  ```
 
 ---
 
