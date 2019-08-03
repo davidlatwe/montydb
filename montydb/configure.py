@@ -1,4 +1,5 @@
 import os
+import contextlib
 import importlib
 import inspect
 
@@ -15,8 +16,86 @@ DEFAULT_STORAGE = FALTFILE_STORAGE
 MEMORY_REPOSITORY = ":memory:"
 
 
+_pinned_repository = {"_": None}
+
+
+def pin_repo(repository):
+    """Pin a db repository for all operations afterward
+
+    Example:
+        >>> from montydb import pin_repo, set_storage, MontyClient
+        >>> pin_repo("/foo/bar")
+        >>> # The following operations will use '/foo/bar'
+        >>> set_storage(storage="sqlite")
+        >>> client = MontyClient()
+
+    Args:
+        repository (str): Database repository path
+
+    """
+    _pinned_repository["_"] = repository
+
+
+def current_repo():
+    """Returns current pinned repository
+
+    Returns:
+        str: Database repository path
+
+    """
+    return _pinned_repository["_"]
+
+
+@contextlib.contextmanager
+def open_repo(repository=None):
+    """Open a repository context
+
+    This will change current working dir to the `repository` or the current
+    pinned one during the context. But if the `repository` is ":memory:",
+    the current working dir will NOT be changed.
+
+    Args:
+        repository (str): Database repository path, default None
+
+    """
+    repository = provide_repository(repository)
+    crepo = current_repo()
+    if repository == MEMORY_REPOSITORY:
+        try:
+            # Context
+            pin_repo(repository)
+            yield
+
+        finally:
+            pin_repo(crepo)
+
+    else:
+        cwd = os.getcwd()
+        try:
+            # Context
+            pin_repo(repository)
+            os.chdir(repository)
+            yield
+
+        finally:
+            pin_repo(crepo)
+            os.chdir(cwd)
+
+
 def provide_repository(dirname=None):
-    return dirname or os.getcwd()
+    """Internal function to acquire repository path
+
+    This will pick one repository path in the order of:
+    `dirname` -> current pinned repository -> current working dir
+
+    Args:
+        dirname (str): Folder path, default None
+
+    Returns:
+        str: A repository path acquired from current environment
+
+    """
+    return dirname or current_repo() or os.getcwd()
 
 
 def find_storage_cls(storage_name):
@@ -97,6 +176,9 @@ def provide_storage(repository):
 
     Args:
         repository (str): A dir path for database to live on disk.
+
+    Returns:
+        A Subclass of `montydb.storage.abcs.AbstractStorage`
 
     """
     if repository == MEMORY_REPOSITORY:

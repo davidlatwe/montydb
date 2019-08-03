@@ -375,7 +375,7 @@ class SQLiteCollection(AbstractCollection):
 
         self._conn.write_many(
             self._col_path,
-            _docs.iteritems(),
+            _docs.items(),
             self.wconcern
         )
 

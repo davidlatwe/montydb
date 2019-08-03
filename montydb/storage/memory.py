@@ -11,13 +11,16 @@ from .abcs import (
 from .errors import StorageDuplicateKeyError
 
 
+_repo = OrderedDict()
+
+
 class MemoryStorage(AbstractStorage):
     """
     """
 
     def __init__(self, repository, storage_config):
         super(MemoryStorage, self).__init__(repository, storage_config)
-        self._repo = OrderedDict()
+        self._repo = _repo
 
     @classmethod
     def config(cls, **storage_kwargs):
