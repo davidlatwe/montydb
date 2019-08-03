@@ -58,10 +58,9 @@ sudo: false
 
 deploy:
   provider: pypi
-  user: davidlatwe
   distributions: "sdist bdist_wheel"
-  password:
-    secure: 
+  user: davidlatwe
+  password: $PYPI_PASSWORD
   on:
     tags: true
     repo: davidlatwe/montydb
