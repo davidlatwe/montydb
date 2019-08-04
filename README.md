@@ -37,8 +37,12 @@
 {'_id': ObjectId('5ad34e537e8dd45d9c61a456'), 'stock': 'A', 'qty': 6}
 ```
 
-### Develop Status
-See [Projects' TODO](https://github.com/davidlatwe/MontyDB/projects/1)
+### Development
+* Adopting [Gitflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) branching model.
+* Adopting Test-driven development.
+* You may visit [Projects' TODO](https://github.com/davidlatwe/montydb/projects/1) to see what's going on.
+* You may visit [This Issue](https://github.com/davidlatwe/montydb/issues/14) to see what's been implemented and what's not.
+
 
 ### Storage Engine Configurations
 
@@ -176,6 +180,12 @@ The configuration process only required on repository creation or modification.
   >>> mtl.find({"a": {"$gt": 3}})
   MontyList([{'a': 5}, {'a': 8}])
   ```
+
+### Why I did this ?
+
+Mainly for personal skill practicing and fun.
+I work in VFX industry, some of my production needs (mostly edge-case) requires to run in a limited environment (e.g. outsourced render farms), which may have problem to run or connect a MongoDB instance. And I found this project really helps.
+
 
 ---
 
