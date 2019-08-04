@@ -2,7 +2,6 @@
 from collections import OrderedDict
 from datetime import datetime
 
-from bson import SON
 from bson.py3compat import string_type
 from bson.decimal128 import Decimal128
 from bson.timestamp import Timestamp
