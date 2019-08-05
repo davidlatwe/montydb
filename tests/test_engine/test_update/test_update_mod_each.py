@@ -11,9 +11,8 @@ def test_update_mod_each_1(monty_update, mongo_update):
     assert next(mongo_c) == {"a": [10, 20, 30, 10]}
     mongo_c.rewind()
 
-    with pytest.raises(Exception):  # Remove this
-        monty_c = monty_update(docs, spec)
-        assert next(mongo_c) == next(monty_c)
+    monty_c = monty_update(docs, spec)
+    assert next(mongo_c) == next(monty_c)
 
 
 def test_update_mod_each_2(monty_update, mongo_update):
@@ -26,6 +25,5 @@ def test_update_mod_each_2(monty_update, mongo_update):
     assert next(mongo_c) == {"a": [10, 20, 30]}
     mongo_c.rewind()
 
-    with pytest.raises(Exception):  # Remove this
-        monty_c = monty_update(docs, spec)
-        assert next(mongo_c) == next(monty_c)
+    monty_c = monty_update(docs, spec)
+    assert next(mongo_c) == next(monty_c)

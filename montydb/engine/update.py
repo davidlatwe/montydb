@@ -41,6 +41,29 @@ def _drop(fieldwalker, field, array_filters):
         raise WriteError(str(err), code=err.code)
 
 
+class Eacher(object):
+
+    def __init__(self, spec, is_set=False):
+        self.elems = spec["$each"][:]
+        self.position = spec.get("$position")
+        self.slice = spec.get("$slice")
+        self.sort = spec.get("$sort")
+        self.is_set = is_set
+
+    def __call__(self, array):
+        new_array = (array or [])[:]
+
+        if self.position is None:
+            if self.is_set:
+                for elem in self.elems:
+                    if elem not in new_array:
+                        new_array.append(elem)
+            else:
+                new_array += self.elems
+
+        return new_array
+
+
 class Updator(object):
 
     def __init__(self, spec, array_filters=None):
@@ -67,11 +90,11 @@ class Updator(object):
             "$pull": parse_pull,
             "$push": parse_push,
             "$pullAll": parse_pull_all,
-            "$each": None,
-            "$position": None,
-            "$slice": None,
-            "$sort": None,
 
+            # $each             implemented in Eacher
+            # $position         implemented in Eacher
+            # $slice            implemented in Eacher
+            # $sort             implemented in Eacher
         }
 
         self.fields_to_update = []
@@ -399,7 +422,14 @@ def parse_currentDate(field, value, array_filters):
     return _currentDate
 
 
-def parse_add_to_set(field, value, array_filters):
+def parse_add_to_set(field, value_or_each, array_filters):
+    if is_duckument_type(value_or_each) and "$each" in value_or_each:
+        value = Eacher(value_or_each, is_set=True)
+        run_each = True
+    else:
+        value = value_or_each
+        run_each = False
+
     def _add_to_set(fieldwalker):
         def add_to_set(node, new_elem):
             old_val = node.value
@@ -410,9 +440,14 @@ def parse_add_to_set(field, value, array_filters):
                        "".format(str(node), value_type))
                 raise WriteError(msg, code=2)
 
-            new_array = (old_val or [])[:]
-            if new_elem not in new_array:
-                new_array.append(new_elem)
+            if run_each:
+                eacher = new_elem
+                new_array = eacher(old_val)
+            else:
+                new_array = (old_val or [])[:]
+                if new_elem not in new_array:
+                    new_array.append(new_elem)
+
             return new_array
 
         _update(fieldwalker, field, value, add_to_set, array_filters)
@@ -494,7 +529,14 @@ def parse_pull(field, value_or_conditions, array_filters):
     return _pull
 
 
-def parse_push(field, value, array_filters):
+def parse_push(field, value_or_each, array_filters):
+    if is_duckument_type(value_or_each) and "$each" in value_or_each:
+        value = Eacher(value_or_each)
+        run_each = True
+    else:
+        value = value_or_each
+        run_each = False
+
     def _push(fieldwalker):
         def push(node, new_elem):
             old_val = node.value
@@ -506,8 +548,13 @@ def parse_push(field, value, array_filters):
                        "".format(str(node), value_type, _id))
                 raise WriteError(msg, code=2)
 
-            new_array = (old_val or [])[:]
-            new_array.append(new_elem)
+            if run_each:
+                eacher = new_elem
+                new_array = eacher(old_val)
+            else:
+                new_array = (old_val or [])[:]
+                new_array.append(new_elem)
+
             return new_array
 
         _update(fieldwalker, field, value, push, array_filters)
