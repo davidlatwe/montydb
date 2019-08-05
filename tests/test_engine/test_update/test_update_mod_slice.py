@@ -12,9 +12,8 @@ def test_update_mod_slice_1(monty_update, mongo_update):
     assert next(mongo_c) == {"a": [10, 20]}
     mongo_c.rewind()
 
-    with pytest.raises(Exception):  # Remove this
-        monty_c = monty_update(docs, spec)
-        assert next(mongo_c) == next(monty_c)
+    monty_c = monty_update(docs, spec)
+    assert next(mongo_c) == next(monty_c)
 
 
 def test_update_mod_slice_2(monty_update, mongo_update):
@@ -27,9 +26,8 @@ def test_update_mod_slice_2(monty_update, mongo_update):
     assert next(mongo_c) == {"a": [30, 10]}
     mongo_c.rewind()
 
-    with pytest.raises(Exception):  # Remove this
-        monty_c = monty_update(docs, spec)
-        assert next(mongo_c) == next(monty_c)
+    monty_c = monty_update(docs, spec)
+    assert next(mongo_c) == next(monty_c)
 
 
 def test_update_mod_slice_3(monty_update, mongo_update):
@@ -42,9 +40,8 @@ def test_update_mod_slice_3(monty_update, mongo_update):
     assert next(mongo_c) == {"a": []}
     mongo_c.rewind()
 
-    with pytest.raises(Exception):  # Remove this
-        monty_c = monty_update(docs, spec)
-        assert next(mongo_c) == next(monty_c)
+    monty_c = monty_update(docs, spec)
+    assert next(mongo_c) == next(monty_c)
 
 
 def test_update_mod_slice_4(monty_update, mongo_update):
@@ -57,9 +54,8 @@ def test_update_mod_slice_4(monty_update, mongo_update):
     assert next(mongo_c) == {"a": [30, 40, 50]}
     mongo_c.rewind()
 
-    with pytest.raises(Exception):  # Remove this
-        monty_c = monty_update(docs, spec)
-        assert next(mongo_c) == next(monty_c)
+    monty_c = monty_update(docs, spec)
+    assert next(mongo_c) == next(monty_c)
 
 
 def test_update_mod_slice_5(monty_update, mongo_update):
@@ -72,6 +68,5 @@ def test_update_mod_slice_5(monty_update, mongo_update):
     assert next(mongo_c) == {"a": [10, 20, 80, 90]}
     mongo_c.rewind()
 
-    with pytest.raises(Exception):  # Remove this
-        monty_c = monty_update(docs, spec)
-        assert next(mongo_c) == next(monty_c)
+    monty_c = monty_update(docs, spec)
+    assert next(mongo_c) == next(monty_c)

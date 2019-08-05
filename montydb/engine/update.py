@@ -63,6 +63,12 @@ class Eacher(object):
         else:
             new_array[:self.position] += new_elems
 
+        if self.slice is not None:
+            if self.slice >= 0:
+                new_array = new_array[:self.slice]
+            else:
+                new_array = new_array[self.slice:]
+
         return new_array
 
 
