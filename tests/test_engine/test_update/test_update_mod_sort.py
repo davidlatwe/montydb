@@ -12,9 +12,8 @@ def test_update_mod_sort_1(monty_update, mongo_update):
     assert next(mongo_c) == {"a": [10, 10, 20, 30, 40, 60, 70]}
     mongo_c.rewind()
 
-    with pytest.raises(Exception):  # Remove this
-        monty_c = monty_update(docs, spec)
-        assert next(mongo_c) == next(monty_c)
+    monty_c = monty_update(docs, spec)
+    assert next(mongo_c) == next(monty_c)
 
 
 def test_update_mod_sort_2(monty_update, mongo_update):
@@ -27,9 +26,8 @@ def test_update_mod_sort_2(monty_update, mongo_update):
     assert next(mongo_c) == {"a": [{"x": -3}, {"x": 1}, {"x": 2}, {"x": 5}]}
     mongo_c.rewind()
 
-    with pytest.raises(Exception):  # Remove this
-        monty_c = monty_update(docs, spec)
-        assert next(mongo_c) == next(monty_c)
+    monty_c = monty_update(docs, spec)
+    assert next(mongo_c) == next(monty_c)
 
 
 def test_update_mod_sort_3(monty_update, mongo_update):
@@ -44,9 +42,8 @@ def test_update_mod_sort_3(monty_update, mongo_update):
     ]}
     mongo_c.rewind()
 
-    with pytest.raises(Exception):  # Remove this
-        monty_c = monty_update(docs, spec)
-        assert next(mongo_c) == next(monty_c)
+    monty_c = monty_update(docs, spec)
+    assert next(mongo_c) == next(monty_c)
 
 
 def test_update_mod_sort_4(monty_update, mongo_update):
@@ -61,6 +58,5 @@ def test_update_mod_sort_4(monty_update, mongo_update):
     ]}
     mongo_c.rewind()
 
-    with pytest.raises(Exception):  # Remove this
-        monty_c = monty_update(docs, spec)
-        assert next(mongo_c) == next(monty_c)
+    monty_c = monty_update(docs, spec)
+    assert next(mongo_c) == next(monty_c)

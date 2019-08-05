@@ -13,7 +13,7 @@ from .core import (
     Weighted,
     FieldWriteError,
 )
-from .queries import QueryFilter
+from .queries import QueryFilter, ordering
 from .helpers import is_numeric_type, is_duckument_type
 
 
@@ -68,6 +68,32 @@ class Eacher(object):
                 new_array = new_array[:self.slice]
             else:
                 new_array = new_array[self.slice:]
+
+        if self.sort is not None:
+            if is_duckument_type(self.sort):
+                fieldwalkers = list()
+                unsortable = list()
+                for elem in new_array:
+                    if is_duckument_type(elem):
+                        fieldwalkers.append(FieldWalker(elem))
+                    else:
+                        unsortable.append(elem)
+
+                ordered = ordering(fieldwalkers, self.sort)
+                new_array = [f.doc for f in ordered]
+
+                if unsortable:
+                    is_reverse = bool(1 - next(iter(self.sort.values())))
+                    if is_reverse:
+                        new_array += unsortable
+                    else:
+                        new_array[:0] += unsortable
+
+            else:
+                is_reverse = bool(1 - self.sort)
+                ordered = sorted((Weighted(e) for e in new_array),
+                                 reverse=is_reverse)
+                new_array = [w.value for w in ordered]
 
         return new_array
 
