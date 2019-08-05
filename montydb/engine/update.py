@@ -53,13 +53,15 @@ class Eacher(object):
     def __call__(self, array):
         new_array = (array or [])[:]
 
+        if self.is_set:
+            new_elems = [e for e in self.elems if e not in new_array]
+        else:
+            new_elems = self.elems
+
         if self.position is None:
-            if self.is_set:
-                for elem in self.elems:
-                    if elem not in new_array:
-                        new_array.append(elem)
-            else:
-                new_array += self.elems
+            new_array += new_elems
+        else:
+            new_array[:self.position] += new_elems
 
         return new_array
 
