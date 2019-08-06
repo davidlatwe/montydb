@@ -30,10 +30,16 @@ from .core import (
 from .helpers import (
     RE_PATTERN_TYPE,
     is_duckument_type,
+    is_integer_type,
     is_pattern_type,
     keep,
     compare_documents,
 )
+
+
+def validate_sort_specifier(sort):
+    if not (is_integer_type(sort) and sort in (1, -1)):
+        raise OperationFailure("bad sort specification", code=2)
 
 
 def ordering(fieldwalkers, order, doc_type=None):
@@ -43,6 +49,8 @@ def ordering(fieldwalkers, order, doc_type=None):
     pre_sect_stack = []
 
     for path, revr in order.items():
+        validate_sort_specifier(revr)
+
         is_reverse = bool(1 - revr)
         value_stack = []
 
