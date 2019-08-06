@@ -595,7 +595,13 @@ class EachAdder(object):
 
     def __call__(self, array):
         new_array = (array or [])[:]
-        new_elems = self.mods["$each"][:]
+        try:
+            new_elems = self.mods["$each"][:]
+        except TypeError:
+            type_name = type(self.mods["$each"]).__name__
+            raise WriteError("The argument to $each in $addToSet must be an "
+                             "array but it was of type %s" % type_name,
+                             code=14)
 
         new_array[:0] += [e for e in new_elems if e not in new_array]
         return new_array
@@ -622,7 +628,13 @@ class EachPusher(object):
 
     def __call__(self, array):
         new_array = (array or [])[:]
-        new_elems = self.mods["$each"][:]
+        try:
+            new_elems = self.mods["$each"][:]
+        except TypeError:
+            type_name = type(self.mods["$each"]).__name__
+            raise WriteError("The argument to $each in $push must be an "
+                             "array but it was of type: %s" % type_name,
+                             code=2)
 
         position = self.mods["$position"]
         slice = self.mods["$slice"]

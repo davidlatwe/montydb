@@ -75,3 +75,33 @@ def test_update_mod_each_5(monty_update, mongo_update):
         monty_update(docs, spec)
 
     assert mongo_err.value.code == monty_err.value.code
+
+
+def test_update_mod_each_6(monty_update, mongo_update):
+    docs = [
+        {"a": [10]}
+    ]
+    spec = {"$addToSet": {"a": {"$each": None}}}
+
+    with pytest.raises(mongo_write_err) as mongo_err:
+        mongo_update(docs, spec)
+
+    with pytest.raises(monty_write_err) as monty_err:
+        monty_update(docs, spec)
+
+    assert mongo_err.value.code == monty_err.value.code
+
+
+def test_update_mod_each_7(monty_update, mongo_update):
+    docs = [
+        {"a": [10]}
+    ]
+    spec = {"$push": {"a": {"$each": None}}}
+
+    with pytest.raises(mongo_write_err) as mongo_err:
+        mongo_update(docs, spec)
+
+    with pytest.raises(monty_write_err) as monty_err:
+        monty_update(docs, spec)
+
+    assert mongo_err.value.code == monty_err.value.code
