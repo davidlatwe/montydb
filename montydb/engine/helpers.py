@@ -80,6 +80,13 @@ def is_numeric_type(obj):
     return isinstance(obj, number_type)
 
 
+def is_integer_type(obj):
+    if isinstance(obj, bool):
+        return False
+    integer_type = (integer_types, Int64)
+    return isinstance(obj, integer_type)
+
+
 def is_pattern_type(obj):
     return isinstance(obj, RE_PATTERN_TYPE)
 

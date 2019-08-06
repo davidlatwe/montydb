@@ -14,7 +14,7 @@ from .core import (
     FieldWriteError,
 )
 from .queries import QueryFilter, ordering
-from .helpers import is_numeric_type, is_duckument_type
+from .helpers import is_numeric_type, is_duckument_type, is_integer_type
 
 
 def _update(fieldwalker,
@@ -263,7 +263,7 @@ def parse_mul(field, value, array_filters):
         raise WriteError(msg, code=14)
 
     def _mul(fieldwalker):
-        def mul(node, mul_val):
+        def evaluator(node, mul_val):
             old_val = node.value
             if node.exists and not is_numeric_type(old_val):
                 _id = fieldwalker.doc["_id"]
@@ -286,7 +286,7 @@ def parse_mul(field, value, array_filters):
             else:
                 return (old_val or 0.0) * mul_val
 
-        _update(fieldwalker, field, value, mul, array_filters)
+        _update(fieldwalker, field, value, evaluator, array_filters)
 
     return _mul
 
@@ -586,25 +586,35 @@ class EachAdder(object):
         spec = spec.copy()
 
         for mod, value in spec.items():
-            if mod in self.mods:
-                self.mods[mod] = value
-            else:
+            try:
+                type_check = self.validators[mod]
+            except KeyError:
                 raise WriteError("Found unexpected fields after $each in "
                                  "$addToSet: %s" % spec.to_dict(),  # SON type
                                  code=2)
 
+            self.mods[mod] = type_check(self, value)
+
     def __call__(self, array):
         new_array = (array or [])[:]
-        try:
-            new_elems = self.mods["$each"][:]
-        except TypeError:
-            type_name = type(self.mods["$each"]).__name__
-            raise WriteError("The argument to $each in $addToSet must be an "
-                             "array but it was of type %s" % type_name,
-                             code=14)
+        new_elems = self.mods["$each"][:]
 
         new_array[:0] += [e for e in new_elems if e not in new_array]
         return new_array
+
+    def _validate_each(self, each):
+        try:
+            each[:]
+        except TypeError:
+            type_name = type(each).__name__
+            raise WriteError("The argument to $each in $addToSet must be an "
+                             "array but it was of type %s" % type_name,
+                             code=14)
+        return each
+
+    validators = {
+        "$each": _validate_each,
+    }
 
 
 class EachPusher(object):
@@ -620,21 +630,17 @@ class EachPusher(object):
         spec = spec.copy()
 
         for mod, value in spec.items():
-            if mod in self.mods:
-                self.mods[mod] = value
-            else:
+            try:
+                type_check = self.validators[mod]
+            except KeyError:
                 raise WriteError("Unrecognized clause in $push: %s" % mod,
                                  code=2)
 
+            self.mods[mod] = type_check(self, value)
+
     def __call__(self, array):
         new_array = (array or [])[:]
-        try:
-            new_elems = self.mods["$each"][:]
-        except TypeError:
-            type_name = type(self.mods["$each"]).__name__
-            raise WriteError("The argument to $each in $push must be an "
-                             "array but it was of type: %s" % type_name,
-                             code=2)
+        new_elems = self.mods["$each"][:]
 
         position = self.mods["$position"]
         slice = self.mods["$slice"]
@@ -678,3 +684,53 @@ class EachPusher(object):
                 new_array = [w.value for w in ordered]
 
         return new_array
+
+    def _validate_each(self, each):
+        try:
+            each[:]
+        except TypeError:
+            type_name = type(each).__name__
+            raise WriteError("The argument to $each in $push must be an "
+                             "array but it was of type: %s" % type_name,
+                             code=2)
+        return each
+
+    def _validate_position(self, position):
+        if not is_integer_type(position):
+            type_name = type(position).__name__
+            raise WriteError("The value for $position must be an integer "
+                             "value, not of type: %s" % type_name,
+                             code=2)
+        return position
+
+    def _validate_slice(self, slice):
+        if not is_integer_type(slice):
+            type_name = type(slice).__name__
+            raise WriteError("The value for $slice must be an integer "
+                             "value but was given type: %s" % type_name,
+                             code=2)
+        return slice
+
+    def _validate_sort(self, sort, int_only=False):
+        if is_integer_type(sort) or int_only:
+            if sort not in (1, -1):
+                raise WriteError("The $sort element value must be either "
+                                 "1 or -1",
+                                 code=2)
+            return sort
+
+        if is_duckument_type(sort):
+            for key, value in sort.items():
+                self._validate_sort(value, int_only=True)
+            return sort
+
+        raise WriteError("The $sort is invalid: use 1/-1 to sort the whole "
+                         "element, or {field:1/-1} to sort embedded fields",
+                         code=2)
+
+    validators = {
+        "$each": _validate_each,
+        "$position": _validate_position,
+        "$slice": _validate_slice,
+        "$sort": _validate_sort,
+    }

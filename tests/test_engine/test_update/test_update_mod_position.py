@@ -52,10 +52,25 @@ def test_update_mod_position_4(monty_update, mongo_update):
     ]
     spec = {"$addToSet": {"a": {"$each": [70, 30, 80], "$position": 2}}}
 
-    with pytest.raises(mongo_write_err):
+    with pytest.raises(mongo_write_err) as mongo_err:
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err):
+    with pytest.raises(monty_write_err) as monty_err:
         monty_update(docs, spec)
 
-    # (TODO): Validate error code
+    assert mongo_err.value.code == monty_err.value.code
+
+
+def test_update_mod_position_5(monty_update, mongo_update):
+    docs = [
+        {"a": [10, 20, 30]}
+    ]
+    spec = {"$push": {"a": {"$each": [70, 80], "$position": True}}}
+
+    with pytest.raises(mongo_write_err) as mongo_err:
+        mongo_update(docs, spec)
+
+    with pytest.raises(monty_write_err) as monty_err:
+        monty_update(docs, spec)
+
+    assert mongo_err.value.code == monty_err.value.code
