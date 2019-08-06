@@ -41,63 +41,6 @@ def _drop(fieldwalker, field, array_filters):
         raise WriteError(str(err), code=err.code)
 
 
-class Eacher(object):
-
-    def __init__(self, spec, is_set=False):
-        self.elems = spec["$each"][:]
-        self.position = spec.get("$position")
-        self.slice = spec.get("$slice")
-        self.sort = spec.get("$sort")
-        self.is_set = is_set
-
-    def __call__(self, array):
-        new_array = (array or [])[:]
-
-        if self.is_set:
-            new_elems = [e for e in self.elems if e not in new_array]
-        else:
-            new_elems = self.elems
-
-        if self.position is None:
-            new_array += new_elems
-        else:
-            new_array[:self.position] += new_elems
-
-        if self.slice is not None:
-            if self.slice >= 0:
-                new_array = new_array[:self.slice]
-            else:
-                new_array = new_array[self.slice:]
-
-        if self.sort is not None:
-            if is_duckument_type(self.sort):
-                fieldwalkers = list()
-                unsortable = list()
-                for elem in new_array:
-                    if is_duckument_type(elem):
-                        fieldwalkers.append(FieldWalker(elem))
-                    else:
-                        unsortable.append(elem)
-
-                ordered = ordering(fieldwalkers, self.sort)
-                new_array = [f.doc for f in ordered]
-
-                if unsortable:
-                    is_reverse = bool(1 - next(iter(self.sort.values())))
-                    if is_reverse:
-                        new_array += unsortable
-                    else:
-                        new_array[:0] += unsortable
-
-            else:
-                is_reverse = bool(1 - self.sort)
-                ordered = sorted((Weighted(e) for e in new_array),
-                                 reverse=is_reverse)
-                new_array = [w.value for w in ordered]
-
-        return new_array
-
-
 class Updator(object):
 
     def __init__(self, spec, array_filters=None):
@@ -457,8 +400,9 @@ def parse_currentDate(field, value, array_filters):
 
 
 def parse_add_to_set(field, value_or_each, array_filters):
-    if is_duckument_type(value_or_each) and "$each" in value_or_each:
-        value = Eacher(value_or_each, is_set=True)
+    if (is_duckument_type(value_or_each) and
+            next(iter(value_or_each)) == "$each"):
+        value = EachAdder(value_or_each)
         run_each = True
     else:
         value = value_or_each
@@ -565,7 +509,7 @@ def parse_pull(field, value_or_conditions, array_filters):
 
 def parse_push(field, value_or_each, array_filters):
     if is_duckument_type(value_or_each) and "$each" in value_or_each:
-        value = Eacher(value_or_each)
+        value = EachPusher(value_or_each)
         run_each = True
     else:
         value = value_or_each
@@ -630,3 +574,95 @@ def parse_pull_all(field, value, array_filters):
         _update(fieldwalker, field, value, pull_all, array_filters)
 
     return _pull_all
+
+
+class EachAdder(object):
+
+    mods = {
+        "$each": None,
+    }
+
+    def __init__(self, spec):
+        spec = spec.copy()
+
+        for mod, value in spec.items():
+            if mod in self.mods:
+                self.mods[mod] = value
+            else:
+                raise WriteError("Found unexpected fields after $each in "
+                                 "$addToSet: %s" % spec.to_dict(),  # SON type
+                                 code=2)
+
+    def __call__(self, array):
+        new_array = (array or [])[:]
+        new_elems = self.mods["$each"][:]
+
+        new_array[:0] += [e for e in new_elems if e not in new_array]
+        return new_array
+
+
+class EachPusher(object):
+
+    mods = {
+        "$each": None,
+        "$position": None,
+        "$slice": None,
+        "$sort": None,
+    }
+
+    def __init__(self, spec):
+        spec = spec.copy()
+
+        for mod, value in spec.items():
+            if mod in self.mods:
+                self.mods[mod] = value
+            else:
+                raise WriteError("Unrecognized clause in $push: %s" % mod,
+                                 code=2)
+
+    def __call__(self, array):
+        new_array = (array or [])[:]
+        new_elems = self.mods["$each"][:]
+
+        position = self.mods["$position"]
+        slice = self.mods["$slice"]
+        sort = self.mods["$sort"]
+
+        if position is None:
+            new_array += new_elems
+        else:
+            new_array[:position] += new_elems
+
+        if slice is not None:
+            if slice >= 0:
+                new_array = new_array[:slice]
+            else:
+                new_array = new_array[slice:]
+
+        if sort is not None:
+            if is_duckument_type(sort):
+                fieldwalkers = list()
+                unsortable = list()
+                for elem in new_array:
+                    if is_duckument_type(elem):
+                        fieldwalkers.append(FieldWalker(elem))
+                    else:
+                        unsortable.append(elem)
+
+                ordered = ordering(fieldwalkers, sort)
+                new_array = [f.doc for f in ordered]
+
+                if unsortable:
+                    is_reverse = bool(1 - next(iter(sort.values())))
+                    if is_reverse:
+                        new_array += unsortable
+                    else:
+                        new_array[:0] += unsortable
+
+            else:
+                is_reverse = bool(1 - sort)
+                ordered = sorted((Weighted(e) for e in new_array),
+                                 reverse=is_reverse)
+                new_array = [w.value for w in ordered]
+
+        return new_array
