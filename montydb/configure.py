@@ -3,6 +3,8 @@ import contextlib
 import importlib
 import inspect
 
+from bson.py3compat import string_type
+
 from .storage.abcs import AbstractStorage
 from .errors import ConfigurationError
 
@@ -15,8 +17,49 @@ DEFAULT_STORAGE = FALTFILE_STORAGE
 
 MEMORY_REPOSITORY = ":memory:"
 
+URI_SCHEME_PREFIX = "montydb://"
+
 
 _pinned_repository = {"_": None}
+
+
+def remove_uri_scheme_prefix(uri_or_dir):
+    """Internal function to remove URI scheme prefix from repository path
+
+    Args:
+        uri_or_dir (str): Folder path or montydb URI
+
+    Returns:
+        str: A repository path without URI scheme prefix
+
+    """
+    if uri_or_dir.startswith(URI_SCHEME_PREFIX):
+        dirname = uri_or_dir[len(URI_SCHEME_PREFIX):]
+    else:
+        dirname = uri_or_dir
+
+    return dirname
+
+
+def provide_repository(dirname=None):
+    """Internal function to acquire repository path
+
+    This will pick one repository path in the order of:
+    `dirname` -> current pinned repository -> current working dir
+
+    Args:
+        dirname (str): Folder path, default None
+
+    Returns:
+        str: A repository path acquired from current environment
+
+    """
+    if dirname is None or dirname == "":
+        return current_repo() or os.getcwd()
+    elif isinstance(dirname, string_type):
+        return remove_uri_scheme_prefix(dirname)
+    else:
+        raise TypeError("Repository path should be a string.")
 
 
 def pin_repo(repository):
@@ -33,7 +76,7 @@ def pin_repo(repository):
         repository (str): Database repository path
 
     """
-    _pinned_repository["_"] = repository
+    _pinned_repository["_"] = provide_repository(repository)
 
 
 def current_repo():
@@ -80,22 +123,6 @@ def open_repo(repository=None):
         finally:
             pin_repo(crepo)
             os.chdir(cwd)
-
-
-def provide_repository(dirname=None):
-    """Internal function to acquire repository path
-
-    This will pick one repository path in the order of:
-    `dirname` -> current pinned repository -> current working dir
-
-    Args:
-        dirname (str): Folder path, default None
-
-    Returns:
-        str: A repository path acquired from current environment
-
-    """
-    return dirname or current_repo() or os.getcwd()
 
 
 def find_storage_cls(storage_name):

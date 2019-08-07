@@ -16,7 +16,27 @@ class MontyClient(BaseObject):
                  document_class=dict,
                  tz_aware=None,
                  **kwargs):
-        """
+        """Client for a MontyDB instance
+
+        The `repository` argument can be a montydb URI. A montydb URI is simply
+        a repository path that prefixed with montydb scheme.
+        For example:
+            `montydb:///foo/bar/db_repo` -> Point to a absolute dir path
+            `montydb://db_repo` -> Point to a relative dir path
+            `montydb://` -> Point to current working dir or pinned dir
+            `montydb://:memory:` -> Use memory storage
+
+        Args:
+            repository (str): A dir path for on-disk storage or `:memory:` for
+                memory storage only, or a montydb URI.
+            document_class (cls, optional): default class to use for documents
+                returned from queries on this client. Default class is `dict`.
+            tz_aware (bool, optional): if `True`, `datetime.datetime` instances
+                returned as values in document by this client will be timezone
+                awared (otherwise they will be naive).
+            **kwargs: Other optional keyword arguments will pass into storage
+                engine as write concern arguments.
+
         """
         repository = provide_repository(repository)
         storage_cls = provide_storage(repository)
