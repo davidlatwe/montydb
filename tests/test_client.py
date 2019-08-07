@@ -19,7 +19,7 @@ def _create_db(client, db_name):
 def test_client_address(monty_client, tmp_monty_repo):
     address = os.path.normpath(monty_client.address)
     tmp_repo = os.path.normpath(tmp_monty_repo)
-    assert address in [tmp_repo, ":memory:"]
+    assert address in [tmp_repo, MEMORY_REPOSITORY]
 
 
 def test_client_eq(monty_client):
@@ -31,8 +31,8 @@ def test_client_eq_other_type(monty_client):
     assert not monty_client == "other_type"
 
 
-def test_client_ne(monty_client, tmp_monty_repo):
-    other_client = montydb.MontyClient(tmp_monty_repo + "/other_address")
+def test_client_ne(monty_client, gettempdir):
+    other_client = montydb.MontyClient(gettempdir + "/other_address")
     assert monty_client != other_client
 
 
@@ -103,8 +103,8 @@ def test_client_get_database_non_windows_faild(monty_client, monkeypatch):
         monty_client.get_database("$invalid")
 
 
-def test_client_context(monty_client, tmp_monty_repo):
-    with montydb.MontyClient(tmp_monty_repo + "/address"):
+def test_client_context(monty_client, gettempdir):
+    with montydb.MontyClient(gettempdir + "/address"):
         pass
 
 
