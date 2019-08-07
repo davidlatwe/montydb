@@ -578,12 +578,12 @@ def parse_pull_all(field, value, array_filters):
 
 class EachAdder(object):
 
-    mods = {
-        "$each": None,
-    }
-
     def __init__(self, spec):
         spec = spec.copy()
+
+        self.mods = {
+            "$each": None,
+        }
 
         for mod, value in spec.items():
             try:
@@ -599,7 +599,7 @@ class EachAdder(object):
         new_array = (array or [])[:]
         new_elems = self.mods["$each"][:]
 
-        new_array[:0] += [e for e in new_elems if e not in new_array]
+        new_array[0:] += [e for e in new_elems if e not in new_array]
         return new_array
 
     def _validate_each(self, each):
@@ -619,15 +619,15 @@ class EachAdder(object):
 
 class EachPusher(object):
 
-    mods = {
-        "$each": None,
-        "$position": None,
-        "$slice": None,
-        "$sort": None,
-    }
-
     def __init__(self, spec):
         spec = spec.copy()
+
+        self.mods = {
+            "$each": None,
+            "$position": None,
+            "$slice": None,
+            "$sort": None,
+        }
 
         for mod, value in spec.items():
             try:
