@@ -1,5 +1,6 @@
 
 import pytest
+from bson import SON
 
 from pymongo.errors import WriteError as mongo_write_err
 from montydb.errors import WriteError as monty_write_err
@@ -96,10 +97,14 @@ def test_update_mod_sort_6(monty_update, mongo_update):
 
 
 def test_update_mod_sort_7(monty_update, mongo_update):
+    sort = SON()  # (NOTE): Preserve field order for PY2
+    sort["x"] = -1
+    sort["y"] = 1
+
     docs = [
         {"a": [{"x": 5, "y": 1}, {"x": 4, "y": 2}, {"x": 4, "y": 0}]}
     ]
-    spec = {"$push": {"a": {"$each": [], "$sort": {"x": -1, "y": 1}}}}
+    spec = {"$push": {"a": {"$each": [], "$sort": sort}}}
 
     mongo_c = mongo_update(docs, spec)
     assert next(mongo_c) == {"a": [
