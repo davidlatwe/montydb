@@ -2,7 +2,6 @@
 from collections import OrderedDict
 from datetime import datetime
 
-from bson import SON
 from bson.py3compat import string_type
 from bson.decimal128 import Decimal128
 from bson.timestamp import Timestamp
@@ -14,8 +13,8 @@ from .core import (
     Weighted,
     FieldWriteError,
 )
-from .queries import QueryFilter
-from .helpers import is_numeric_type, is_duckument_type
+from .queries import QueryFilter, ordering
+from .helpers import is_numeric_type, is_duckument_type, is_integer_type
 
 
 def _update(fieldwalker,
@@ -68,11 +67,11 @@ class Updator(object):
             "$pull": parse_pull,
             "$push": parse_push,
             "$pullAll": parse_pull_all,
-            "$each": None,
-            "$position": None,
-            "$slice": None,
-            "$sort": None,
 
+            # $each             implemented in Eacher
+            # $position         implemented in Eacher
+            # $slice            implemented in Eacher
+            # $sort             implemented in Eacher
         }
 
         self.fields_to_update = []
@@ -264,7 +263,7 @@ def parse_mul(field, value, array_filters):
         raise WriteError(msg, code=14)
 
     def _mul(fieldwalker):
-        def mul(node, mul_val):
+        def evaluator(node, mul_val):
             old_val = node.value
             if node.exists and not is_numeric_type(old_val):
                 _id = fieldwalker.doc["_id"]
@@ -287,7 +286,7 @@ def parse_mul(field, value, array_filters):
             else:
                 return (old_val or 0.0) * mul_val
 
-        _update(fieldwalker, field, value, mul, array_filters)
+        _update(fieldwalker, field, value, evaluator, array_filters)
 
     return _mul
 
@@ -400,7 +399,15 @@ def parse_currentDate(field, value, array_filters):
     return _currentDate
 
 
-def parse_add_to_set(field, value, array_filters):
+def parse_add_to_set(field, value_or_each, array_filters):
+    if (is_duckument_type(value_or_each) and
+            next(iter(value_or_each)) == "$each"):
+        value = EachAdder(value_or_each)
+        run_each = True
+    else:
+        value = value_or_each
+        run_each = False
+
     def _add_to_set(fieldwalker):
         def add_to_set(node, new_elem):
             old_val = node.value
@@ -411,9 +418,14 @@ def parse_add_to_set(field, value, array_filters):
                        "".format(str(node), value_type))
                 raise WriteError(msg, code=2)
 
-            new_array = (old_val or [])[:]
-            if new_elem not in new_array:
-                new_array.append(new_elem)
+            if run_each:
+                eacher = new_elem
+                new_array = eacher(old_val)
+            else:
+                new_array = (old_val or [])[:]
+                if new_elem not in new_array:
+                    new_array.append(new_elem)
+
             return new_array
 
         _update(fieldwalker, field, value, add_to_set, array_filters)
@@ -495,7 +507,14 @@ def parse_pull(field, value_or_conditions, array_filters):
     return _pull
 
 
-def parse_push(field, value, array_filters):
+def parse_push(field, value_or_each, array_filters):
+    if is_duckument_type(value_or_each) and "$each" in value_or_each:
+        value = EachPusher(value_or_each)
+        run_each = True
+    else:
+        value = value_or_each
+        run_each = False
+
     def _push(fieldwalker):
         def push(node, new_elem):
             old_val = node.value
@@ -507,8 +526,13 @@ def parse_push(field, value, array_filters):
                        "".format(str(node), value_type, _id))
                 raise WriteError(msg, code=2)
 
-            new_array = (old_val or [])[:]
-            new_array.append(new_elem)
+            if run_each:
+                eacher = new_elem
+                new_array = eacher(old_val)
+            else:
+                new_array = (old_val or [])[:]
+                new_array.append(new_elem)
+
             return new_array
 
         _update(fieldwalker, field, value, push, array_filters)
@@ -550,3 +574,163 @@ def parse_pull_all(field, value, array_filters):
         _update(fieldwalker, field, value, pull_all, array_filters)
 
     return _pull_all
+
+
+class EachAdder(object):
+
+    def __init__(self, spec):
+        spec = spec.copy()
+
+        self.mods = {
+            "$each": None,
+        }
+
+        for mod, value in spec.items():
+            try:
+                type_check = self.validators[mod]
+            except KeyError:
+                raise WriteError("Found unexpected fields after $each in "
+                                 "$addToSet: %s" % spec.to_dict(),  # SON type
+                                 code=2)
+
+            self.mods[mod] = type_check(self, value)
+
+    def __call__(self, array):
+        new_array = (array or [])[:]
+        new_elems = self.mods["$each"][:]
+
+        new_array[0:] += [e for e in new_elems if e not in new_array]
+        return new_array
+
+    def _validate_each(self, each):
+        try:
+            each[:]
+        except TypeError:
+            type_name = type(each).__name__
+            raise WriteError("The argument to $each in $addToSet must be an "
+                             "array but it was of type %s" % type_name,
+                             code=14)
+        return each
+
+    validators = {
+        "$each": _validate_each,
+    }
+
+
+class EachPusher(object):
+
+    def __init__(self, spec):
+        spec = spec.copy()
+
+        self.mods = {
+            "$each": None,
+            "$position": None,
+            "$slice": None,
+            "$sort": None,
+        }
+
+        for mod, value in spec.items():
+            try:
+                type_check = self.validators[mod]
+            except KeyError:
+                raise WriteError("Unrecognized clause in $push: %s" % mod,
+                                 code=2)
+
+            self.mods[mod] = type_check(self, value)
+
+    def __call__(self, array):
+        new_array = (array or [])[:]
+        new_elems = self.mods["$each"][:]
+
+        position = self.mods["$position"]
+        slice = self.mods["$slice"]
+        sort = self.mods["$sort"]
+
+        if position is None:
+            new_array += new_elems
+        else:
+            new_array[:position] += new_elems
+
+        if slice is not None:
+            if slice >= 0:
+                new_array = new_array[:slice]
+            else:
+                new_array = new_array[slice:]
+
+        if sort is not None:
+            if is_duckument_type(sort):
+                fieldwalkers = list()
+                unsortable = list()
+                for elem in new_array:
+                    if is_duckument_type(elem):
+                        fieldwalkers.append(FieldWalker(elem))
+                    else:
+                        unsortable.append(elem)
+
+                ordered = ordering(fieldwalkers, sort)
+                new_array = [f.doc for f in ordered]
+
+                if unsortable:
+                    is_reverse = bool(1 - next(iter(sort.values())))
+                    if is_reverse:
+                        new_array += unsortable
+                    else:
+                        new_array[:0] += unsortable
+
+            else:
+                is_reverse = bool(1 - sort)
+                ordered = sorted((Weighted(e) for e in new_array),
+                                 reverse=is_reverse)
+                new_array = [w.value for w in ordered]
+
+        return new_array
+
+    def _validate_each(self, each):
+        try:
+            each[:]
+        except TypeError:
+            type_name = type(each).__name__
+            raise WriteError("The argument to $each in $push must be an "
+                             "array but it was of type: %s" % type_name,
+                             code=2)
+        return each
+
+    def _validate_position(self, position):
+        if not is_integer_type(position):
+            type_name = type(position).__name__
+            raise WriteError("The value for $position must be an integer "
+                             "value, not of type: %s" % type_name,
+                             code=2)
+        return position
+
+    def _validate_slice(self, slice):
+        if not is_integer_type(slice):
+            type_name = type(slice).__name__
+            raise WriteError("The value for $slice must be an integer "
+                             "value but was given type: %s" % type_name,
+                             code=2)
+        return slice
+
+    def _validate_sort(self, sort, int_only=False):
+        if is_integer_type(sort) or int_only:
+            if sort not in (1, -1):
+                raise WriteError("The $sort element value must be either "
+                                 "1 or -1",
+                                 code=2)
+            return sort
+
+        if is_duckument_type(sort):
+            for key, value in sort.items():
+                self._validate_sort(value, int_only=True)
+            return sort
+
+        raise WriteError("The $sort is invalid: use 1/-1 to sort the whole "
+                         "element, or {field:1/-1} to sort embedded fields",
+                         code=2)
+
+    validators = {
+        "$each": _validate_each,
+        "$position": _validate_position,
+        "$slice": _validate_slice,
+        "$sort": _validate_sort,
+    }

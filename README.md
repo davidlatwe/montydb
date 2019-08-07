@@ -101,6 +101,14 @@ The configuration process only required on repository creation or modification.
   >>>                      busy_timeout=5000)
   ```
 
+### MontyDB URI
+
+You could prefix the repository path with montydb URI scheme.
+
+```python
+  >>> client = MontyClient("montydb:///db/repo")
+```
+
 ### Utilities
 
 * #### `montyimport`

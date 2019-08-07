@@ -19,6 +19,15 @@ def pytest_addoption(parser):
                      """)
 
 
+def _gettempdir():
+    return tempfile.gettempdir()
+
+
+@pytest.fixture
+def gettempdir():
+    return _gettempdir()
+
+
 @pytest.fixture(scope="session")
 def storage(request):
     return request.config.getoption("--storage")
@@ -26,7 +35,7 @@ def storage(request):
 
 @pytest.fixture(scope="session")
 def tmp_monty_repo():
-    tmp_dir = os.path.join(tempfile.gettempdir(), "monty")
+    tmp_dir = os.path.join(_gettempdir(), "monty")
     if os.path.isdir(tmp_dir):
         shutil.rmtree(tmp_dir)
     return tmp_dir

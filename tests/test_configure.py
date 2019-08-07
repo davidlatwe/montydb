@@ -7,6 +7,7 @@ import shutil
 from montydb.configure import (
     set_storage,
     find_storage_cls,
+    provide_repository,
     provide_storage,
 )
 from montydb.errors import ConfigurationError
@@ -50,3 +51,8 @@ def test_set_storage_to_memory():
 def test_storage_module_not_found():
     with pytest.raises(ConfigurationError):
         find_storage_cls("lost")
+
+
+def test_provide_repository_type_err():
+    with pytest.raises(TypeError):
+        provide_repository(True)

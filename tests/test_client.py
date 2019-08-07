@@ -5,6 +5,11 @@ import platform
 
 import montydb
 from montydb.errors import OperationFailure
+from montydb.configure import (
+    MEMORY_REPOSITORY,
+    URI_SCHEME_PREFIX,
+    set_storage,
+)
 
 
 def _create_db(client, db_name):
@@ -14,7 +19,7 @@ def _create_db(client, db_name):
 def test_client_address(monty_client, tmp_monty_repo):
     address = os.path.normpath(monty_client.address)
     tmp_repo = os.path.normpath(tmp_monty_repo)
-    assert address in [tmp_repo, ":memory:"]
+    assert address in [tmp_repo, MEMORY_REPOSITORY]
 
 
 def test_client_eq(monty_client):
@@ -26,8 +31,8 @@ def test_client_eq_other_type(monty_client):
     assert not monty_client == "other_type"
 
 
-def test_client_ne(monty_client, tmp_monty_repo):
-    other_client = montydb.MontyClient(tmp_monty_repo + "/other_address")
+def test_client_ne(monty_client, gettempdir):
+    other_client = montydb.MontyClient(gettempdir + "/other_address")
     assert monty_client != other_client
 
 
@@ -98,8 +103,8 @@ def test_client_get_database_non_windows_faild(monty_client, monkeypatch):
         monty_client.get_database("$invalid")
 
 
-def test_client_context(monty_client, tmp_monty_repo):
-    with montydb.MontyClient(tmp_monty_repo + "/address"):
+def test_client_context(monty_client, gettempdir):
+    with montydb.MontyClient(gettempdir + "/address"):
         pass
 
 
@@ -126,3 +131,30 @@ def test_client_server_info(monty_client):
         server_info.pop(key)
 
     assert len(server_info) == 0
+
+
+def test_client_with_montydb_uri(gettempdir):
+    URI_SCHEME_PREFIX
+    # Faltfile
+    tmp_dir = os.path.join(gettempdir, "flatfile")
+    uri = URI_SCHEME_PREFIX + tmp_dir
+
+    set_storage(repository=uri, storage="flatfile")
+    client = montydb.MontyClient(uri)
+
+    assert client.address == tmp_dir
+
+    # SQLite
+    tmp_dir = os.path.join(gettempdir, "sqlite")
+    uri = URI_SCHEME_PREFIX + tmp_dir
+
+    set_storage(repository=uri, storage="sqlite")
+    client = montydb.MontyClient(uri)
+
+    assert client.address == tmp_dir
+
+    # Memory
+    uri = URI_SCHEME_PREFIX + MEMORY_REPOSITORY
+    client = montydb.MontyClient(uri)
+
+    assert client.address == MEMORY_REPOSITORY
