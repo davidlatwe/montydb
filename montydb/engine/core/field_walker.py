@@ -46,11 +46,11 @@ class FieldValues(object):
         for node in self.nodes:
             fieldwalker._put_matched(node)
 
-            doc = node.value
-            if isinstance(doc, list):
-                # docs in array
+            value = node.value
+            if isinstance(value, list):
+                # value in array
                 if unpack and not node.located:
-                    for i, elem in enumerate(doc):
+                    for i, elem in enumerate(value):
                         if elem is not _no_val:
                             matched = FieldNode(str(i),
                                                 elem,
@@ -60,11 +60,12 @@ class FieldValues(object):
                             fieldwalker._put_matched(matched)
                             yield elem
                 if pack:
-                    yield doc
+                    # Include whole array as part of query result
+                    yield value
             else:
-                # doc or array positioned doc
-                if not array_only and doc is not _no_val:
-                    yield doc
+                # Value of document field or value of positioned array element
+                if not array_only and value is not _no_val:
+                    yield value
 
         # Reset to `None` if the iter loop did not *break* in query
         fieldwalker._put_matched(None)
