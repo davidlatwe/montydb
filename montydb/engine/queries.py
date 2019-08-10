@@ -126,12 +126,12 @@ class LogicBox(list):
         self.implicity = implicity
         self._logic = {
 
-            "$and": self.__call_and,
-            "$or": self.__call_or,
-            "$nor": self.__call_nor,
-            "$not": self.__call_not,
+            "$and": self._call_and,
+            "$or": self._call_or,
+            "$nor": self._call_nor,
+            "$not": self._call_not,
 
-            "$elemMatch": self.__call_elemMatch,
+            "$elemMatch": self._call_elemMatch,
 
         }
 
@@ -172,35 +172,35 @@ class LogicBox(list):
         try:
             return self._logic[self.theme](fieldwalker)
         except KeyError:
-            return self.__call_field(fieldwalker)
+            return self._call_field(fieldwalker)
 
-    def __gen(self, fieldwalker):
+    def _gen(self, fieldwalker):
         return (cond(fieldwalker) for cond in self[:])
 
-    def __call_field(self, fieldwalker):
+    def _call_field(self, fieldwalker):
         """Entering document field context before process"""
         with fieldwalker.go(self.theme).get():
-            return all(self.__gen(fieldwalker))
+            return all(self._gen(fieldwalker))
 
-    def __call_elemMatch(self, fieldwalker):
+    def _call_elemMatch(self, fieldwalker):
         """"""
         with fieldwalker.value as field_value:
             for elem in field_value.iter_elements():
                 field_value.change_iter(lambda: iter([elem]))
-                if all(self.__gen(fieldwalker)):
+                if all(self._gen(fieldwalker)):
                     return True
 
-    def __call_and(self, fieldwalker):
-        return all(self.__gen(fieldwalker))
+    def _call_and(self, fieldwalker):
+        return all(self._gen(fieldwalker))
 
-    def __call_or(self, fieldwalker):
-        return any(self.__gen(fieldwalker))
+    def _call_or(self, fieldwalker):
+        return any(self._gen(fieldwalker))
 
-    def __call_nor(self, fieldwalker):
-        return not any(self.__gen(fieldwalker))
+    def _call_nor(self, fieldwalker):
+        return not any(self._gen(fieldwalker))
 
-    def __call_not(self, fieldwalker):
-        return not all(self.__gen(fieldwalker))
+    def _call_not(self, fieldwalker):
+        return not all(self._gen(fieldwalker))
 
 
 class QueryFilter(object):

@@ -194,7 +194,7 @@ def parse_inc(field, value, array_filters):
 
     def _inc(fieldwalker):
 
-        def inc(node, inc_val):
+        def evaluator(node, inc_val):
             old_val = node.value
             if node.exists and not is_numeric_type(old_val):
                 _id = fieldwalker.doc["_id"]
@@ -217,14 +217,16 @@ def parse_inc(field, value, array_filters):
             else:
                 return (old_val or 0) + inc_val
 
-        _update(fieldwalker, field, value, inc, array_filters)
+        _update(fieldwalker, field, value, evaluator, array_filters)
 
     return _inc
 
 
 def parse_min(field, value, array_filters):
+
     def _min(fieldwalker):
-        def min(node, min_val):
+
+        def evaluator(node, min_val):
             old_val = node.value
             if node.exists:
                 old_val = Weighted(old_val)
@@ -233,14 +235,16 @@ def parse_min(field, value, array_filters):
             else:
                 return min_val
 
-        _update(fieldwalker, field, value, min, array_filters)
+        _update(fieldwalker, field, value, evaluator, array_filters)
 
     return _min
 
 
 def parse_max(field, value, array_filters):
+
     def _max(fieldwalker):
-        def max(node, max_val):
+
+        def evaluator(node, max_val):
             old_val = node.value
             if node.exists:
                 old_val = Weighted(old_val)
@@ -249,7 +253,7 @@ def parse_max(field, value, array_filters):
             else:
                 return max_val
 
-        _update(fieldwalker, field, value, max, array_filters)
+        _update(fieldwalker, field, value, evaluator, array_filters)
 
     return _max
 
@@ -263,6 +267,7 @@ def parse_mul(field, value, array_filters):
         raise WriteError(msg, code=14)
 
     def _mul(fieldwalker):
+
         def evaluator(node, mul_val):
             old_val = node.value
             if node.exists and not is_numeric_type(old_val):
@@ -353,14 +358,18 @@ def parse_rename(field, new_field, array_filters):
 
 
 def parse_set(field, value, array_filters):
+
     def _set(fieldwalker):
+
         _update(fieldwalker, field, value, None, array_filters)
 
     return _set
 
 
 def parse_unset(field, _, array_filters):
+
     def _unset(fieldwalker):
+
         _drop(fieldwalker, field, array_filters)
 
     return _unset
@@ -409,7 +418,8 @@ def parse_add_to_set(field, value_or_each, array_filters):
         run_each = False
 
     def _add_to_set(fieldwalker):
-        def add_to_set(node, new_elem):
+
+        def evaluator(node, new_elem):
             old_val = node.value
             if node.exists and not isinstance(old_val, list):
                 value_type = type(old_val).__name__
@@ -428,7 +438,7 @@ def parse_add_to_set(field, value_or_each, array_filters):
 
             return new_array
 
-        _update(fieldwalker, field, value, add_to_set, array_filters)
+        _update(fieldwalker, field, value, evaluator, array_filters)
 
     return _add_to_set
 
@@ -449,7 +459,8 @@ def parse_pop(field, value, array_filters):
             raise WriteError(msg_raw.format(field, value), code=9)
 
     def _pop(fieldwalker):
-        def pop(node, pop_ind):
+
+        def evaluator(node, pop_ind):
             old_val = node.value
             if node.exists and not isinstance(old_val, list):
                 value_type = type(old_val).__name__
@@ -466,7 +477,7 @@ def parse_pop(field, value, array_filters):
             else:
                 return old_val[1:]
 
-        _update(fieldwalker, field, value, pop, array_filters)
+        _update(fieldwalker, field, value, evaluator, array_filters)
 
     return _pop
 
@@ -484,7 +495,8 @@ def parse_pull(field, value_or_conditions, array_filters):
         queryfilter = QueryFilter({field: value_or_conditions})
 
     def _pull(fieldwalker):
-        def pull(node, _):
+
+        def evaluator(node, _):
             old_val = node.value
             if node.exists and not isinstance(old_val, list):
                 msg = "Cannot apply $pull to a non-array value"
@@ -502,7 +514,7 @@ def parse_pull(field, value_or_conditions, array_filters):
                     new_array.append(elem)
             return new_array
 
-        _update(fieldwalker, field, None, pull, array_filters)
+        _update(fieldwalker, field, None, evaluator, array_filters)
 
     return _pull
 
@@ -516,7 +528,8 @@ def parse_push(field, value_or_each, array_filters):
         run_each = False
 
     def _push(fieldwalker):
-        def push(node, new_elem):
+
+        def evaluator(node, new_elem):
             old_val = node.value
             if node.exists and not isinstance(old_val, list):
                 value_type = type(old_val).__name__
@@ -535,7 +548,7 @@ def parse_push(field, value_or_each, array_filters):
 
             return new_array
 
-        _update(fieldwalker, field, value, push, array_filters)
+        _update(fieldwalker, field, value, evaluator, array_filters)
 
     return _push
 
@@ -548,7 +561,8 @@ def parse_pull_all(field, value, array_filters):
         raise WriteError(msg, code=2)
 
     def _pull_all(fieldwalker):
-        def pull_all(node, pull_list):
+
+        def evaluator(node, pull_list):
             old_val = node.value
             if node.exists and not isinstance(old_val, list):
                 msg = "Cannot apply $pull to a non-array value"
@@ -571,7 +585,7 @@ def parse_pull_all(field, value, array_filters):
             new_array = [elem for elem in old_val if elem not in pull_list]
             return new_array
 
-        _update(fieldwalker, field, value, pull_all, array_filters)
+        _update(fieldwalker, field, value, evaluator, array_filters)
 
     return _pull_all
 
