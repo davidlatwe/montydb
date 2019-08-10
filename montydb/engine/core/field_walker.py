@@ -27,7 +27,15 @@ class FieldWriteError(FieldWalkError):
 
 
 class FieldValues(object):
-    """Document field value iterator
+    """Document field status and values iterator
+
+    Store document tree nodes that matched from query, and iterate nodes values
+    by interests. Also compute document field status from input nodes.
+
+    Arguments:
+        nodes (list): A list of nodes that picked from `FieldTree`
+        fieldwalker: Instance of `FieldWalker` which made the query
+
     """
 
     __slots__ = ("nodes", "_is_exists", "_null_or_missing",
@@ -43,6 +51,7 @@ class FieldValues(object):
         self._value_iter = self.iter_full
 
     def is_exists(self):
+        """Is field exists ?"""
         if self._is_exists is None:
             is_exists = any(nd.exists for nd in self.nodes)
             # Cache
@@ -53,6 +62,7 @@ class FieldValues(object):
             return self._is_exists
 
     def null_or_missing(self):
+        """Is None value or missing field ?"""
         if self._null_or_missing is None:
             null_or_missing = (any(nd.is_missing() for nd in self.nodes) or
                                self.is_exists() and None in self.iter_flat())
@@ -64,6 +74,14 @@ class FieldValues(object):
             return self._null_or_missing
 
     def _iter(self, array_only, unpack, pack):
+        """Value iterator
+
+        Args:
+            array_only (bool): Yield only `list` type values.
+            unpack (bool): If value is a `list`, yield it's elements.
+            pack (bool): If value is a `list`, yield it.
+
+        """
         fieldwalker = self._fieldwalker
         for node in self.nodes:
             fieldwalker._put_matched(node)
@@ -93,21 +111,36 @@ class FieldValues(object):
         fieldwalker._put_matched(None)
 
     def iter_plain(self):
+        """Iterate each nodes value as is
+        """
         return self._iter(array_only=False, unpack=False, pack=True)
 
     def iter_flat(self):
+        """Iterate each nodes value and unpack list value's element
+        """
         return self._iter(array_only=False, unpack=True, pack=False)
 
     def iter_full(self):
+        """Iterate each nodes value as is, also unpack list value's element
+        """
         return self._iter(array_only=False, unpack=True, pack=True)
 
     def iter_arrays(self):
+        """Only iterate list type values
+        """
         return self._iter(array_only=True, unpack=False, pack=True)
 
     def iter_elements(self):
+        """Only iterate list type values' elements
+        """
         return self._iter(array_only=True, unpack=True, pack=False)
 
     def change_iter(self, func):
+        """Change value iterator
+
+        func: A function that retures a iterator
+
+        """
         self._value_iter = func
 
     def __next__(self):
@@ -133,13 +166,23 @@ class FieldValues(object):
 
 
 class FieldNode(str):
+    """Docuemtn field node
+
+    Arguments:
+        field (str): Document field name
+        doc: field value
+        located (bool): Is this a positioned field (array element)
+        exists (bool): Is this field exists
+        in_array (bool): Is this document inside an array
+        parent (FieldNode): Parent node
+
     """
+
     # (NOTE) `__slots__` not supported for `str` in Python 2.7,
     #        drop it for now.
-
-    __slots__ = ("value", "located", "exists", "full_path",
-                 "in_array", "parent", "children")
-    """
+    #
+    # __slots__ = ("value", "located", "exists", "full_path",
+    #              "in_array", "parent", "children")
 
     def __new__(cls, field, doc, located=False, exists=False,
                 in_array=False, parent=None):
