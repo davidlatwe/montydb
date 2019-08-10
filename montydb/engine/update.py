@@ -320,7 +320,7 @@ def parse_rename(field, new_field, array_filters):
         probe.go(field).get()
         fieldvalues = probe.value
 
-        if not fieldvalues.exists:
+        if not fieldvalues.is_exists():
             return
 
         value = next(fieldvalues.iter_plain())
