@@ -90,16 +90,16 @@ class FieldValues(object):
         fieldwalker._put_matched(None)
 
     def iter_plain(self):
-        return self._iter(False, False, True)
+        return self._iter(array_only=False, unpack=False, pack=True)
 
     def iter_flat(self):
         return self._iter(array_only=False, unpack=True, pack=False)
 
     def iter_full(self):
-        return self._iter(False, True, True)
+        return self._iter(array_only=False, unpack=True, pack=True)
 
     def iter_arrays(self):
-        return self._iter(True, False, True)
+        return self._iter(array_only=True, unpack=False, pack=True)
 
     def __next__(self):
         return next(self.__iter)
