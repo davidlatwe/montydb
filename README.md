@@ -1,7 +1,7 @@
 
 <img src="artwork/logo.png" alt="drawing" width="600"/>
 
-#### Monty, Mongo tinified. MongoDB implementated in Python !
+#### Monty, Mongo tinified. MongoDB implemented in Python !
 
 [![Build Status](https://travis-ci.org/davidlatwe/MontyDB.svg?branch=master)](https://travis-ci.org/davidlatwe/MontyDB)
 <a href='https://coveralls.io/github/davidlatwe/MontyDB?branch=master'><img src='https://coveralls.io/repos/github/davidlatwe/MontyDB/badge.svg?branch=master&kill_cache=1' alt='Coverage Status' /></a>
