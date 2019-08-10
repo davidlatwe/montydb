@@ -57,7 +57,7 @@ def ordering(fieldwalkers, order, doc_type=None):
         for indx, fieldwalker in enumerate(fieldwalkers):
             # get field value
             fieldwalker = FieldWalker(fieldwalker.doc, doc_type).go(path).get()
-            values = fieldwalker.value.values
+            values = list(fieldwalker.value.iter_flat())
             if values:
                 value = tuple([Weighted(val) for val in values])
 

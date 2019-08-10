@@ -427,7 +427,7 @@ class MontyCollection(BaseObject):
             fieldwalker = FieldWalker(doc)
             fieldvalues = fieldwalker.go(key).get().value
             res = list()
-            for v in fieldvalues.values:
+            for v in fieldvalues.iter_flat():
                 weighted = Weighted(v)
                 if weighted not in result:
                     res.append(weighted)

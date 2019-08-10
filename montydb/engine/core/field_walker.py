@@ -26,17 +26,16 @@ class FieldWriteError(FieldWalkError):
 
 
 class FieldValues(object):
-    __slots__ = ("nodes", "values", "exists", "null_or_missing",
+    __slots__ = ("nodes", "exists", "null_or_missing",
                  "_fieldwalker", "_value_iter", "__iter")
 
     def __init__(self, nodes, fieldwalker):
         self.nodes = nodes
         self._fieldwalker = fieldwalker
 
-        self.values = list(self._iter(False, True, False))
         self.exists = any(nd.exists for nd in nodes)
         self.null_or_missing = (any(nd.is_missing() for nd in nodes) or
-                                self.exists and None in self.values)
+                                self.exists and None in self.iter_flat())
 
         self._value_iter = self.iter_full
         self.__iter = self.iter_full()
@@ -73,6 +72,9 @@ class FieldValues(object):
     def iter_plain(self):
         return self._iter(False, False, True)
 
+    def iter_flat(self):
+        return self._iter(array_only=False, unpack=True, pack=False)
+
     def iter_full(self):
         return self._iter(False, True, True)
 
@@ -95,10 +97,10 @@ class FieldValues(object):
         self._value_iter = self.iter_full
 
     def __repr__(self):
-        return "FieldValues({})".format(self.values)
+        return "FieldValues({})".format(self.iter_plain())
 
     def __eq__(self, other):
-        return self.values == other
+        return list(self.iter_plain()) == other
 
 
 class FieldNode(str):
