@@ -6,6 +6,7 @@ class _NoVal(object):
     __solts__ = ()
 
 
+# Value of missing field
 _no_val = _NoVal()
 
 
@@ -26,6 +27,9 @@ class FieldWriteError(FieldWalkError):
 
 
 class FieldValues(object):
+    """Document field value iterator
+    """
+
     __slots__ = ("nodes", "_is_exists", "_null_or_missing",
                  "_fieldwalker", "_value_iter", "__iter")
 
@@ -37,7 +41,6 @@ class FieldValues(object):
         self._null_or_missing = None
 
         self._value_iter = self.iter_full
-        self.__iter = self.iter_full()
 
     def is_exists(self):
         if self._is_exists is None:
@@ -103,6 +106,9 @@ class FieldValues(object):
 
     def iter_elements(self):
         return self._iter(array_only=True, unpack=True, pack=False)
+
+    def change_iter(self, func):
+        self._value_iter = func
 
     def __next__(self):
         return next(self.__iter)

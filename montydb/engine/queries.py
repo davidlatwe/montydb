@@ -186,7 +186,7 @@ class LogicBox(list):
         """"""
         with fieldwalker.value as field_value:
             for elem in field_value.iter_elements():
-                field_value._value_iter = lambda: iter([elem])
+                field_value.change_iter(lambda: iter([elem]))
                 if all(self.__gen(fieldwalker)):
                     return True
 
