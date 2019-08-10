@@ -101,6 +101,9 @@ class FieldValues(object):
     def iter_arrays(self):
         return self._iter(array_only=True, unpack=False, pack=True)
 
+    def iter_elements(self):
+        return self._iter(array_only=True, unpack=True, pack=False)
+
     def __next__(self):
         return next(self.__iter)
 

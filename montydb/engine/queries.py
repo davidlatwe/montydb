@@ -185,11 +185,10 @@ class LogicBox(list):
     def __call_elemMatch(self, fieldwalker):
         """"""
         with fieldwalker.value as field_value:
-            for value in field_value.iter_arrays():
-                for v in value:
-                    field_value._value_iter = lambda: iter([v])
-                    if all(self.__gen(fieldwalker)):
-                        return True
+            for elem in field_value.iter_elements():
+                field_value._value_iter = lambda: iter([elem])
+                if all(self.__gen(fieldwalker)):
+                    return True
 
     def __call_and(self, fieldwalker):
         return all(self.__gen(fieldwalker))
