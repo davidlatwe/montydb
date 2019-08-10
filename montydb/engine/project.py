@@ -243,7 +243,7 @@ class Projector(object):
 
             if "." in field_path:
                 fore_path, key = field_path.rsplit(".", 1)
-                if fieldwalker.go(fore_path).get().value.exists:
+                if fieldwalker.go(fore_path).get().value.is_exists():
                     for emb_doc in fieldwalker.value:
                         if key not in emb_doc:
                             continue

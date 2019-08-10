@@ -210,3 +210,17 @@ def test_qop_elemMatch_14(monty_find, mongo_find):
 
     with pytest.raises(OperationFailure):
         next(monty_c)
+
+
+def test_qop_elemMatch_15(monty_find, mongo_find):
+    docs = [
+        {"a": ["some"]},
+    ]
+    spec = {"a": {"$elemMatch": {"$exists": True}}}
+
+    monty_c = monty_find(docs, spec)
+    mongo_c = mongo_find(docs, spec)
+
+    assert mongo_c.count() == 1
+    assert monty_c.count() == mongo_c.count()
+    assert next(mongo_c) == next(monty_c)

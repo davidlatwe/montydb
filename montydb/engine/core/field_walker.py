@@ -6,6 +6,7 @@ class _NoVal(object):
     __solts__ = ()
 
 
+# Value of missing field
 _no_val = _NoVal()
 
 
@@ -26,31 +27,70 @@ class FieldWriteError(FieldWalkError):
 
 
 class FieldValues(object):
-    __slots__ = ("nodes", "values", "exists", "null_or_missing",
+    """Document field status and values iterator
+
+    Store document tree nodes that matched from query, and iterate nodes values
+    by interests. Also compute document field status from input nodes.
+
+    Arguments:
+        nodes (list): A list of nodes that picked from `FieldTree`
+        fieldwalker: Instance of `FieldWalker` which made the query
+
+    """
+
+    __slots__ = ("nodes", "_is_exists", "_null_or_missing",
                  "_fieldwalker", "_value_iter", "__iter")
 
     def __init__(self, nodes, fieldwalker):
         self.nodes = nodes
         self._fieldwalker = fieldwalker
 
-        self.values = list(self._iter(False, True, False))
-        self.exists = any(nd.exists for nd in nodes)
-        self.null_or_missing = (any(nd.is_missing() for nd in nodes) or
-                                self.exists and None in self.values)
+        self._is_exists = None
+        self._null_or_missing = None
 
         self._value_iter = self.iter_full
-        self.__iter = self.iter_full()
+
+    def is_exists(self):
+        """Is field exists ?"""
+        if self._is_exists is None:
+            is_exists = any(nd.exists for nd in self.nodes)
+            # Cache
+            self._is_exists = is_exists
+
+            return is_exists
+        else:
+            return self._is_exists
+
+    def null_or_missing(self):
+        """Is None value or missing field ?"""
+        if self._null_or_missing is None:
+            null_or_missing = (any(nd.is_missing() for nd in self.nodes) or
+                               self.is_exists() and None in self.iter_flat())
+            # Cache
+            self._null_or_missing = null_or_missing
+
+            return null_or_missing
+        else:
+            return self._null_or_missing
 
     def _iter(self, array_only, unpack, pack):
+        """Value iterator
+
+        Args:
+            array_only (bool): Yield only `list` type values.
+            unpack (bool): If value is a `list`, yield it's elements.
+            pack (bool): If value is a `list`, yield it.
+
+        """
         fieldwalker = self._fieldwalker
         for node in self.nodes:
             fieldwalker._put_matched(node)
 
-            doc = node.value
-            if isinstance(doc, list):
-                # docs in array
+            value = node.value
+            if isinstance(value, list):
+                # value in array
                 if unpack and not node.located:
-                    for i, elem in enumerate(doc):
+                    for i, elem in enumerate(value):
                         if elem is not _no_val:
                             matched = FieldNode(str(i),
                                                 elem,
@@ -60,23 +100,48 @@ class FieldValues(object):
                             fieldwalker._put_matched(matched)
                             yield elem
                 if pack:
-                    yield doc
+                    # Include whole array as part of query result
+                    yield value
             else:
-                # doc or array positioned doc
-                if not array_only and doc is not _no_val:
-                    yield doc
+                # Value of document field or value of positioned array element
+                if not array_only and value is not _no_val:
+                    yield value
 
         # Reset to `None` if the iter loop did not *break* in query
         fieldwalker._put_matched(None)
 
     def iter_plain(self):
-        return self._iter(False, False, True)
+        """Iterate each nodes value as is
+        """
+        return self._iter(array_only=False, unpack=False, pack=True)
+
+    def iter_flat(self):
+        """Iterate each nodes value and unpack list value's element
+        """
+        return self._iter(array_only=False, unpack=True, pack=False)
 
     def iter_full(self):
-        return self._iter(False, True, True)
+        """Iterate each nodes value as is, also unpack list value's element
+        """
+        return self._iter(array_only=False, unpack=True, pack=True)
 
     def iter_arrays(self):
-        return self._iter(True, False, True)
+        """Only iterate list type values
+        """
+        return self._iter(array_only=True, unpack=False, pack=True)
+
+    def iter_elements(self):
+        """Only iterate list type values' elements
+        """
+        return self._iter(array_only=True, unpack=True, pack=False)
+
+    def change_iter(self, func):
+        """Change value iterator
+
+        func: A function that retures a iterator
+
+        """
+        self._value_iter = func
 
     def __next__(self):
         return next(self.__iter)
@@ -94,20 +159,30 @@ class FieldValues(object):
         self._value_iter = self.iter_full
 
     def __repr__(self):
-        return "FieldValues({})".format(self.values)
+        return "FieldValues({})".format(self.iter_plain())
 
     def __eq__(self, other):
-        return self.values == other
+        return list(self.iter_plain()) == other
 
 
 class FieldNode(str):
+    """Docuemtn field node
+
+    Arguments:
+        field (str): Document field name
+        doc: field value
+        located (bool): Is this a positioned field (array element)
+        exists (bool): Is this field exists
+        in_array (bool): Is this document inside an array
+        parent (FieldNode): Parent node
+
     """
+
     # (NOTE) `__slots__` not supported for `str` in Python 2.7,
     #        drop it for now.
-
-    __slots__ = ("value", "located", "exists", "full_path",
-                 "in_array", "parent", "children")
-    """
+    #
+    # __slots__ = ("value", "located", "exists", "full_path",
+    #              "in_array", "parent", "children")
 
     def __new__(cls, field, doc, located=False, exists=False,
                 in_array=False, parent=None):
@@ -586,11 +661,43 @@ class FieldTree(object):
 
 
 class FieldWalker(object):
-    """Document traversal context manager"""
+    """Document field traversal interface for MontyDB
+
+    Key component to make everything run. Every document operation in MontyDB
+    use this to read/write the field value into document or to delete field.
+
+    The `FieldWalker` does not interact with the input document directly, it
+    initialized with a tree (`FieldTree`), and adding nodes (`FieldNode`) via
+    the input field.
+
+    when read, all matched fields' values will be carry out by a `FieldValues`
+    instance.
+
+    When write/delete, you need to commit the changes before it take effect.
+
+    Example:
+        >>> from montydb.engine.core import FieldWalker
+        >>> doc = {"name": "Tom", "detail": {"age": None, "weight": 80}}
+        >>> walker = FieldWalker(doc)
+        >>> walker.go("name").get().value
+        FieldValues(['Tom'])
+        >>> walker.go("detail.weight").get().value
+        FieldValues([80])
+        >>> walker.go("detail.age").set(30)
+        >>> walker.commit()
+        True
+        >>> walker.doc
+        {'name': 'Tom', 'detail': {'age': 30, 'weight': 80}}
+
+    Arguments:
+        doc: The document to operate on. Must be a mutable mapping type.
+        doc_type (optional): The document class, specify what type of the
+            document is. If `doc_type` not provided, will use `type(doc)`
+            to get document class.
+
+    """
 
     def __init__(self, doc, doc_type=None):
-        """
-        """
         self.doc = doc
         self.doc_type = doc_type or type(doc)
         self.steps = None
@@ -600,12 +707,32 @@ class FieldWalker(object):
         self.matched = dict()
 
     def go(self, path):
+        """Input document traversing field path
+
+        https://docs.mongodb.com/manual/core/document/#dot-notation
+
+        Arguments:
+            path (str): Document field path
+
+        Returns:
+            (FieldWalker): self
+
+        """
         self.tree.restart()
         self.path = path
         self.steps = path.split(".")
         return self
 
     def step(self, field):
+        """Push traversing one depth further
+
+        Arguments:
+            field (str): Document field name
+
+        Returns:
+            (FieldWalker): self
+
+        """
         if self.path is None:
             self.path = field
         else:
@@ -614,31 +741,78 @@ class FieldWalker(object):
         return self
 
     def restart(self):
+        """Reset traversing state
+
+        Returns:
+            (FieldWalker): self
+
+        """
         self.tree.restart()
         self.path = None
         return self
 
     def get(self):
-        """Walk through document and acquire value with given key-path
+        """Read all values from previous given field path
+
+        Returns:
+            (FieldWalker): self
+
         """
         self.value = FieldValues(self.tree.read(self.steps), self)
         return self
 
     def set(self, value, evaluator=None, array_filters=None):
+        """Write value into fields that matched
+
+        This operation will not take effect util `commit()`.
+
+        Arguments:
+            value: Any value that needs to be written into
+            evaluator (optional): A function which compute the result from
+                `value` and the current field value from document, and the
+                result will be the new value to write into document.
+                This function should take two arguments, the first arg is an
+                instance of `.engine.core.field_walker.FieldNode`, the second
+                is the `value`.
+            array_filters (optional): An array filter document which formed as
+                `{<top-field-name>: <.engine.queries.QueryFilter>, ..}`.
+
+        """
         steps = self.tree.fields_positioning(self, array_filters)
         self.tree.write(steps, value, evaluator, array_filters)
 
     def drop(self, array_filters=None):
+        """Delete field
+
+        This operation will not take effect util `commit()`.
+
+        Arguments:
+            array_filters (optional): An array filter document which formed as
+                `{<top-field-name>: <.engine.queries.QueryFilter>, ..}`.
+
+        """
         steps = self.tree.fields_positioning(self, array_filters)
         self.tree.delete(steps, array_filters)
 
     def commit(self):
+        """Update document if any change been staged
+
+        Returns:
+            bool: Return `True` if any change happened, else `False`
+
+        """
         has_change = bool(self.tree.changes)
         if has_change:
             self.doc = self.tree.extract()
         return has_change
 
     def touched(self):
+        """Return a copy of document that contains only visited fields
+
+        Returns:
+            document
+
+        """
         return self.tree.extract(visited_only=True)
 
     def top_matched(self, position_path):
