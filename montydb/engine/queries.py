@@ -36,6 +36,8 @@ from .helpers import (
     compare_documents,
 )
 
+from . import MONGO_COMPAT_36
+
 
 def validate_sort_specifier(sort):
     if not (is_integer_type(sort) and sort in (1, -1)):
@@ -455,7 +457,8 @@ def _modify_regex_optins(sub_spec):
         "flags": flags
     }
 
-    if "#" in new_sub_spec["$regex"]["pattern"].rsplit("\n")[-1]:
+    if (MONGO_COMPAT_36
+            and "#" in new_sub_spec["$regex"]["pattern"].rsplit("\n")[-1]):
         # (NOTE) davidlatwe:
         #   if pound(#) char exists in $regex string value and not ends with
         #   newline(\n), Mongo raise error. (but the message seems incomplete)
