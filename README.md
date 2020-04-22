@@ -13,8 +13,8 @@
 ---
 
 ### MontyDB is:
-* A tiny version of MongoDB, against to **MongoDB 3.6.4** *(4.0 soon)*
-* Written in pure Python, testing on **Python 2.7, 3.6, 3.7, PyPy, PyPy3.5**
+* A tiny version of MongoDB, against to **MongoDB 4.0.11**
+* Written in pure Python, testing on **Python 2.7, 3.6, 3.7, 3.8, PyPy, PyPy3.5**
 * Literally serverless.
 * Similar to [mongomock](https://github.com/mongomock/mongomock), but a bit more than that.
 
