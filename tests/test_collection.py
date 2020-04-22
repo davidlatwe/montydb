@@ -166,3 +166,20 @@ def test_collection_save(monty_collection, mongo_collection):
     monty_collection.save(existed_doc)
 
     assert monty_collection.find_one(doc, {"_id": 0}) == result
+
+
+def test_collection_count(monty_collection, mongo_collection):
+    monty_collection.insert_many([{"a": 1}, {"a": 2}])
+    mongo_collection.insert_many([{"a": 1}, {"a": 2}])
+
+    assert monty_collection.count() == mongo_collection.count()
+
+
+def test_collection_count_documents(monty_collection, mongo_collection):
+    monty_collection.insert_many([{"a": 1}, {"a": 2}])
+    mongo_collection.insert_many([{"a": 1}, {"a": 2}])
+
+    monty_res = monty_collection.count_documents({"a": 1})
+    mongo_res = mongo_collection.count_documents({"a": 1})
+
+    assert monty_res == mongo_res

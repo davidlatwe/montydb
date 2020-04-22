@@ -1,3 +1,4 @@
+import warnings
 import collections
 from copy import deepcopy
 from bson import ObjectId
@@ -412,7 +413,26 @@ class MontyCollection(BaseObject):
         raise NotImplementedError("Not implemented.")
 
     def count(self, filter=None):
-        raise NotImplementedError("Not implemented.")
+        warnings.warn("count is deprecated. Use Collection.count_documents "
+                      "instead.", DeprecationWarning, stacklevel=2)
+
+        documents = self._storage.query(MontyCursor(self), 0)
+        if filter:
+            return self.__count_with_filter(documents, filter)
+        else:
+            return len(list(documents))
+
+    def count_documents(self, filter):
+        documents = self._storage.query(MontyCursor(self), 0)
+        return self.__count_with_filter(documents, filter)
+
+    def __count_with_filter(self, documents, filter):
+        count = 0
+        queryfilter = QueryFilter(filter)
+        for doc in documents:
+            if queryfilter(doc):
+                count += 1
+        return count
 
     def distinct(self, key, filter=None, **kwargs):
         """

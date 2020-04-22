@@ -1,4 +1,5 @@
 
+import warnings
 import copy
 from collections import deque
 
@@ -372,6 +373,9 @@ class MontyCursor(object):
         raise NotImplementedError
 
     def count(self, with_limit_and_skip=False):
+        warnings.warn("count is deprecated. Use Collection.count_documents "
+                      "instead.", DeprecationWarning, stacklevel=2)
+
         validate_boolean("with_limit_and_skip", with_limit_and_skip)
         if self._id is None:
             # (NOTE) this might need improve

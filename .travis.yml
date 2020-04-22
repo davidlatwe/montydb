@@ -2,6 +2,7 @@ language: python
 python:
   - pypy3.5
   - pypy
+  - 3.8
   - 3.7
   - 3.6
   - 2.7
@@ -10,7 +11,7 @@ python:
 env:
   global:
     - CC_TEST_REPORTER_ID=aa9820d7f18c6a86da387e2604f592f37845d0dac88afb10f73738872647c321
-    - MONGODB=3.6.4
+    - MONGODB=4.0.11
 
 matrix:
   fast_finish: true
@@ -28,13 +29,13 @@ before_install:
   - pip install codecov
 
 install:
-  - pip install pymongo==3.6.1  # Pin pymongo==3.6.1 to avoid deprecation warnings for now
+  - pip install pymongo
   - python setup.py install
 
 before_script:
   - mkdir ${PWD}/mongodb-linux-x86_64-${MONGODB}/data
   - ${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongod --dbpath ${PWD}/mongodb-linux-x86_64-${MONGODB}/data --logpath ${PWD}/mongodb-linux-x86_64-${MONGODB}/mongodb.log --fork
-  - "${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongo --eval 'db.adminCommand( { setFeatureCompatibilityVersion: \"3.6\" } )'"
+  - "${PWD}/mongodb-linux-x86_64-${MONGODB}/bin/mongo --eval 'db.adminCommand( { setFeatureCompatibilityVersion: \"4.0\" } )'"
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter
   - ./cc-test-reporter before-build
