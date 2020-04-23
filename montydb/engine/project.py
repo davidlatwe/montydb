@@ -3,7 +3,7 @@ from bson.py3compat import string_type
 
 from ..errors import OperationFailure
 from .queries import QueryFilter
-from .core import _no_val
+from .field_walker import _no_val
 from .helpers import (
     is_duckument_type,
 )

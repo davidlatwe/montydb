@@ -18,10 +18,10 @@ from bson.int64 import Int64
 
 from ..errors import OperationFailure
 
-from .core import (
-    gravity,
-    FieldWalker,
+from .field_walker import FieldWalker
+from .weighted import (
     Weighted,
+    gravity,
     _cmp_decimal,
     _decimal128_INF,
     _decimal128_NaN_ls,

@@ -15,7 +15,7 @@ from bson.code import Code
 
 from bson.py3compat import string_type, integer_types
 
-from ..helpers import (
+from .helpers import (
     RE_PATTERN_TYPE,
     re_int_flag_to_str,
 )

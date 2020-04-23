@@ -3,7 +3,8 @@ from bson import ObjectId
 from bson.py3compat import integer_types
 from bson.codec_options import DEFAULT_CODEC_OPTIONS
 
-from ..engine.core import FieldWalker, Weighted
+from ..engine.field_walker import FieldWalker
+from ..engine.weighted import Weighted
 from ..engine.queries import QueryFilter, ordering
 from ..engine.project import Projector
 from ..base import (

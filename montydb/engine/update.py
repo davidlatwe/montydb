@@ -7,12 +7,10 @@ from bson.decimal128 import Decimal128
 from bson.timestamp import Timestamp
 
 from ..errors import WriteError
-from .core import (
-    _cmp_decimal,
-    FieldWalker,
-    Weighted,
-    FieldWriteError,
-)
+
+from .field_walker import FieldWalker, FieldWriteError
+from .weighted import Weighted, _cmp_decimal
+
 from .queries import QueryFilter, ordering
 from .helpers import is_numeric_type, is_duckument_type, is_integer_type
 
