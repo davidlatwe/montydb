@@ -2,7 +2,7 @@
 import pytest
 import re
 
-from montydb.engine.core import Weighted, _cmp_decimal
+from montydb.engine.weighted import Weighted, _cmp_decimal
 
 from datetime import datetime
 
