@@ -21,7 +21,7 @@ from .engine.queries import QueryFilter
 from .engine.update import Updator
 from .engine.helpers import is_duckument_type, Counter
 
-from .storage.errors import StorageDuplicateKeyError
+from .storage import StorageDuplicateKeyError
 from .errors import (
     DuplicateKeyError,
     BulkWriteError,

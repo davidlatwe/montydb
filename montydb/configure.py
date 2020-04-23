@@ -5,7 +5,7 @@ import inspect
 
 from bson.py3compat import string_type
 
-from .storage.abcs import AbstractStorage
+from .storage import AbstractStorage
 from .errors import ConfigurationError
 
 

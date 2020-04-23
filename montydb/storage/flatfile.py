@@ -11,13 +11,14 @@ from bson.json_util import (
     dumps as _dumps,
 )
 
-from .abcs import (
+from . import (
     AbstractStorage,
     AbstractDatabase,
     AbstractCollection,
     AbstractCursor,
+
+    StorageDuplicateKeyError,
 )
-from .errors import StorageDuplicateKeyError
 
 
 FLATFILE_DB_EXT = ".json"

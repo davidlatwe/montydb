@@ -9,13 +9,14 @@ from bson import BSON
 from bson.py3compat import _unicode
 
 from ..base import WriteConcern
-from .abcs import (
+from . import (
     AbstractStorage,
     AbstractDatabase,
     AbstractCollection,
     AbstractCursor,
+
+    StorageDuplicateKeyError,
 )
-from .errors import StorageDuplicateKeyError
 
 
 sqlite_324 = sqlite3.sqlite_version_info >= (3, 24, 0)
