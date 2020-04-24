@@ -16,7 +16,6 @@ from .base import (
     _fields_list_to_dict,
     _index_list,
     _index_document,
-    command_coder,
 )
 
 
@@ -95,9 +94,6 @@ class MontyCursor(object):
         self._collection = collection
         self._components = (collection.database, collection, self)
         self._codec_options = collection.codec_options
-
-        spec, projection = command_coder(spec, projection,
-                                         codec_op=self._codec_options)
 
         self._spec = spec
         self._projection = projection

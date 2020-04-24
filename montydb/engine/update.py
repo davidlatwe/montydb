@@ -602,7 +602,7 @@ class EachAdder(object):
                 type_check = self.validators[mod]
             except KeyError:
                 raise WriteError("Found unexpected fields after $each in "
-                                 "$addToSet: %s" % spec.to_dict(),  # SON type
+                                 "$addToSet: %s" % spec,
                                  code=2)
 
             self.mods[mod] = type_check(self, value)

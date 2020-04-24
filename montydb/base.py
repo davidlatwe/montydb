@@ -21,29 +21,14 @@
 
 import collections
 
-from bson import BSON, SON
+from bson import SON
 from bson.py3compat import integer_types, string_type, abc, iteritems
 from bson.codec_options import CodecOptions
 from bson.raw_bson import RawBSONDocument
 from bson.codec_options import _parse_codec_options
 
-from .engine.helpers import is_duckument_type
-
 ASCENDING = 1
 DESCENDING = -1
-
-
-def command_coder(*args, **kwargs):
-    """Convert command doc to SON type
-    """
-    codec_op = kwargs["codec_op"]
-    for doc in args:
-        if is_duckument_type(doc):
-            # Preserve the type of the query document when decode it back
-            order_keep = codec_op.with_options(document_class=SON)
-            yield BSON.encode(doc, False, codec_op).decode(order_keep)
-        else:
-            yield doc  # should be None type.
 
 
 def validate_is_document_type(option, value):

@@ -11,7 +11,6 @@ from .base import (
     validate_ok_for_replace,
     validate_list_or_none,
     validate_boolean,
-    command_coder,
 )
 
 from .cursor import MontyCursor
@@ -174,8 +173,6 @@ class MontyCollection(BaseObject):
         validate_ok_for_replace(replacement)
         validate_boolean("upsert", upsert)
 
-        filter, = command_coder(filter, codec_op=self._database.codec_options)
-
         if bypass_document_validation:
             pass
 
@@ -256,12 +253,6 @@ class MontyCollection(BaseObject):
         validate_list_or_none('array_filters', array_filters)
         validate_boolean('upsert', upsert)
 
-        filter, update = command_coder(filter, update,
-                                       codec_op=self._database.codec_options)
-        if array_filters:
-            array_filters = command_coder(
-                *array_filters, codec_op=self._database.codec_options)
-
         if bypass_document_validation:
             pass
 
@@ -292,12 +283,6 @@ class MontyCollection(BaseObject):
         validate_ok_for_update(update)
         validate_list_or_none('array_filters', array_filters)
         validate_boolean('upsert', upsert)
-
-        filter, update = command_coder(filter, update,
-                                       codec_op=self._database.codec_options)
-        if array_filters:
-            array_filters = command_coder(
-                *array_filters, codec_op=self._database.codec_options)
 
         if bypass_document_validation:
             pass

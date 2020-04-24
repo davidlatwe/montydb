@@ -11,7 +11,6 @@ from ..base import (
     _fields_list_to_dict,
     _index_document,
     _index_list,
-    command_coder,
 )
 
 
@@ -93,8 +92,7 @@ class MontyList(list):
             projection = _fields_list_to_dict(projection, "projection")
         sort = sort and _index_document(sort) or None
 
-        spec, proj = command_coder(filter or {}, projection,
-                                   codec_op=DEFAULT_CODEC_OPTIONS)
+        spec, proj = filter or {}, projection,
 
         qf = QueryFilter(spec)
         pj = Projector(proj, qf) if proj is not None else None
