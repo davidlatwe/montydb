@@ -1,16 +1,9 @@
 
 import os
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from bson import BSON
-from bson.py3compat import PY3
-
-from ..engine.helpers import with_metaclass
-
-if PY3:
-    from configparser import ConfigParser
-else:
-    from ConfigParser import ConfigParser
+from ..engine.types import ConfigParser
 
 
 class StorageError(Exception):
@@ -21,7 +14,7 @@ class StorageDuplicateKeyError(StorageError):
     """Raise when an insert or update fails due to a duplicate key error."""
 
 
-class AbstractStorage(with_metaclass(ABCMeta, object)):
+class AbstractStorage(object):
     """
     """
 
@@ -152,7 +145,7 @@ class AbstractStorage(with_metaclass(ABCMeta, object)):
         return NotImplemented
 
 
-class AbstractDatabase(with_metaclass(ABCMeta, object)):
+class AbstractDatabase(object):
 
     def __init__(self, storage, subject):
         self._name = subject._name
@@ -179,7 +172,7 @@ class AbstractDatabase(with_metaclass(ABCMeta, object)):
         return NotImplemented
 
 
-class AbstractCollection(with_metaclass(ABCMeta, object)):
+class AbstractCollection(object):
 
     def __init__(self, database, subject):
         self._name = subject._name
@@ -222,7 +215,7 @@ class AbstractCollection(with_metaclass(ABCMeta, object)):
         return NotImplemented
 
 
-class AbstractCursor(with_metaclass(ABCMeta, object)):
+class AbstractCursor(object):
 
     def __init__(self, collection, subject):
         self._collection = collection
