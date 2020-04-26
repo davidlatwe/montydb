@@ -2,20 +2,20 @@
 from datetime import datetime
 from collections import Mapping
 
-from bson import SON
-from bson.timestamp import Timestamp
-from bson.objectid import ObjectId
-from bson.min_key import MinKey
-from bson.max_key import MaxKey
-from bson.int64 import Int64
-from bson.decimal128 import Decimal128
-from bson.binary import Binary
-from bson.regex import Regex
-from bson.code import Code
+from .types import (
+    integer_types,
+    string_types,
+    SON,
+    Regex,
+    MinKey,
+    MaxKey,
+    Decimal128,
+    Timestamp,
+    ObjectId,
+    Binary,
+    Code,
+    Int64,
 
-from bson.py3compat import string_type, integer_types
-
-from .helpers import (
     RE_PATTERN_TYPE,
     re_int_flag_to_str,
 )
@@ -143,9 +143,9 @@ def gravity(value, weight_only=None):
         wgt = TYPE_WEIGHT[type(value)]
 
     except KeyError:
-        if isinstance(value, Code):  # also an instance of string_type
+        if isinstance(value, Code):  # also an instance of string_types
             wgt = 12 if value.scope is None else 13
-        elif isinstance(value, string_type):
+        elif isinstance(value, string_types):
             wgt = 3
         elif isinstance(value, bytes):  # pragma: no PY2 cover
             wgt = 6

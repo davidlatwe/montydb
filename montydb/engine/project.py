@@ -1,10 +1,9 @@
 
-from bson.py3compat import string_type
-
 from ..errors import OperationFailure
 from .queries import QueryFilter
 from .field_walker import _no_val
-from .helpers import (
+from .types import (
+    string_types,
     is_duckument_type,
 )
 
@@ -14,7 +13,7 @@ def _is_include(val):
     [] and "" will be `True` as well
     """
     return bool(isinstance(val, list) or
-                isinstance(val, string_type) or
+                isinstance(val, string_types) or
                 val)
 
 
@@ -45,7 +44,7 @@ def _perr_doc(val):
     """
     v_lis = []
     for _k, _v in val.items():
-        if isinstance(_v, string_type):
+        if isinstance(_v, string_types):
             v_lis.append("{0}: \"{1}\"".format(_k, _v))
         else:
             if is_duckument_type(_v):

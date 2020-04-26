@@ -3,13 +3,15 @@ import warnings
 import copy
 from collections import deque
 
-from bson import RE_TYPE
-from bson import SON
-from bson.py3compat import iteritems, integer_types
-
 from .errors import InvalidOperation, OperationFailure
 from .engine.queries import QueryFilter, ordering
 from .engine.project import Projector
+from .engine.types import (
+    SON,
+    RE_PATTERN_TYPE,
+    iteritems,
+    integer_types,
+)
 from .base import (
     validate_boolean,
     validate_is_mapping,
@@ -191,13 +193,13 @@ class MontyCursor(object):
         for key, value in iterator:
             if isinstance(value, (dict, list)) and not isinstance(value, SON):
                 value = self._deepcopy(value, memo)
-            elif not isinstance(value, RE_TYPE):
+            elif not isinstance(value, RE_PATTERN_TYPE):
                 value = copy.deepcopy(value, memo)
 
             if is_list:
                 y.append(value)
             else:
-                if not isinstance(key, RE_TYPE):
+                if not isinstance(key, RE_PATTERN_TYPE):
                     key = copy.deepcopy(key, memo)
                 y[key] = value
         return y

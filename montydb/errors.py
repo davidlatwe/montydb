@@ -1,4 +1,4 @@
-from bson.errors import *
+from .engine.types import InvalidDocument
 
 
 class MontyError(Exception):

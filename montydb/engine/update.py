@@ -2,17 +2,19 @@
 from collections import OrderedDict
 from datetime import datetime
 
-from bson.py3compat import string_type
-from bson.decimal128 import Decimal128
-from bson.timestamp import Timestamp
-
 from ..errors import WriteError
 
 from .field_walker import FieldWalker, FieldWriteError
 from .weighted import Weighted, _cmp_decimal
-
 from .queries import QueryFilter, ordering
-from .helpers import is_numeric_type, is_duckument_type, is_integer_type
+from .types import (
+    Decimal128,
+    Timestamp,
+    string_types,
+    is_numeric_type,
+    is_duckument_type,
+    is_integer_type,
+)
 
 
 def _update(fieldwalker,
@@ -184,7 +186,7 @@ class Updator(object):
 
 def parse_inc(field, value, array_filters):
     if not is_numeric_type(value):
-        val_repr_ = "{!r}" if isinstance(value, string_type) else "{}"
+        val_repr_ = "{!r}" if isinstance(value, string_types) else "{}"
         val_repr_ = val_repr_.format(value)
         msg = ("Cannot increment with non-numeric argument: "
                "{{{0}: {1}}}".format(field, val_repr_))
@@ -258,7 +260,7 @@ def parse_max(field, value, array_filters):
 
 def parse_mul(field, value, array_filters):
     if not is_numeric_type(value):
-        val_repr_ = "{!r}" if isinstance(value, string_type) else "{}"
+        val_repr_ = "{!r}" if isinstance(value, string_types) else "{}"
         val_repr_ = val_repr_.format(value)
         msg = ("Cannot multiply with non-numeric argument: "
                "{{{0}: {1}}}".format(field, val_repr_))
@@ -301,7 +303,7 @@ def _get_array_member(fieldvalues):
 
 
 def parse_rename(field, new_field, array_filters):
-    if not isinstance(new_field, string_type):
+    if not isinstance(new_field, string_types):
         msg = ("The 'to' field for $rename must be a string: {0}: {1}"
                "".format(field, new_field))
         raise WriteError(msg, code=2)

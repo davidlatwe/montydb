@@ -72,6 +72,11 @@ try:
         _parse_codec_options as parse_codec_options,
     )
 
+    from bson.errors import (
+        BSONError,
+        InvalidDocument,
+    )
+
 except ImportError:
     _mock = type("mock", (object,), {})
 
@@ -96,6 +101,14 @@ except ImportError:
         return CodecOptions(
             document_class=options.get("document_class", dict)
         )
+
+    class BSONError(Exception):
+        """Base class for all BSON exceptions.
+        """
+
+    class InvalidDocument(BSONError):
+        """Raised when trying to create a BSON object from an invalid document.
+        """
 
 
 RE_PATTERN_TYPE = type(re.compile(""))
@@ -196,3 +209,73 @@ def re_int_flag_to_str(int_flags):
     if int_flags & re.VERBOSE:
         flags += "x"
     return flags
+
+
+def re_str_flags_to_int(str_flags):
+    flags = 0
+    if "i" in str_flags:
+        flags |= re.IGNORECASE
+    if "l" in str_flags:
+        flags |= re.LOCALE
+    if "m" in str_flags:
+        flags |= re.MULTILINE
+    if "s" in str_flags:
+        flags |= re.DOTALL
+    if "u" in str_flags:
+        flags |= re.UNICODE
+    if "x" in str_flags:
+        flags |= re.VERBOSE
+
+    return flags
+
+
+def __add_attrib(deco):
+    """Decorator helper"""
+    def meta_decorator(value):
+        def add_attrib(func):
+            func._keep = lambda: value
+            return func
+        return add_attrib
+    return meta_decorator
+
+
+@__add_attrib
+def keep(query):
+    """A decorator that preserve operation query for operator"""
+    def _(func):
+        return query
+    return _
+
+
+class Counter(object):
+    """An iterator that could trace the progress of iteration
+
+    Args:
+        iterable (Iterable): An iterable object.
+        job_on_each (func): The function to process each item in the iterable
+                            during the iteration. `function(item)`
+                            The return value of the function will be stored in
+                            `Counter.data` attribute.
+
+    Attributes:
+        count (int): An int that indicate the progress of iteration.
+        data: The value returned from the `job_on_each` function.
+
+    """
+
+    def __init__(self, iterable, job_on_each=None):
+        self._iterable = iterable
+        self._job = job_on_each or (lambda i: None)
+        self.count = 0
+        self.data = None
+
+    def __next__(self):
+        item = next(self._iterable)
+        self.data = self._job(item)
+        self.count += 1
+        return item
+
+    next = __next__
+
+    def __iter__(self):
+        return self

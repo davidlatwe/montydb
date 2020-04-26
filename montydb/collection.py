@@ -1,8 +1,6 @@
 import warnings
 import collections
 from copy import deepcopy
-from bson import ObjectId
-from bson.py3compat import string_type
 
 from .base import (
     BaseObject,
@@ -18,8 +16,12 @@ from .engine.field_walker import FieldWalker
 from .engine.weighted import Weighted
 from .engine.queries import QueryFilter
 from .engine.update import Updator
-from .engine.helpers import is_duckument_type, Counter
-
+from .engine.types import (
+    ObjectId,
+    string_types,
+    is_duckument_type,
+    Counter,
+)
 from .storage import StorageDuplicateKeyError
 from .errors import (
     DuplicateKeyError,
@@ -423,9 +425,9 @@ class MontyCollection(BaseObject):
     def distinct(self, key, filter=None, **kwargs):
         """
         """
-        if not isinstance(key, string_type):
+        if not isinstance(key, string_types):
             raise TypeError("key must be an "
-                            "instance of %s" % (string_type.__name__,))
+                            "instance of %s" % (string_types.__name__,))
 
         result = list()
 

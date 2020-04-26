@@ -4,18 +4,6 @@ from copy import deepcopy
 from datetime import datetime
 from collections import Mapping
 
-from bson import SON
-from bson.py3compat import integer_types, string_type
-from bson.regex import Regex, str_flags_to_int
-from bson.min_key import MinKey
-from bson.max_key import MaxKey
-from bson.decimal128 import Decimal128
-from bson.timestamp import Timestamp
-from bson.objectid import ObjectId
-from bson.binary import Binary
-from bson.code import Code
-from bson.int64 import Int64
-
 from ..errors import OperationFailure
 
 from .field_walker import FieldWalker
@@ -26,14 +14,28 @@ from .weighted import (
     _decimal128_INF,
     _decimal128_NaN_ls,
 )
+from .types import (
+    integer_types,
+    string_types,
+    SON,
+    Regex,
+    MinKey,
+    MaxKey,
+    Decimal128,
+    Timestamp,
+    ObjectId,
+    Binary,
+    Code,
+    Int64,
 
-from .helpers import (
     RE_PATTERN_TYPE,
+
     is_duckument_type,
     is_integer_type,
     is_pattern_type,
     keep,
     compare_documents,
+    re_str_flags_to_int,
 )
 
 from . import MONGO_COMPAT_36
@@ -617,7 +619,7 @@ def _in_match(fieldwalker, query):
 
     for q in q_regex:
         for value in fieldwalker.value:
-            if isinstance(value, string_type) and q.search(value):
+            if isinstance(value, string_types) and q.search(value):
                 return True
 
 
@@ -803,9 +805,9 @@ def obj_to_bson_type_id(obj):
     try:
         type_id = BSON_TYPE_ID[type(obj)]
     except KeyError:
-        if isinstance(obj, Code):  # also an instance of string_type
+        if isinstance(obj, Code):  # also an instance of string_types
             type_id = 13 if obj.scope is None else 15
-        elif isinstance(obj, string_type):
+        elif isinstance(obj, string_types):
             type_id = 2
         elif isinstance(obj, bytes):
             type_id = 5
@@ -830,7 +832,7 @@ def parse_type(query):
 
         int_types = []
         for q in query:
-            if isinstance(q, string_type):
+            if isinstance(q, string_types):
                 try:
                     int_types.append(BSON_TYPE_ALIAS_ID[q])
                 except KeyError:
@@ -869,22 +871,22 @@ def parse_regex(query):
     if isinstance(query, Regex):
         q = query.try_compile()
     else:
-        if not isinstance(query["pattern"], string_type):
+        if not isinstance(query["pattern"], string_types):
             raise OperationFailure("$regex has to be a string")
-        if not isinstance(query["flags"], (string_type, _FALG)):
+        if not isinstance(query["flags"], (string_types, _FALG)):
             raise OperationFailure("$options has to be a string")
 
         if isinstance(query["flags"], _FALG):
             flags = query["flags"].retrieve
         else:
-            flags = str_flags_to_int(query["flags"])
+            flags = re_str_flags_to_int(query["flags"])
 
         q = re.compile(query["pattern"], flags)
 
     @keep(query)
     def _regex(fieldwalker):
         for value in fieldwalker.value:
-            if isinstance(value, (string_type, bytes)) and q.search(value):
+            if isinstance(value, (string_types, bytes)) and q.search(value):
                 return True
 
     return _regex
