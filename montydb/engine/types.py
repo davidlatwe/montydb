@@ -6,6 +6,8 @@ import re
 from datetime import datetime
 from collections import Mapping
 
+from . import ENABLE_BSON
+
 PY3 = sys.version_info[0] == 3
 
 
@@ -53,7 +55,7 @@ else:
 
 # BSON types
 
-try:
+if ENABLE_BSON:
 
     from bson import SON, BSON
     from bson.timestamp import Timestamp
@@ -100,7 +102,8 @@ try:
     def json_dumps(doc):
         return _dumps(doc, json_options=CANONICAL_JSON_OPTIONS)
 
-except ImportError:
+else:
+
     from json import (
         JSONEncoder,
         loads as _loads,
