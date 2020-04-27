@@ -165,10 +165,11 @@ else:
         else:
             return _dumps(doc)
 
-    def object_hook(object):
-        if "$oid" in object:
-            return ObjectId(object["$oid"])
-        return object
+    def object_hook(obj):
+        for key in json_hooks:
+            if key in obj:
+                return json_hooks[key](obj)
+        return obj
 
     def document_decode(serialized, codec_options=None, *args, **kwargs):
         cls = codec_options.document_class if codec_options else dict
@@ -180,6 +181,11 @@ else:
 
     def json_dumps(doc):
         return _dumps(doc)
+
+
+json_hooks = {
+    "$oid": lambda obj: ObjectId(obj["$oid"])
+}
 
 
 RE_PATTERN_TYPE = type(re.compile(""))
