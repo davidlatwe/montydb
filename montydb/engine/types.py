@@ -67,7 +67,14 @@ try:
     from bson.code import Code
     from bson.raw_bson import RawBSONDocument
 
+    from bson.json_util import (
+        CANONICAL_JSON_OPTIONS,
+        loads as _loads,
+        dumps as _dumps,
+    )
+
     from bson.codec_options import (
+        DEFAULT_CODEC_OPTIONS,
         CodecOptions,
         _parse_codec_options as parse_codec_options,
     )
@@ -77,7 +84,29 @@ try:
         InvalidDocument,
     )
 
+    def document_encode(doc,
+                        check_keys=False,
+                        codec_options=DEFAULT_CODEC_OPTIONS):
+        return BSON.encode(doc,
+                           check_keys=check_keys,
+                           codec_options=codec_options)
+
+    def document_decode(doc, codec_options=DEFAULT_CODEC_OPTIONS):
+        return BSON(doc).decode(codec_options)
+
+    def json_loads(serialized):
+        return _loads(serialized, json_options=CANONICAL_JSON_OPTIONS)
+
+    def json_dumps(doc):
+        return _dumps(doc, json_options=CANONICAL_JSON_OPTIONS)
+
 except ImportError:
+    from json import (
+        JSONEncoder,
+        loads as _loads,
+        dumps as _dumps,
+    )
+
     _mock = type("mock", (object,), {})
 
     SON = _mock
@@ -109,6 +138,44 @@ except ImportError:
     class InvalidDocument(BSONError):
         """Raised when trying to create a BSON object from an invalid document.
         """
+
+    def document_encode(doc, check_keys=False, *args, **kwargs):
+        if check_keys:
+            serialized = ""
+            encoder = JSONEncoder()
+            item_sep = encoder.item_separator
+            key_incoming = False
+            for s in encoder.iterencode(doc):
+                if key_incoming:
+                    key_incoming = False
+                    if "." in s:
+                        msg = "key '%s' must not contain '.'" % s
+                        raise InvalidDocument(msg)
+                    if s.startswith("$"):
+                        msg = "key '%s' must not start with '$'" % s
+                        raise InvalidDocument(msg)
+
+                elif s == "{" or s == item_sep:
+                    key_incoming = True
+
+                serialized += s
+
+            return serialized
+        else:
+            return _dumps(doc)
+
+    def document_decode(serialized, codec_options=None, *args, **kwargs):
+        if codec_options:
+            object_hook = codec_options.document_class
+        else:
+            object_hook = None
+        return _loads(serialized, object_hook=object_hook)
+
+    def json_loads(serialized):
+        return _loads(serialized)
+
+    def json_dumps(doc):
+        return _dumps(doc)
 
 
 RE_PATTERN_TYPE = type(re.compile(""))

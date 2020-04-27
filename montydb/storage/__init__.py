@@ -1,9 +1,11 @@
 
 import os
-
 from abc import abstractmethod
-from bson import BSON
-from ..engine.types import ConfigParser
+from ..engine.types import (
+    ConfigParser,
+    document_encode,
+    document_decode,
+)
 
 
 class StorageError(Exception):
@@ -181,10 +183,10 @@ class AbstractCollection(object):
         self.coptions = subject.codec_options
 
     def _encode_doc(self, doc, check_keys=False):
-        return BSON.encode(doc,
-                           # Check if keys start with '$' or contain '.'
-                           check_keys=check_keys,
-                           codec_options=self.coptions)
+        return document_encode(doc,
+                               # Check if keys start with '$' or contain '.'
+                               check_keys=check_keys,
+                               codec_options=self.coptions)
 
     @property
     def contractor_cls(self):
@@ -223,7 +225,7 @@ class AbstractCursor(object):
     def _decode_doc(self, doc):
         """
         """
-        return BSON(doc).decode(self._collection.coptions)
+        return document_decode(doc, codec_options=self._collection.coptions)
 
     @abstractmethod
     def query(self):

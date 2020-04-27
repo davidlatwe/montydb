@@ -3,12 +3,13 @@ import os
 import shutil
 from collections import OrderedDict
 from itertools import islice
-from bson import BSON
-from bson.py3compat import _unicode
-from bson.json_util import (
-    CANONICAL_JSON_OPTIONS,
-    loads as _loads,
-    dumps as _dumps,
+
+from ..engine.types import (
+    document_encode,
+    document_decode,
+    json_loads,
+    json_dumps,
+    unicode_,
 )
 
 from . import (
@@ -24,15 +25,12 @@ from . import (
 FLATFILE_DB_EXT = ".json"
 
 
-# (TODO) CANONICAL_JSON_OPTIONS might need to sync with codec_options
-
-
 def _read_pretty(file_path):
     with open(file_path, "r") as fp:
         lines = [line.strip() for line in fp.readlines()]
         if lines:
             serialized = "".join(lines)
-            return _loads(serialized, json_options=CANONICAL_JSON_OPTIONS)
+            return json_loads(serialized)
         else:
             return []
 
@@ -40,8 +38,7 @@ def _read_pretty(file_path):
 def _write_pretty(file_path, documents):
     serialized = []
     for doc in documents.values():
-        serialized.append(
-            _dumps(BSON(doc).decode(), json_options=CANONICAL_JSON_OPTIONS))
+        serialized.append(json_dumps(document_decode(doc)))
 
     with open(file_path, "w") as fp:
         fp.write("[\n{}\n]".format(",\n".join(serialized)))
@@ -60,7 +57,7 @@ class FlatFileKVEngine(object):
 
         if os.path.isfile(self.file_path):
             for doc in _read_pretty(self.file_path):
-                self.__cache[doc["_id"]] = BSON.encode(doc)
+                self.__cache[doc["_id"]] = document_encode(doc)
 
     @classmethod
     def touch(cls, file_path):
@@ -154,7 +151,7 @@ class FlatFileStorage(AbstractStorage):
 
     def database_list(self):
         return [
-            name for name in os.listdir(_unicode(self._repository))
+            name for name in os.listdir(unicode_(self._repository))
             if os.path.isdir(self._db_path(name))
         ]
 
@@ -200,7 +197,7 @@ class FlatFileDatabase(AbstractDatabase):
         if not self.database_exists():
             return []
         return [os.path.splitext(name)[0]
-                for name in os.listdir(_unicode(self._db_path))]
+                for name in os.listdir(unicode_(self._db_path))]
 
 
 FlatFileStorage.contractor_cls = FlatFileDatabase
