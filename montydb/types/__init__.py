@@ -68,13 +68,11 @@ if ENABLE_BSON:
     from bson.regex import Regex
     from bson.code import Code
     from bson.raw_bson import RawBSONDocument
-
     from bson.json_util import (
         CANONICAL_JSON_OPTIONS,
         loads as _loads,
         dumps as _dumps,
     )
-
     from bson.codec_options import (
         DEFAULT_CODEC_OPTIONS,
         CodecOptions,
@@ -105,13 +103,17 @@ else:
         dumps as _dumps,
     )
     from ..errors import InvalidDocument
+    from .objectid import ObjectId
 
-    _mock = type("mock", (object,), {})
+    class _mock(object):
+        def __init__(self, *args, **kwargs):
+            pass
 
     SON = _mock
     BSON = _mock
+    RawBSONDocument = _mock
+
     Timestamp = _mock
-    ObjectId = _mock
     MinKey = _mock
     MaxKey = _mock
     Int64 = _mock
@@ -119,7 +121,6 @@ else:
     Binary = _mock
     Regex = _mock
     Code = _mock
-    RawBSONDocument = _mock
 
     class CodecOptions(_mock):
         def __init__(self, document_class=dict):
@@ -130,10 +131,18 @@ else:
             document_class=options.get("document_class", dict)
         )
 
+    class BSONEncoder(JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, ObjectId):
+                return {"$oid": str(obj)}
+            if hasattr(obj, "to_json"):
+                return obj.to_json()
+            return JSONEncoder.default(self, obj)
+
     def document_encode(doc, check_keys=False, *args, **kwargs):
         if check_keys:
             serialized = ""
-            encoder = JSONEncoder()
+            encoder = BSONEncoder()
             item_sep = encoder.item_separator
             key_incoming = False
             for s in encoder.iterencode(doc):
@@ -155,12 +164,15 @@ else:
         else:
             return _dumps(doc)
 
+    def object_hook(object):
+        if "$oid" in object:
+            return ObjectId(object["$oid"])
+        return object
+
     def document_decode(serialized, codec_options=None, *args, **kwargs):
-        if codec_options:
-            object_hook = codec_options.document_class
-        else:
-            object_hook = None
-        return _loads(serialized, object_hook=object_hook)
+        cls = codec_options.document_class if codec_options else dict
+        return _loads(serialized,
+                      object_pairs_hook=lambda pairs: object_hook(cls(pairs)))
 
     def json_loads(serialized):
         return _loads(serialized)
@@ -170,14 +182,6 @@ else:
 
 
 RE_PATTERN_TYPE = type(re.compile(""))
-
-
-_decimal128_NaN = Decimal128('NaN')
-_decimal128_INF = Decimal128('Infinity')
-_decimal128_NaN_ls = (_decimal128_NaN,
-                      Decimal128('-NaN'),
-                      Decimal128('sNaN'),
-                      Decimal128('-sNaN'))
 
 
 def _compare_doc_in_strict_order(a, b):
