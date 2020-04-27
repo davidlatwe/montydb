@@ -1,12 +1,13 @@
 """Managing all data types and mocks
 """
 import sys
+import os
 import platform
 import re
 from datetime import datetime
 from collections import Mapping
 
-from . import ENABLE_BSON
+ENABLE_BSON = bool(os.getenv("ENABLE_BSON", False))
 
 PY3 = sys.version_info[0] == 3
 
