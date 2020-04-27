@@ -1,4 +1,17 @@
-from .engine.types import InvalidDocument
+
+class BSONError(Exception):
+    """Base class for all BSON exceptions.
+    """
+
+
+class InvalidDocument(BSONError):
+    """Raised when trying to create a BSON object from an invalid document.
+    """
+
+
+class InvalidId(BSONError):
+    """Raised when trying to create an ObjectId from invalid data.
+    """
 
 
 class MontyError(Exception):

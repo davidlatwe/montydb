@@ -81,11 +81,6 @@ if ENABLE_BSON:
         _parse_codec_options as parse_codec_options,
     )
 
-    from bson.errors import (
-        BSONError,
-        InvalidDocument,
-    )
-
     def document_encode(doc,
                         check_keys=False,
                         codec_options=DEFAULT_CODEC_OPTIONS):
@@ -109,6 +104,7 @@ else:
         loads as _loads,
         dumps as _dumps,
     )
+    from ..errors import InvalidDocument
 
     _mock = type("mock", (object,), {})
 
@@ -133,14 +129,6 @@ else:
         return CodecOptions(
             document_class=options.get("document_class", dict)
         )
-
-    class BSONError(Exception):
-        """Base class for all BSON exceptions.
-        """
-
-    class InvalidDocument(BSONError):
-        """Raised when trying to create a BSON object from an invalid document.
-        """
 
     def document_encode(doc, check_keys=False, *args, **kwargs):
         if check_keys:
