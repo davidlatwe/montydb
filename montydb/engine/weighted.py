@@ -2,7 +2,7 @@
 from datetime import datetime
 from collections import Mapping
 
-from .types import (
+from ..types import (
     integer_types,
     string_types,
     SON,

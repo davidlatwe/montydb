@@ -5,7 +5,7 @@ import inspect
 
 from .storage import AbstractStorage
 from .errors import ConfigurationError
-from .engine.types import string_types
+from .types import string_types
 
 
 MEMORY_STORAGE = "memory"

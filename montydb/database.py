@@ -2,7 +2,7 @@
 from . import errors
 from .collection import MontyCollection
 from .base import BaseObject
-from .engine.types import string_types, encode_
+from .types import string_types, encode_
 
 
 class MontyDatabase(BaseObject):

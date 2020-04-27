@@ -14,7 +14,7 @@ from .weighted import (
     _decimal128_INF,
     _decimal128_NaN_ls,
 )
-from .types import (
+from ..types import (
     integer_types,
     string_types,
     SON,

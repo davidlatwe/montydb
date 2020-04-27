@@ -6,7 +6,7 @@ from collections import deque
 from .errors import InvalidOperation, OperationFailure
 from .engine.queries import QueryFilter, ordering
 from .engine.project import Projector
-from .engine.types import (
+from .types import (
     SON,
     RE_PATTERN_TYPE,
     iteritems,

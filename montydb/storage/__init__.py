@@ -1,7 +1,7 @@
 
 import os
 from abc import abstractmethod
-from ..engine.types import (
+from ..types import (
     ConfigParser,
     document_encode,
     document_decode,

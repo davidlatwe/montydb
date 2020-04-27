@@ -6,7 +6,7 @@ import contextlib
 from collections import OrderedDict
 
 from ..base import WriteConcern
-from ..engine.types import (
+from ..types import (
     unicode_,
     document_encode,
 )

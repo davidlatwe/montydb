@@ -16,7 +16,7 @@ from .engine.field_walker import FieldWalker
 from .engine.weighted import Weighted
 from .engine.queries import QueryFilter
 from .engine.update import Updator
-from .engine.types import (
+from .types import (
     ObjectId,
     string_types,
     is_duckument_type,

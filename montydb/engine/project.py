@@ -2,7 +2,7 @@
 from ..errors import OperationFailure
 from .queries import QueryFilter
 from .field_walker import _no_val
-from .types import (
+from ..types import (
     string_types,
     is_duckument_type,
 )

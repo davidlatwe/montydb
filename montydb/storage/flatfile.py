@@ -4,7 +4,7 @@ import shutil
 from collections import OrderedDict
 from itertools import islice
 
-from ..engine.types import (
+from ..types import (
     document_encode,
     document_decode,
     json_loads,

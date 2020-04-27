@@ -7,7 +7,7 @@ from ..errors import WriteError
 from .field_walker import FieldWalker, FieldWriteError
 from .weighted import Weighted, _cmp_decimal
 from .queries import QueryFilter, ordering
-from .types import (
+from ..types import (
     Decimal128,
     Timestamp,
     string_types,

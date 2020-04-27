@@ -23,7 +23,7 @@ from collections import (
     OrderedDict,
     MutableMapping,
 )
-from .engine.types import (
+from .types import (
     abc,
     iteritems,
     integer_types,

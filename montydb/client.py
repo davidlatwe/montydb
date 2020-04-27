@@ -5,7 +5,7 @@ from . import errors, version
 from .base import BaseObject, ClientOptions
 from .configure import provide_storage, provide_repository
 from .database import MontyDatabase
-from .engine.types import string_types
+from .types import string_types
 
 
 class MontyClient(BaseObject):
