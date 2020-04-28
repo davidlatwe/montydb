@@ -3,6 +3,7 @@ import pytest
 
 from pymongo.errors import WriteError as mongo_write_err
 from montydb.errors import WriteError as monty_write_err
+from ...conftest import skip_if_no_bson
 
 
 def test_update_currentDate_1(monty_update, mongo_update):
@@ -56,6 +57,7 @@ def test_update_currentDate_3(monty_update, mongo_update):
     assert mg_date.minute == mt_date.minute
 
 
+@skip_if_no_bson
 def test_update_currentDate_4(monty_update, mongo_update):
     docs = [
         {"a": None}

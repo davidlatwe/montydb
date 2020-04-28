@@ -1,16 +1,19 @@
 
 import re
-
+from montydb.types import (
+    ObjectId,
+    Int64,
+    Decimal128,
+    Binary,
+    Timestamp,
+    Regex,
+    Code,
+    MinKey,
+    MaxKey,
+)
 from datetime import datetime
-from bson.timestamp import Timestamp
-from bson.objectid import ObjectId
-from bson.min_key import MinKey
-from bson.max_key import MaxKey
-from bson.int64 import Int64
-from bson.decimal128 import Decimal128
-from bson.binary import Binary
-from bson.regex import Regex
-from bson.code import Code
+
+from ...conftest import skip_if_no_bson
 
 
 def test_qop_type_1(monty_find, mongo_find):
@@ -65,6 +68,7 @@ def test_qop_type_4(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_type_5(monty_find, mongo_find):
     docs = [
         {"a": Binary(b"0")}
@@ -83,6 +87,7 @@ def test_qop_type_6(monty_find, mongo_find):
     assert True
 
 
+@skip_if_no_bson
 def test_qop_type_7(monty_find, mongo_find):
     docs = [
         {"a": ObjectId(b"000000000000")}
@@ -137,6 +142,7 @@ def test_qop_type_10(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_type_11(monty_find, mongo_find):
     docs = [
         {"a": Regex("^a")},
@@ -156,6 +162,7 @@ def test_qop_type_12(monty_find, mongo_find):
     assert True
 
 
+@skip_if_no_bson
 def test_qop_type_13(monty_find, mongo_find):
     docs = [
         {"a": Code("a")}
@@ -174,6 +181,7 @@ def test_qop_type_14(monty_find, mongo_find):
     assert True
 
 
+@skip_if_no_bson
 def test_qop_type_15(monty_find, mongo_find):
     docs = [
         {"a": Code("a", {})}
@@ -200,6 +208,7 @@ def test_qop_type_16(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_type_17(monty_find, mongo_find):
     docs = [
         {"a": Timestamp(0, 1)}
@@ -213,6 +222,7 @@ def test_qop_type_17(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_type_18(monty_find, mongo_find):
     docs = [
         {"a": Int64(1)}
@@ -226,6 +236,7 @@ def test_qop_type_18(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_type_19(monty_find, mongo_find):
     docs = [
         {"a": Decimal128("1.1")}
@@ -239,6 +250,7 @@ def test_qop_type_19(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_type_20(monty_find, mongo_find):
     docs = [
         {"a": MinKey()}
@@ -252,6 +264,7 @@ def test_qop_type_20(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_type_21(monty_find, mongo_find):
     docs = [
         {"a": MaxKey()}
@@ -304,6 +317,7 @@ def test_qop_type_24(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_type_25(monty_find, mongo_find):
     docs = [
         {"a": 1},
@@ -321,6 +335,7 @@ def test_qop_type_25(monty_find, mongo_find):
     assert next(monty_c) == next(mongo_c)
 
 
+@skip_if_no_bson
 def test_qop_type_26(monty_find, mongo_find):
     docs = [
         {"a": 1},
@@ -338,6 +353,7 @@ def test_qop_type_26(monty_find, mongo_find):
     assert next(monty_c) == next(mongo_c)
 
 
+@skip_if_no_bson
 def test_qop_type_27(monty_find, mongo_find):
     docs = [
         {"a": 1},
@@ -355,6 +371,7 @@ def test_qop_type_27(monty_find, mongo_find):
     assert next(monty_c) == next(mongo_c)
 
 
+@skip_if_no_bson
 def test_qop_type_28(monty_find, mongo_find):
     docs = [
         {"a": 1},
@@ -390,6 +407,7 @@ def test_qop_type_29(monty_find, mongo_find):
         assert next(monty_c) == next(mongo_c)
 
 
+@skip_if_no_bson
 def test_qop_type_30(monty_find, mongo_find):
     docs = [
         {"a": 1},

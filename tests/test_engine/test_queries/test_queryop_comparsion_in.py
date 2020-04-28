@@ -3,10 +3,14 @@ import pytest
 import re
 
 from montydb.errors import OperationFailure
+from montydb.types import (
+    PY3,
 
-from bson.regex import Regex
-from bson.binary import Binary
-from bson.py3compat import PY3
+    Binary,
+    Regex,
+)
+
+from ...conftest import skip_if_no_bson
 
 
 def test_qop_in_1(monty_find, mongo_find):
@@ -132,6 +136,7 @@ def test_qop_in_8(monty_find, mongo_find):
     assert next(mongo_c)["_id"] == 1
 
 
+@skip_if_no_bson
 def test_qop_in_9(monty_find, mongo_find):
     docs = [
         {"a": "apple"},
@@ -146,6 +151,7 @@ def test_qop_in_9(monty_find, mongo_find):
     assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_in_10(monty_find, mongo_find):
     docs = [
         {"a": [Regex("*")]},
@@ -174,6 +180,7 @@ def test_qop_in_11(monty_find, mongo_find):
     assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_in_12(monty_find, mongo_find):
     docs = [
         {"a": "apple"},
@@ -213,6 +220,7 @@ def test_qop_in_14(monty_find, mongo_find):
         next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_in_15(monty_find, mongo_find):
     docs = [
         {"a": [{"b": Binary(b"00")}]},

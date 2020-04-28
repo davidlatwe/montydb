@@ -3,8 +3,9 @@ import pytest
 import re
 
 from montydb.errors import OperationFailure
+from montydb.types import Regex
 
-from bson.regex import Regex
+from ...conftest import skip_if_no_bson
 
 
 def test_qop_nin_1(monty_find, mongo_find):
@@ -141,6 +142,7 @@ def test_qop_nin_8(monty_find, mongo_find):
     assert next(mongo_c)["_id"] == 0
 
 
+@skip_if_no_bson
 def test_qop_nin_9(monty_find, mongo_find):
     docs = [
         {"a": "banana"},
@@ -155,6 +157,7 @@ def test_qop_nin_9(monty_find, mongo_find):
     assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_nin_10(monty_find, mongo_find):
     docs = [
         {"a": [Regex("*")]},
@@ -182,6 +185,7 @@ def test_qop_nin_11(monty_find, mongo_find):
     assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_nin_12(monty_find, mongo_find):
     docs = [
         {"a": "apple"},

@@ -1,11 +1,13 @@
 
 import re
 import pytest
-from bson.regex import Regex
+from montydb.types import Regex
 
 from pymongo.errors import OperationFailure as MongoOpFail
 from montydb.errors import OperationFailure as MontyOpFail
 from montydb.engine import MONGO_COMPAT_36
+
+from ...conftest import skip_if_no_bson
 
 
 def test_qop_regex_1(monty_find, mongo_find):
@@ -49,6 +51,7 @@ def test_qop_regex_3(monty_find, mongo_find):
     assert next(monty_c) == next(mongo_c)
 
 
+@skip_if_no_bson
 def test_qop_regex_4(monty_find, mongo_find):
     docs = [
         {"a": "apple"},
@@ -79,6 +82,7 @@ def test_qop_regex_5(monty_find, mongo_find):
     assert next(monty_c) == next(mongo_c)
 
 
+@skip_if_no_bson
 def test_qop_regex_6(monty_find, mongo_find):
     docs = [
         {"a": "Apple"}
@@ -136,6 +140,7 @@ def test_qop_regex_8(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_regex_9(monty_find, mongo_find):
     docs = [
         {"a": "apple"}

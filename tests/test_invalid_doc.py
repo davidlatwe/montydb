@@ -1,6 +1,6 @@
 
 import pytest
-from bson.errors import InvalidDocument
+from montydb.errors import InvalidDocument
 
 
 @pytest.fixture

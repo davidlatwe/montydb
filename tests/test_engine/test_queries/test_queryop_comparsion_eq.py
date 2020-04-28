@@ -1,9 +1,14 @@
 
-from bson.binary import Binary
-from bson.code import Code
-from bson.int64 import Int64
-from bson.decimal128 import Decimal128
-from bson.py3compat import PY3
+from montydb.types import (
+    PY3,
+
+    Int64,
+    Decimal128,
+    Binary,
+    Code,
+)
+
+from ...conftest import skip_if_no_bson
 
 
 def test_qop_eq_1(monty_find, mongo_find):
@@ -86,6 +91,7 @@ def test_qop_eq_5(monty_find, mongo_find):
         assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_eq_6(monty_find, mongo_find):
     docs = [
         {"a": [{"b": Binary(b"00")}]},
@@ -105,6 +111,7 @@ def test_qop_eq_6(monty_find, mongo_find):
         assert next(mongo_c)["_id"] == 1
 
 
+@skip_if_no_bson
 def test_qop_eq_7(monty_find, mongo_find):
     docs = [
         {"a": [{"b": Code("a")}]},
@@ -118,6 +125,7 @@ def test_qop_eq_7(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_eq_8(monty_find, mongo_find):
     docs = [
         {"a": [{"b": "a"}]},
@@ -131,6 +139,7 @@ def test_qop_eq_8(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_eq_9(monty_find, mongo_find):
     docs = [
         {"a": 1},
@@ -144,6 +153,7 @@ def test_qop_eq_9(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_eq_10(monty_find, mongo_find):
     docs = [
         {"a": 1},
@@ -158,6 +168,7 @@ def test_qop_eq_10(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_eq_11(monty_find, mongo_find):
     docs = [
         {"a": 1},

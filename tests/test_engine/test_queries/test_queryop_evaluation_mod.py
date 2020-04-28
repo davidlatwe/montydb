@@ -1,6 +1,9 @@
 
-from bson.int64 import Int64
-from bson.decimal128 import Decimal128
+from montydb.types import (
+    Int64,
+    Decimal128,
+)
+from ...conftest import skip_if_no_bson
 
 
 def test_qop_mod_1(monty_find, mongo_find):
@@ -42,6 +45,7 @@ def test_qop_mod_3(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_mod_4(monty_find, mongo_find):
     docs = [
         {"a": Int64(8)}
@@ -55,6 +59,7 @@ def test_qop_mod_4(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_mod_5(monty_find, mongo_find):
     docs = [
         {"a": Decimal128("8")}
@@ -68,6 +73,7 @@ def test_qop_mod_5(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_mod_6(monty_find, mongo_find):
     docs = [
         {"a": 8}
@@ -81,6 +87,7 @@ def test_qop_mod_6(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_mod_7(monty_find, mongo_find):
     docs = [
         {"a": 8}
@@ -107,6 +114,7 @@ def test_qop_mod_8(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_mod_9(monty_find, mongo_find):
     docs = [
         {"a": 9}
@@ -120,6 +128,7 @@ def test_qop_mod_9(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_mod_10(monty_find, mongo_find):
     docs = [
         {"a": 9}
