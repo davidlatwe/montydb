@@ -28,7 +28,7 @@ from random import SystemRandom
 
 # (NOTE) modify for vendorizing
 import sys
-from ..errors import InvalidId
+from . import InvalidId
 from .tz_util import utc
 PY3 = sys.version_info[0] == 3
 if PY3:

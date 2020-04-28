@@ -4,8 +4,9 @@ import sys
 import os
 import platform
 import re
-from datetime import datetime
-from collections import Mapping
+import calendar
+import datetime
+from collections import OrderedDict
 
 ENABLE_BSON = bool(os.getenv("ENABLE_BSON", False))
 
@@ -21,6 +22,7 @@ if PY3:
 
     string_types = str,
     integer_types = int,
+    text_type = str
 
     def iteritems(d, **kw):
         return iter(d.items(**kw))
@@ -40,6 +42,7 @@ else:
 
     string_types = basestring,
     integer_types = (int, long)
+    text_type = unicode
 
     def iteritems(d, **kw):
         return d.iteritems(**kw)
@@ -55,6 +58,27 @@ else:
 
 
 # BSON types
+
+if ENABLE_BSON:
+    from bson.errors import (
+        BSONError,
+        InvalidDocument,
+        InvalidId,
+    )
+
+else:
+    class BSONError(Exception):
+        """Base class for all BSON exceptions.
+        """
+
+    class InvalidDocument(BSONError):
+        """Raised when trying to create a BSON object from an invalid document.
+        """
+
+    class InvalidId(BSONError):
+        """Raised when trying to create an ObjectId from invalid data.
+        """
+
 
 if ENABLE_BSON:
 
@@ -103,8 +127,8 @@ else:
         loads as _loads,
         dumps as _dumps,
     )
-    from ..errors import InvalidDocument
     from .objectid import ObjectId
+    from .tz_util import utc
 
     class _mock(object):
         def __init__(self, *args, **kwargs):
@@ -123,38 +147,95 @@ else:
     Regex = _mock
     Code = _mock
 
-    class CodecOptions(_mock):
-        def __init__(self, document_class=dict):
+    class CodecOptions(object):
+        def __init__(self, document_class=dict, tz_aware=False, tzinfo=None):
             self.document_class = document_class
+            self.tz_aware = tz_aware
+            self.tzinfo = tzinfo
+
+    DEFAULT_CODEC_OPTIONS = CodecOptions()
 
     def parse_codec_options(options):
         return CodecOptions(
-            document_class=options.get("document_class", dict)
+            document_class=options.get("document_class", dict),
+            tz_aware=options.get("tz_aware", DEFAULT_CODEC_OPTIONS.tz_aware),
+            tzinfo=options.get("tzinfo", DEFAULT_CODEC_OPTIONS.tzinfo),
         )
 
+    EPOCH_AWARE = datetime.datetime.fromtimestamp(0, utc)
+    EPOCH_NAIVE = datetime.datetime.utcfromtimestamp(0)
+
+    def _datetime_to_millis(dtm):
+        """Convert datetime to milliseconds since epoch UTC."""
+        if dtm.utcoffset() is not None:
+            dtm = dtm - dtm.utcoffset()
+        return int(calendar.timegm(dtm.timetuple()) * 1000 +
+                   dtm.microsecond // 1000)
+
+    def _millis_to_datetime(millis, opts):
+        """Convert milliseconds since epoch UTC to datetime."""
+        diff = ((millis % 1000) + 1000) % 1000
+        seconds = (millis - diff) // 1000
+        micros = diff * 1000
+        if opts.tz_aware:
+            dt = EPOCH_AWARE + datetime.timedelta(seconds=seconds,
+                                                  microseconds=micros)
+            if opts.tzinfo:
+                dt = dt.astimezone(opts.tzinfo)
+            return dt
+        else:
+            return EPOCH_NAIVE + datetime.timedelta(seconds=seconds,
+                                                    microseconds=micros)
+
     class BSONEncoder(JSONEncoder):
+        _key_is_keyword = None
+
         def default(self, obj):
+            self._key_is_keyword = True
+
             if isinstance(obj, ObjectId):
                 return {"$oid": str(obj)}
+
+            if isinstance(obj, datetime.datetime):
+                millis = _datetime_to_millis(obj)
+                return {"$date": millis}
+
+            if isinstance(obj, RE_PATTERN_TYPE):
+                flags = re_int_flag_to_str(obj.flags)
+                if isinstance(obj.pattern, text_type):
+                    pattern = obj.pattern
+                else:
+                    pattern = obj.pattern.decode("utf-8")
+                return OrderedDict([("$regex", pattern), ("$options", flags)])
+
             if hasattr(obj, "to_json"):
                 return obj.to_json()
+
             return JSONEncoder.default(self, obj)
 
+    encoder = BSONEncoder()
+
     def document_encode(doc, check_keys=False, *args, **kwargs):
+        # (TODO) Did not raise `InvalidDocument` when key is not string,
+        #   this check is not in `check_keys` scope.
+        #   msg = "documents must have only string keys, key was %r"
         if check_keys:
             serialized = ""
-            encoder = BSONEncoder()
             item_sep = encoder.item_separator
             key_incoming = False
             for s in encoder.iterencode(doc):
-                if key_incoming:
+                if key_incoming and s not in "[{":
                     key_incoming = False
-                    if "." in s:
-                        msg = "key '%s' must not contain '.'" % s
-                        raise InvalidDocument(msg)
-                    if s.startswith("$"):
-                        msg = "key '%s' must not start with '$'" % s
-                        raise InvalidDocument(msg)
+                    if encoder._key_is_keyword is False:
+                        k = eval(s)
+                        if "." in k:
+                            msg = "key '%s' must not contain '.'" % k
+                            raise InvalidDocument(msg)
+                        if k.startswith("$"):
+                            msg = "key '%s' must not start with '$'" % k
+                            raise InvalidDocument(msg)
+                    else:
+                        encoder._key_is_keyword = False
 
                 elif s == "{" or s == item_sep:
                     key_incoming = True
@@ -163,29 +244,37 @@ else:
 
             return serialized
         else:
-            return _dumps(doc)
+            return _dumps(doc, default=encoder.default)
 
-    def object_hook(obj):
-        for key in json_hooks:
+    def object_hook(obj, opts=DEFAULT_CODEC_OPTIONS):
+        if "$oid" in obj:
+            return ObjectId(obj["$oid"])
+        if "$date" in obj:
+            return _millis_to_datetime(int(obj["$date"]), opts)
+        if "$regex" in obj:
+            flags = re_str_flags_to_int(obj.get("$options", ""))
+            return re.compile(obj["$regex"], flags)
+        for key in custom_json_hooks:
             if key in obj:
-                return json_hooks[key](obj)
+                return custom_json_hooks[key](obj, opts)
         return obj
 
     def document_decode(serialized, codec_options=None, *args, **kwargs):
-        cls = codec_options.document_class if codec_options else dict
-        return _loads(serialized,
-                      object_pairs_hook=lambda pairs: object_hook(cls(pairs)))
+        opts = codec_options or DEFAULT_CODEC_OPTIONS
+        cls = opts.document_class
+        return _loads(
+            serialized,
+            object_pairs_hook=lambda pairs: object_hook(cls(pairs), opts)
+        )
 
     def json_loads(serialized):
-        return _loads(serialized)
+        return _loads(serialized, object_hook=object_hook)
 
     def json_dumps(doc):
-        return _dumps(doc)
+        return _dumps(doc, default=encoder.default)
 
 
-json_hooks = {
-    "$oid": lambda obj: ObjectId(obj["$oid"])
-}
+custom_json_hooks = {}
 
 
 RE_PATTERN_TYPE = type(re.compile(""))
