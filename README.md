@@ -5,6 +5,7 @@
 
 [![Build Status](https://travis-ci.org/davidlatwe/MontyDB.svg?branch=master)](https://travis-ci.org/davidlatwe/MontyDB)
 <a href='https://coveralls.io/github/davidlatwe/MontyDB?branch=master'><img src='https://coveralls.io/repos/github/davidlatwe/MontyDB/badge.svg?branch=master&kill_cache=1' alt='Coverage Status' /></a>
+![Size](https://img.shields.io/github/languages/code-size/davidlatwe/montydb)
 [![Version](http://img.shields.io/pypi/v/MontyDB.svg?style=flat)](https://pypi.python.org/pypi/MontyDB)
 [![Maintainability](https://api.codeclimate.com/v1/badges/1adb14266d05ef3c9b17/maintainability)](https://codeclimate.com/github/davidlatwe/MontyDB/maintainability)
 
@@ -14,7 +15,7 @@
 
 ### MontyDB is:
 * A tiny version of MongoDB, against to **MongoDB 4.0.11**
-* Written in pure Python, testing on **Python 2.7, 3.6, 3.7, 3.8, PyPy, PyPy3.5**
+* Written in pure Python, testing on **Python 2.7, 3.6, 3.7, 3.8, PyPy***
 * Literally serverless.
 * Similar to [mongomock](https://github.com/mongomock/mongomock), but a bit more than that.
 
@@ -23,8 +24,10 @@
 ### Install
 `pip install montydb`
 
-  ##### Requirements
+  ##### Optinal Requirements
   - *`pymongo` (for `bson`)*
+
+      `bson` is opt-out by default even it's installed, set env var `MONTY_ENABLE_BSON=1` to enable it.
 
 ### Example Code
 ```python
@@ -38,8 +41,6 @@
 ```
 
 ### Development
-* Adopting [Gitflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) branching model.
-* Adopting Test-driven development.
 * You may visit [Projects' TODO](https://github.com/davidlatwe/montydb/projects/1) to see what's going on.
 * You may visit [This Issue](https://github.com/davidlatwe/montydb/issues/14) to see what's been implemented and what's not.
 
