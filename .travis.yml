@@ -13,8 +13,8 @@ env:
     - CC_TEST_REPORTER_ID=aa9820d7f18c6a86da387e2604f592f37845d0dac88afb10f73738872647c321
     - MONGODB=4.0.11
   matrix:
-    - ENABLE_BSON=true
-    - ENABLE_BSON=
+    - MONTY_ENABLE_BSON=true
+    - MONTY_ENABLE_BSON=
 
 matrix:
   fast_finish: true

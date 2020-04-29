@@ -38,7 +38,7 @@ from ..types import (
     re_str_flags_to_int,
 )
 
-from . import MONGO_COMPAT_36
+from . import MONTY_MONGO_COMPAT_36
 
 
 def validate_sort_specifier(sort):
@@ -459,7 +459,7 @@ def _modify_regex_optins(sub_spec):
         "flags": flags
     }
 
-    if (MONGO_COMPAT_36
+    if (MONTY_MONGO_COMPAT_36
             and "#" in new_sub_spec["$regex"]["pattern"].rsplit("\n")[-1]):
         # (NOTE) davidlatwe:
         #   if pound(#) char exists in $regex string value and not ends with

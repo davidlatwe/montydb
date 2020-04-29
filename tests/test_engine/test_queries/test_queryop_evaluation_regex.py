@@ -5,7 +5,7 @@ from montydb.types import Regex
 
 from pymongo.errors import OperationFailure as MongoOpFail
 from montydb.errors import OperationFailure as MontyOpFail
-from montydb.engine import MONGO_COMPAT_36
+from montydb.engine import MONTY_MONGO_COMPAT_36
 
 from ...conftest import skip_if_no_bson
 
@@ -110,7 +110,7 @@ def test_qop_regex_7(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    if MONGO_COMPAT_36:
+    if MONTY_MONGO_COMPAT_36:
         # if pound(#) char exists in $regex string value and not ends with
         # newline(\n), Mongo raise error.
         with pytest.raises(MongoOpFail):

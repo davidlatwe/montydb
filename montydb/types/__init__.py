@@ -8,7 +8,7 @@ import calendar
 import datetime
 from collections import OrderedDict
 
-ENABLE_BSON = bool(os.getenv("ENABLE_BSON", False))
+MONTY_ENABLE_BSON = bool(os.getenv("MONTY_ENABLE_BSON", False))
 
 PY3 = sys.version_info[0] == 3
 
@@ -59,7 +59,7 @@ else:
 
 # BSON types
 
-if ENABLE_BSON:
+if MONTY_ENABLE_BSON:
     from bson.errors import (
         BSONError,
         InvalidDocument,
@@ -80,7 +80,7 @@ else:
         """
 
 
-if ENABLE_BSON:
+if MONTY_ENABLE_BSON:
 
     from bson import SON, BSON
     from bson.timestamp import Timestamp

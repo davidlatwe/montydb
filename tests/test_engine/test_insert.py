@@ -1,7 +1,7 @@
 
 import pytest
 from montydb.errors import InvalidDocument
-from montydb.types import ENABLE_BSON
+from montydb.types import MONTY_ENABLE_BSON
 
 
 def test_insert_invalid_doc_1(monty_find, mongo_find):
@@ -10,7 +10,7 @@ def test_insert_invalid_doc_1(monty_find, mongo_find):
     ]
     spec = {}
 
-    if ENABLE_BSON:
+    if MONTY_ENABLE_BSON:
         with pytest.raises(InvalidDocument):
             mongo_find(docs, spec)
 
@@ -24,7 +24,7 @@ def test_insert_invalid_doc_2(monty_find, mongo_find):
     ]
     spec = {}
 
-    if ENABLE_BSON:
+    if MONTY_ENABLE_BSON:
         with pytest.raises(InvalidDocument):
             mongo_find(docs, spec)
 
