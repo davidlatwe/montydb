@@ -45,7 +45,7 @@ SQLITE_RECORD_TABLE = "documents"
 CREATE_TABLE = """
     CREATE TABLE [{}](
         k text NOT NULL,
-        v blob NOT NULL,
+        v text NOT NULL,
         PRIMARY KEY(k)
     );
 """
@@ -330,14 +330,6 @@ class SQLiteCollection(AbstractCollection):
                 self._database.collection_create(self._name)
             return func(self, *args, **kwargs)
         return make_table
-
-    def _encode_doc(self, doc, check_keys=False):
-        # Preserve BSON types
-        encoded = document_encode(doc,
-                                  # Check if keys start with '$' or contain '.'
-                                  check_keys=check_keys,
-                                  codec_options=self.coptions)
-        return sqlite3.Binary(encoded)
 
     @property
     def _conn(self):
