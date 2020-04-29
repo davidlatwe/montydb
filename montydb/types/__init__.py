@@ -188,7 +188,7 @@ else:
                                                     microseconds=micros)
 
     class BSONEncoder(JSONEncoder):
-        _key_is_keyword = None
+        _key_is_keyword = False
 
         def default(self, obj):
             self._key_is_keyword = True
@@ -213,38 +213,30 @@ else:
 
             return JSONEncoder.default(self, obj)
 
-    encoder = BSONEncoder()
+    def _key_validate(key):
+        if "." in key:
+            raise InvalidDocument("key '%s' must not contain '.'" % key)
+        if key.startswith("$"):
+            raise InvalidDocument("key '%s' must not start with '$'" % key)
 
     def document_encode(doc, check_keys=False, *args, **kwargs):
-        # (TODO) Did not raise `InvalidDocument` when key is not string,
-        #   this check is not in `check_keys` scope.
-        #   msg = "documents must have only string keys, key was %r"
-        if check_keys:
-            serialized = ""
-            item_sep = encoder.item_separator
-            key_incoming = False
-            for s in encoder.iterencode(doc):
-                if key_incoming and s not in "[{":
-                    key_incoming = False
-                    if encoder._key_is_keyword is False:
-                        k = eval(s)
-                        if "." in k:
-                            msg = "key '%s' must not contain '.'" % k
-                            raise InvalidDocument(msg)
-                        if k.startswith("$"):
-                            msg = "key '%s' must not start with '$'" % k
-                            raise InvalidDocument(msg)
-                    else:
-                        encoder._key_is_keyword = False
-
-                elif s == "{" or s == item_sep:
-                    key_incoming = True
-
-                serialized += s
-
-            return serialized
-        else:
-            return _dumps(doc, default=encoder.default)
+        _encoder = BSONEncoder()
+        _key_sep = _encoder.key_separator
+        candidate = serialized = ""
+        for s in _encoder.iterencode(doc):
+            if s == _key_sep:
+                if not _encoder._key_is_keyword:
+                    key = eval(candidate)
+                    if not isinstance(key, string_types):
+                        raise InvalidDocument(
+                            "documents must have only string keys, key was "
+                            "%r" % key)
+                    if check_keys:
+                        _key_validate(key)
+                _encoder._key_is_keyword = False
+            candidate = s
+            serialized += s
+        return serialized
 
     def object_hook(obj, opts=DEFAULT_CODEC_OPTIONS):
         if "$oid" in obj:
@@ -271,7 +263,7 @@ else:
         return _loads(serialized, object_hook=object_hook)
 
     def json_dumps(doc):
-        return _dumps(doc, default=encoder.default)
+        return _dumps(doc, default=BSONEncoder().default)
 
 
 custom_json_hooks = {}
