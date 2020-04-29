@@ -35,6 +35,31 @@ from .results import (BulkWriteResult,
                       UpdateResult)
 
 
+NotImplementeds = {
+    "aggregate",
+    "aggregate_raw_batches",
+    "with_options",
+    "bulk_write",
+    "watch",
+    "find_raw_batches",
+    "find_one_and_delete",
+    "find_one_and_replace",
+    "find_one_and_update",
+    "create_index",
+    "create_indexes",
+    "drop_index",
+    "drop_indexes",
+    "reindex",
+    "list_indexes",
+    "index_information",
+    "rename",
+    "options",
+    "map_reduce",
+    "inline_map_reduce",
+    "parallel_scan",
+}
+
+
 class MontyCollection(BaseObject):
 
     def __init__(self, database, name, create=False,
@@ -64,6 +89,9 @@ class MontyCollection(BaseObject):
         return not self == other
 
     def __getattr__(self, name):
+        if name in NotImplementeds:
+            raise NotImplementedError("'MontyCollection.%s' is NOT "
+                                      "implemented !" % name)
         if name.startswith('_'):
             full_name = ".".join((self._name, name))
             raise AttributeError(
@@ -91,12 +119,6 @@ class MontyCollection(BaseObject):
         """
         """
         return self._database
-
-    def with_options(self, codec_options=None, write_concern=None):
-        raise NotImplementedError("Not implemented.")
-
-    def bulk_write(self, requests, ordered=True):
-        raise NotImplementedError("Not implemented.")
 
     def insert_one(self,
                    document,
@@ -344,32 +366,9 @@ class MontyCollection(BaseObject):
 
         return DeleteResult(raw_result)
 
-    def aggregate(self, pipeline, session=None, **kwargs):
-        # return CommandCursor
-        raise NotImplementedError("Not implemented.")
-
-    def aggregate_raw_batches(self, pipeline, **kwargs):
-        # return RawBatchCursor
-        raise NotImplementedError("Not implemented.")
-
-    def watch(self,
-              pipeline=None,
-              full_document='default',
-              resume_after=None,
-              max_await_time_ms=None,
-              batch_size=None,
-              collation=None,
-              session=None):
-        # return a changeStreamCursor
-        raise NotImplementedError("Not implemented.")
-
     def find(self, *args, **kwargs):
         # return a cursor
         return MontyCursor(self, *args, **kwargs)
-
-    def find_raw_batches(self, *args, **kwargs):
-        # return RawBatchCursor
-        raise NotImplementedError("Not implemented.")
 
     def find_one(self, filter=None, *args, **kwargs):
         """
@@ -382,23 +381,6 @@ class MontyCollection(BaseObject):
         for result in cursor.limit(-1):
             return result
         return None
-
-    def find_one_and_delete(self, filter, projection=None, sort=None):
-        raise NotImplementedError("Not implemented.")
-
-    def find_one_and_replace(self,
-                             filter,
-                             replacement,
-                             projection=None,
-                             sort=None, *args, **kwargs):
-        raise NotImplementedError("Not implemented.")
-
-    def find_one_and_update(self,
-                            filter,
-                            update,
-                            projection=None,
-                            sort=None, *args, **kwargs):
-        raise NotImplementedError("Not implemented.")
 
     def count(self, filter=None):
         warnings.warn("count is deprecated. Use Collection.count_documents "
@@ -454,28 +436,6 @@ class MontyCollection(BaseObject):
 
         return [weighted.value for weighted in result]
 
-    def create_index(self, keys):
-        raise NotImplementedError("Not implemented.")
-
-    def create_indexes(self, indexes):
-        raise NotImplementedError("Not implemented.")
-
-    def drop_index(self, index_or_name):
-        raise NotImplementedError("Not implemented.")
-
-    def drop_indexes(self):
-        raise NotImplementedError("Not implemented.")
-
-    def reindex(self):
-        raise NotImplementedError("Not implemented.")
-
-    def list_indexes(self):
-        # return a commandCursor
-        raise NotImplementedError("Not implemented.")
-
-    def index_information(self):
-        raise NotImplementedError("Not implemented.")
-
     def drop(self):
         self._database.drop_collection(self._name)
 
@@ -488,27 +448,3 @@ class MontyCollection(BaseObject):
                              *args, **kwargs)
         else:
             self.insert_one(to_save, *args, **kwargs)
-
-    def rename(self, new_name, session=None, **kwargs):
-        raise NotImplementedError("Not implemented.")
-
-    def options(self, session=None):
-        raise NotImplementedError("Not implemented.")
-
-    def map_reduce(self,
-                   map,
-                   reduce,
-                   out,
-                   full_response=False,
-                   session=None, **kwargs):
-        raise NotImplementedError("Not implemented.")
-
-    def inline_map_reduce(self,
-                          map,
-                          reduce,
-                          full_response=False,
-                          session=None, **kwargs):
-        raise NotImplementedError("Not implemented.")
-
-    def parallel_scan(self, num_cursors, session=None, **kwargs):
-        raise NotImplementedError("Not implemented.")
