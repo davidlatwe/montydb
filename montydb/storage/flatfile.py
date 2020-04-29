@@ -81,9 +81,7 @@ class FlatFileKVEngine(object):
             return True
 
     def write(self, documents):
-        if not isinstance(documents, OrderedDict):
-            raise TypeError("Expecting 'OrderedDict', got {!r}"
-                            "".format(type(documents).__name__))
+        """`documents` should be `OrderedDict` type"""
         self.modified_count += len(documents)
         self.__cache.update(documents)
 
