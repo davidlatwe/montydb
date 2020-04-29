@@ -1,6 +1,6 @@
 
 import pytest
-from bson import SON
+from collections import OrderedDict
 
 from pymongo.errors import WriteError as mongo_write_err
 from montydb.errors import WriteError as monty_write_err
@@ -97,7 +97,7 @@ def test_update_mod_sort_6(monty_update, mongo_update):
 
 
 def test_update_mod_sort_7(monty_update, mongo_update):
-    sort = SON()  # (NOTE): Preserve field order for PY2
+    sort = OrderedDict()  # (NOTE): Preserve field order
     sort["x"] = -1
     sort["y"] = 1
 

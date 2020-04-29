@@ -2,13 +2,14 @@
 from itertools import islice
 from collections import OrderedDict
 
-from .abcs import (
+from . import (
     AbstractStorage,
     AbstractDatabase,
     AbstractCollection,
     AbstractCursor,
+
+    StorageDuplicateKeyError,
 )
-from .errors import StorageDuplicateKeyError
 
 
 _repo = OrderedDict()

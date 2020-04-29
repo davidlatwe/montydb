@@ -2,19 +2,23 @@
 import pytest
 import re
 
+from montydb.types import (
+    ObjectId,
+    Int64,
+    Decimal128,
+    Binary,
+    Timestamp,
+    Regex,
+    Code,
+    MinKey,
+    MaxKey,
+)
 from datetime import datetime
-from bson.timestamp import Timestamp
-from bson.objectid import ObjectId
-from bson.min_key import MinKey
-from bson.max_key import MaxKey
-from bson.int64 import Int64
-from bson.decimal128 import Decimal128
-from bson.binary import Binary
-from bson.regex import Regex
-from bson.code import Code
 
 from montydb.errors import OperationFailure as monty_op_err
 from pymongo.errors import OperationFailure as mongo_op_err
+
+from ..conftest import skip_if_no_bson
 
 
 def test_sort_1(monty_sort, mongo_sort):
@@ -73,6 +77,7 @@ def test_sort_4(monty_sort, mongo_sort):
         assert next(mongo_c)["_id"] == next(monty_c)["_id"]
 
 
+@skip_if_no_bson
 def test_sort_5(monty_sort, mongo_sort):
     docs = [
         {"a": 0},
@@ -89,6 +94,7 @@ def test_sort_5(monty_sort, mongo_sort):
         assert next(mongo_c)["_id"] == next(monty_c)["_id"]
 
 
+@skip_if_no_bson
 def test_sort_6(monty_sort, mongo_sort):
     docs = [
         {"a": Binary(b"00")},
@@ -103,6 +109,7 @@ def test_sort_6(monty_sort, mongo_sort):
         assert next(mongo_c)["_id"] == next(monty_c)["_id"]
 
 
+@skip_if_no_bson
 def test_sort_7(monty_sort, mongo_sort):
     docs = [
         {"a": Code("x")},
@@ -127,6 +134,7 @@ def test_sort_7(monty_sort, mongo_sort):
         assert next(mongo_c)["_id"] == next(monty_c)["_id"]
 
 
+@skip_if_no_bson
 def test_sort_8(monty_sort, mongo_sort):
     docs = [
         {"a": MinKey()},
@@ -169,6 +177,7 @@ def test_sort_10(monty_sort, mongo_sort):
         assert next(mongo_c)["_id"] == next(monty_c)["_id"]
 
 
+@skip_if_no_bson
 def test_sort_11(monty_sort, mongo_sort):
     docs = [
         {"a": Timestamp(0, 1)},
@@ -183,6 +192,7 @@ def test_sort_11(monty_sort, mongo_sort):
         assert next(mongo_c)["_id"] == next(monty_c)["_id"]
 
 
+@skip_if_no_bson
 def test_sort_12(monty_sort, mongo_sort):
     docs = [
         {"a": Regex("^a")},
@@ -197,6 +207,7 @@ def test_sort_12(monty_sort, mongo_sort):
         assert next(mongo_c)["_id"] == next(monty_c)["_id"]
 
 
+@skip_if_no_bson
 def test_sort_13(monty_sort, mongo_sort):
     docs = [
         {"a": Regex("^a")},
@@ -289,6 +300,7 @@ def test_sort_17(monty_sort, mongo_sort):
         assert next(mongo_c)["_id"] == next(monty_c)["_id"]
 
 
+@skip_if_no_bson
 def test_sort_18(monty_sort, mongo_sort):
     docs = [
         {"a": ["x", True]},
@@ -317,6 +329,7 @@ def test_sort_18(monty_sort, mongo_sort):
         assert next(mongo_c)["_id"] == next(monty_c)["_id"]
 
 
+@skip_if_no_bson
 def test_sort_19(monty_sort, mongo_sort):
     docs = [
         {"a": ["x", True]},

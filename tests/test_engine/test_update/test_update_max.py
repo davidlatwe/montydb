@@ -1,7 +1,11 @@
 
+from montydb.types import (
+    Timestamp,
+    MaxKey,
+)
 from datetime import datetime
-from bson.timestamp import Timestamp
-from bson.max_key import MaxKey
+
+from ...conftest import skip_if_no_bson
 
 
 def test_update_max_1(monty_update, mongo_update):
@@ -46,6 +50,7 @@ def test_update_max_3(monty_update, mongo_update):
     assert next(monty_c) == {"a": True}
 
 
+@skip_if_no_bson
 def test_update_max_4(monty_update, mongo_update):
     docs = [
         {"a": {"b": 5}}
@@ -74,6 +79,7 @@ def test_update_max_5(monty_update, mongo_update):
     assert next(monty_c) == {"a": datetime(1998, 8, 22)}
 
 
+@skip_if_no_bson
 def test_update_max_6(monty_update, mongo_update):
     docs = [
         {"a": Timestamp(10, 5)}

@@ -1,10 +1,11 @@
 
 import pytest
 
-from bson.decimal128 import Decimal128
-
 from pymongo.errors import WriteError as mongo_write_err
 from montydb.errors import WriteError as monty_write_err
+from montydb.types import Decimal128
+
+from ...conftest import skip_if_no_bson
 
 
 def test_update_pullAll_1(monty_update, mongo_update):
@@ -65,6 +66,7 @@ def test_update_pullAll_4(monty_update, mongo_update):
     assert next(monty_c) == {}
 
 
+@skip_if_no_bson
 def test_update_pullAll_5(monty_update, mongo_update):
     docs = [
         {"a": [1, 2, 2.0, Decimal128("2.0"), 3]}
@@ -79,6 +81,7 @@ def test_update_pullAll_5(monty_update, mongo_update):
     assert next(monty_c) == {"a": [1, 3]}
 
 
+@skip_if_no_bson
 def test_update_pullAll_6(monty_update, mongo_update):
     docs = [
         {"a": [1, 2, 2.0, 3]}

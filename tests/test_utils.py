@@ -15,6 +15,8 @@ from montydb.utils import (
     MontyList,
 )
 
+from .conftest import skip_if_no_bson
+
 from bson import BSON, json_util
 from bson.timestamp import Timestamp
 from bson.objectid import ObjectId
@@ -75,6 +77,7 @@ JSON_DUMP = "dumped.json"
 BSON_DUMP = "dumped.bson"
 
 
+@skip_if_no_bson
 def test_utils_montyimport(tmp_monty_repo):
     database = "dump_db_JSON"
     collection = "dump_col_JSON"
@@ -95,6 +98,7 @@ def test_utils_montyimport(tmp_monty_repo):
         os.remove(JSON_DUMP)
 
 
+@skip_if_no_bson
 def test_utils_montyexport(tmp_monty_repo):
     database = "dump_db_JSON"
     collection = "dump_col_JSON"
@@ -110,6 +114,7 @@ def test_utils_montyexport(tmp_monty_repo):
         os.remove(JSON_DUMP)
 
 
+@skip_if_no_bson
 def test_utils_montyrestore(tmp_monty_repo):
     database = "dump_db_BSON"
     collection = "dump_col_BSON"
@@ -130,6 +135,7 @@ def test_utils_montyrestore(tmp_monty_repo):
         os.remove(BSON_DUMP)
 
 
+@skip_if_no_bson
 def test_utils_montydump(tmp_monty_repo):
     database = "dump_db_BSON"
     collection = "dump_col_BSON"

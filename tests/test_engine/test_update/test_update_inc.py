@@ -1,10 +1,14 @@
 
 import pytest
-from bson.int64 import Int64
-from bson.decimal128 import Decimal128
 
 from pymongo.errors import WriteError as mongo_write_err
 from montydb.errors import WriteError as monty_write_err
+from montydb.types import (
+    Int64,
+    Decimal128,
+)
+
+from ...conftest import skip_if_no_bson
 
 
 def test_update_inc_1(monty_update, mongo_update):
@@ -239,6 +243,7 @@ def test_update_inc_float(monty_update, mongo_update):
     assert next(monty_c) == {"a": 2.5}
 
 
+@skip_if_no_bson
 def test_update_inc_int64(monty_update, mongo_update):
     docs = [
         {"a": Int64(1)}
@@ -253,6 +258,7 @@ def test_update_inc_int64(monty_update, mongo_update):
     assert next(monty_c) == {"a": 2.5}
 
 
+@skip_if_no_bson
 def test_update_inc_decimal128(monty_update, mongo_update):
     docs = [
         {"a": Decimal128("1.5")}

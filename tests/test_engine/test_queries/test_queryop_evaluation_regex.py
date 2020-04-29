@@ -1,11 +1,13 @@
 
 import re
 import pytest
-from bson.regex import Regex
+from montydb.types import Regex
 
 from pymongo.errors import OperationFailure as MongoOpFail
 from montydb.errors import OperationFailure as MontyOpFail
-from montydb.engine import MONGO_COMPAT_36
+from montydb.engine import MONTY_MONGO_COMPAT_36
+
+from ...conftest import skip_if_no_bson
 
 
 def test_qop_regex_1(monty_find, mongo_find):
@@ -49,6 +51,7 @@ def test_qop_regex_3(monty_find, mongo_find):
     assert next(monty_c) == next(mongo_c)
 
 
+@skip_if_no_bson
 def test_qop_regex_4(monty_find, mongo_find):
     docs = [
         {"a": "apple"},
@@ -79,6 +82,7 @@ def test_qop_regex_5(monty_find, mongo_find):
     assert next(monty_c) == next(mongo_c)
 
 
+@skip_if_no_bson
 def test_qop_regex_6(monty_find, mongo_find):
     docs = [
         {"a": "Apple"}
@@ -106,7 +110,7 @@ def test_qop_regex_7(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    if MONGO_COMPAT_36:
+    if MONTY_MONGO_COMPAT_36:
         # if pound(#) char exists in $regex string value and not ends with
         # newline(\n), Mongo raise error.
         with pytest.raises(MongoOpFail):
@@ -136,6 +140,7 @@ def test_qop_regex_8(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_regex_9(monty_find, mongo_find):
     docs = [
         {"a": "apple"}

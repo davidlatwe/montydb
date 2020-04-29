@@ -1,4 +1,9 @@
-from bson.errors import *
+
+from .types import (
+    BSONError,
+    InvalidDocument,
+    InvalidId,
+)
 
 
 class MontyError(Exception):

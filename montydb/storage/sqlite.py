@@ -5,17 +5,19 @@ import sqlite3
 import contextlib
 from collections import OrderedDict
 
-from bson import BSON
-from bson.py3compat import _unicode
-
 from ..base import WriteConcern
-from .abcs import (
+from ..types import (
+    unicode_,
+    document_encode,
+)
+from . import (
     AbstractStorage,
     AbstractDatabase,
     AbstractCollection,
     AbstractCursor,
+
+    StorageDuplicateKeyError,
 )
-from .errors import StorageDuplicateKeyError
 
 
 sqlite_324 = sqlite3.sqlite_version_info >= (3, 24, 0)
@@ -43,7 +45,7 @@ SQLITE_RECORD_TABLE = "documents"
 CREATE_TABLE = """
     CREATE TABLE [{}](
         k text NOT NULL,
-        v blob NOT NULL,
+        v text NOT NULL,
         PRIMARY KEY(k)
     );
 """
@@ -269,7 +271,7 @@ class SQLiteStorage(AbstractStorage):
 
     def database_list(self):
         return [
-            name for name in os.listdir(_unicode(self._repository))
+            name for name in os.listdir(unicode_(self._repository))
             if os.path.isdir(self._db_path(name))
         ]
 
@@ -309,7 +311,7 @@ class SQLiteDatabase(AbstractDatabase):
         if not self.database_exists():
             return []
         return [os.path.splitext(name)[0]
-                for name in os.listdir(_unicode(self._db_path))]
+                for name in os.listdir(unicode_(self._db_path))]
 
 
 SQLiteStorage.contractor_cls = SQLiteDatabase
@@ -328,14 +330,6 @@ class SQLiteCollection(AbstractCollection):
                 self._database.collection_create(self._name)
             return func(self, *args, **kwargs)
         return make_table
-
-    def _encode_doc(self, doc, check_keys=False):
-        # Preserve BSON types
-        encoded = BSON.encode(doc,
-                              # Check if keys start with '$' or contain '.'
-                              check_keys=check_keys,
-                              codec_options=self.coptions)
-        return sqlite3.Binary(encoded)
 
     @property
     def _conn(self):

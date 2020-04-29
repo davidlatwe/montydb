@@ -1,6 +1,6 @@
 
 import pytest
-from montydb.engine.core import (
+from montydb.engine.field_walker import (
     FieldWalker,
     FieldWriteError,
 )

@@ -45,9 +45,9 @@ setup(
         "Topic :: Database",
     ),
     install_requires=(
-        "pymongo",
     ),
     tests_require=(
         "pytest-cov",
+        "pymongo",
     ),
 )

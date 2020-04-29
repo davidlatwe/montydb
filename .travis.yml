@@ -1,6 +1,8 @@
 language: python
 python:
+  - pypy3.5-6.0
   - pypy3.5
+  - pypy2.7-6.0
   - pypy
   - 3.8
   - 3.7
@@ -12,10 +14,17 @@ env:
   global:
     - CC_TEST_REPORTER_ID=aa9820d7f18c6a86da387e2604f592f37845d0dac88afb10f73738872647c321
     - MONGODB=4.0.11
+  matrix:
+    - MONTY_ENABLE_BSON=true
+    - MONTY_ENABLE_BSON=
 
 matrix:
   fast_finish: true
   allow_failures:
+    - python: pypy3.5-6.0
+    - python: pypy3.5
+    - python: pypy2.7-6.0
+    - python: pypy
     - python: nightly
 
 before_install:

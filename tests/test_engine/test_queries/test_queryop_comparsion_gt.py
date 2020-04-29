@@ -1,19 +1,22 @@
 
 import pytest
 from montydb.errors import OperationFailure
+from montydb.types import (
+    PY3,
 
+    ObjectId,
+    Int64,
+    Decimal128,
+    Binary,
+    Timestamp,
+    Regex,
+    Code,
+    MinKey,
+    MaxKey,
+)
 from datetime import datetime
-from bson.timestamp import Timestamp
-from bson.objectid import ObjectId
-from bson.min_key import MinKey
-from bson.max_key import MaxKey
-from bson.int64 import Int64
-from bson.decimal128 import Decimal128
-from bson.binary import Binary
-from bson.regex import Regex
-from bson.code import Code
 
-from bson.py3compat import PY3
+from ...conftest import skip_if_no_bson
 
 
 def test_qop_gt_1(monty_find, mongo_find):
@@ -168,6 +171,7 @@ def test_qop_gt_10(monty_find, mongo_find):
     assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_gt_11(monty_find, mongo_find):
     ts_0 = Timestamp(0, 1)
     ts_1 = Timestamp(1, 1)
@@ -185,6 +189,7 @@ def test_qop_gt_11(monty_find, mongo_find):
     assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_gt_12(monty_find, mongo_find):
     min_k = MinKey()
     max_k = MaxKey()
@@ -202,6 +207,7 @@ def test_qop_gt_12(monty_find, mongo_find):
     assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_gt_13(monty_find, mongo_find):
     oid_0 = ObjectId(b"000000000000")
     max_k = MaxKey()
@@ -223,6 +229,7 @@ def test_qop_gt_13(monty_find, mongo_find):
         assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_gt_14(monty_find, mongo_find):
     ts_0 = Timestamp(0, 1)
     dt_1 = datetime(1900, 1, 2)
@@ -313,6 +320,7 @@ def test_qop_gt_19(monty_find, mongo_find):
     assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_gt_20(monty_find, mongo_find):
     long_ = Int64(10)
     int_ = 10
@@ -335,6 +343,7 @@ def test_qop_gt_20(monty_find, mongo_find):
         assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_gt_21(monty_find, mongo_find):
     docs = [
         {"a": Decimal128("1.1")},
@@ -355,6 +364,7 @@ def test_qop_gt_21(monty_find, mongo_find):
         assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_gt_22(monty_find, mongo_find):
     bin_0 = Binary(b"0")
     bin_1 = Binary(b"1")
@@ -380,6 +390,7 @@ def test_qop_gt_22(monty_find, mongo_find):
         assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_gt_23(monty_find, mongo_find):
     bin_0 = Binary(b"0")
     bin_1 = Binary(b"1")
@@ -405,6 +416,7 @@ def test_qop_gt_23(monty_find, mongo_find):
         assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_gt_24(monty_find, mongo_find):
     code_0 = Code("0")
     code_1 = Code("1")
@@ -422,6 +434,7 @@ def test_qop_gt_24(monty_find, mongo_find):
     assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_gt_25(monty_find, mongo_find):
     code_0 = Code("0")
     code_1 = Code("1")
@@ -440,6 +453,7 @@ def test_qop_gt_25(monty_find, mongo_find):
     assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_gt_26(monty_find, mongo_find):
     code_0s = Code("0", {})
     code_1s = Code("1", {})
@@ -457,6 +471,7 @@ def test_qop_gt_26(monty_find, mongo_find):
     assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_gt_27(monty_find, mongo_find):
     code_1as = Code("1", {"a": 5})
     code_1bs = Code("1", {"b": 5})
@@ -476,6 +491,7 @@ def test_qop_gt_27(monty_find, mongo_find):
     assert next(mongo_c) == next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_gt_28(monty_find, mongo_find):
     regex_0 = Regex("^0")
     regex_a = Regex("^a")
@@ -491,6 +507,7 @@ def test_qop_gt_28(monty_find, mongo_find):
         next(monty_c)
 
 
+@skip_if_no_bson
 def test_qop_gt_29(monty_find, mongo_find):
     docs = [
         {"a": Decimal128("1.1")},
@@ -512,6 +529,7 @@ def test_qop_gt_29(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_gt_30(monty_find, mongo_find):
     docs = [
         {"a": Decimal128("1.1")},
@@ -533,6 +551,7 @@ def test_qop_gt_30(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_gt_31(monty_find, mongo_find):
     docs = [
         {"a": Decimal128("1.1")},
@@ -554,6 +573,7 @@ def test_qop_gt_31(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_gt_32(monty_find, mongo_find):
     docs = [
         {"a": Decimal128("1.1")},

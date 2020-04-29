@@ -3,10 +3,9 @@ import contextlib
 import importlib
 import inspect
 
-from bson.py3compat import string_type
-
-from .storage.abcs import AbstractStorage
+from .storage import AbstractStorage
 from .errors import ConfigurationError
+from .types import string_types
 
 
 MEMORY_STORAGE = "memory"
@@ -56,7 +55,7 @@ def provide_repository(dirname=None):
     """
     if dirname is None or dirname == "":
         return current_repo() or os.getcwd()
-    elif isinstance(dirname, string_type):
+    elif isinstance(dirname, string_types):
         return remove_uri_scheme_prefix(dirname)
     else:
         raise TypeError("Repository path should be a string.")

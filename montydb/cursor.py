@@ -3,21 +3,38 @@ import warnings
 import copy
 from collections import deque
 
-from bson import RE_TYPE
-from bson import SON
-from bson.py3compat import iteritems, integer_types
-
 from .errors import InvalidOperation, OperationFailure
 from .engine.queries import QueryFilter, ordering
 from .engine.project import Projector
+from .types import (
+    SON,
+    RE_PATTERN_TYPE,
+    iteritems,
+    integer_types,
+)
 from .base import (
     validate_boolean,
     validate_is_mapping,
     _fields_list_to_dict,
     _index_list,
     _index_document,
-    command_coder,
 )
+
+
+NotImplementeds = {
+    "collation",
+    "comment",
+    "distinct",
+    "explain",
+    "hint",
+    "max",
+    "max_await_time_ms",
+    "max_time_ms",
+    "min",
+    "remove_option",
+    "where",
+    "batch_size",
+}
 
 
 _QUERY_OPTIONS = {
@@ -96,9 +113,6 @@ class MontyCursor(object):
         self._components = (collection.database, collection, self)
         self._codec_options = collection.codec_options
 
-        spec, projection = command_coder(spec, projection,
-                                         codec_op=self._codec_options)
-
         self._spec = spec
         self._projection = projection
         self._skip = skip
@@ -117,6 +131,13 @@ class MontyCursor(object):
 
         self._doc_count = 0
         self._doc_count_with_skip_limit = 0
+
+    def __getattr__(self, name):
+        if name in NotImplementeds:
+            raise NotImplementedError("'MontyCursor.%s' is NOT "
+                                      "implemented !" % name)
+        raise AttributeError("'MontyCursor' object has no attribute '%s'"
+                             % name)
 
     def __getitem__(self, index):
         """Get a single document or a slice of documents from this cursor.
@@ -195,13 +216,13 @@ class MontyCursor(object):
         for key, value in iterator:
             if isinstance(value, (dict, list)) and not isinstance(value, SON):
                 value = self._deepcopy(value, memo)
-            elif not isinstance(value, RE_TYPE):
+            elif not isinstance(value, RE_PATTERN_TYPE):
                 value = copy.deepcopy(value, memo)
 
             if is_list:
                 y.append(value)
             else:
-                if not isinstance(key, RE_TYPE):
+                if not isinstance(key, RE_PATTERN_TYPE):
                     key = copy.deepcopy(key, memo)
                 y[key] = value
         return y
@@ -366,12 +387,6 @@ class MontyCursor(object):
     def clone(self):
         return self._clone(True)
 
-    def collation(self, collation):
-        raise NotImplementedError
-
-    def comment(self, comment):
-        raise NotImplementedError
-
     def count(self, with_limit_and_skip=False):
         warnings.warn("count is deprecated. Use Collection.count_documents "
                       "instead.", DeprecationWarning, stacklevel=2)
@@ -384,15 +399,6 @@ class MontyCursor(object):
             return self._doc_count_with_skip_limit
         return self._doc_count
 
-    def distinct(self, key):
-        raise NotImplementedError
-
-    def explain(self):
-        raise NotImplementedError
-
-    def hint(self, index):
-        raise NotImplementedError
-
     def limit(self, limit):
         if not isinstance(limit, integer_types):
             raise TypeError("limit must be an integer")
@@ -404,25 +410,10 @@ class MontyCursor(object):
         self._limit = limit
         return self
 
-    def max(self, spec):
-        raise NotImplementedError
-
-    def max_await_time_ms(self, max_await_time_ms):
-        raise NotImplementedError
-
     def max_scan(self, max_scan):
         self.__check_okay_to_chain()
         self._max_scan = max_scan
         return self
-
-    def max_time_ms(self, max_time_ms):
-        raise NotImplementedError
-
-    def min(self, spec):
-        raise NotImplementedError
-
-    def remove_option(self, mask):
-        raise NotImplementedError
 
     def rewind(self):
         self._data = deque()
@@ -449,9 +440,3 @@ class MontyCursor(object):
         keys = _index_list(key_or_list, direction)
         self._ordering = _index_document(keys)
         return self
-
-    def where(self, code):
-        raise NotImplementedError
-
-    def batch_size(self, batch_size):
-        raise NotImplementedError

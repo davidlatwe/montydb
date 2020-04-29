@@ -19,36 +19,27 @@
 # some of them may modified by needs.
 
 
-import collections
-
-from bson import BSON, SON
-from bson.py3compat import integer_types, string_type, abc, iteritems
-from bson.codec_options import CodecOptions
-from bson.raw_bson import RawBSONDocument
-from bson.codec_options import _parse_codec_options
-
-from .engine.helpers import is_duckument_type
+from collections import (
+    OrderedDict,
+    MutableMapping,
+)
+from .types import (
+    abc,
+    iteritems,
+    integer_types,
+    string_types,
+    RawBSONDocument,
+    CodecOptions,
+    parse_codec_options,
+)
 
 ASCENDING = 1
 DESCENDING = -1
 
 
-def command_coder(*args, **kwargs):
-    """Convert command doc to SON type
-    """
-    codec_op = kwargs["codec_op"]
-    for doc in args:
-        if is_duckument_type(doc):
-            # Preserve the type of the query document when decode it back
-            order_keep = codec_op.with_options(document_class=SON)
-            yield BSON.encode(doc, False, codec_op).decode(order_keep)
-        else:
-            yield doc  # should be None type.
-
-
 def validate_is_document_type(option, value):
     """Validate the type of method arguments that expect a MongoDB document."""
-    if not isinstance(value, (collections.MutableMapping, RawBSONDocument)):
+    if not isinstance(value, (MutableMapping, RawBSONDocument)):
         raise TypeError("%s must be an instance of dict, bson.son.SON, "
                         "bson.raw_bson.RawBSONDocument, or "
                         "a type that inherits from "
@@ -115,10 +106,10 @@ def _fields_list_to_dict(fields, option_name):
         return fields
 
     if isinstance(fields, (abc.Sequence, abc.Set)):
-        if not all(isinstance(field, string_type) for field in fields):
+        if not all(isinstance(field, string_types) for field in fields):
             raise TypeError("%s must be a list of key names, each an "
                             "instance of %s" % (option_name,
-                                                string_type.__name__))
+                                                string_types.__name__))
         return dict.fromkeys(fields, 1)
 
     raise TypeError("%s must be a mapping or "
@@ -133,7 +124,7 @@ def _index_list(key_or_list, direction=None):
     if direction is not None:
         return [(key_or_list, direction)]
     else:
-        if isinstance(key_or_list, string_type):
+        if isinstance(key_or_list, string_types):
             return [(key_or_list, ASCENDING)]
         elif not isinstance(key_or_list, (list, tuple)):
             raise TypeError("if no direction is specified, "
@@ -156,11 +147,11 @@ def _index_document(index_list):
     if not len(index_list):
         raise ValueError("key_or_list must not be the empty list")
 
-    index = SON()
+    index = OrderedDict()
     for (key, value) in index_list:
-        if not isinstance(key, string_type):
+        if not isinstance(key, string_types):
             raise TypeError("first item in each key pair must be a string")
-        if not isinstance(value, (string_type, int, abc.Mapping)):
+        if not isinstance(value, (string_types, int, abc.Mapping)):
             raise TypeError("second item in each key pair must be 1, -1, "
                             "'2d', 'geoHaystack', or another valid MongoDB "
                             "index specifier.")
@@ -213,7 +204,7 @@ class ClientOptions(object):
 
     def __init__(self, options, storage_wconcern=None):
         self.__options = options
-        self.__codec_options = _parse_codec_options(options)
+        self.__codec_options = parse_codec_options(options)
 
         if storage_wconcern is not None:
             self.__write_concern = storage_wconcern

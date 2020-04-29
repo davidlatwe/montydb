@@ -1,6 +1,7 @@
 
 import re
-from bson.regex import Regex
+from montydb.types import Regex
+from ...conftest import skip_if_no_bson
 
 
 def test_qop_not_1(monty_find, mongo_find):
@@ -44,6 +45,7 @@ def test_qop_not_3(monty_find, mongo_find):
     assert monty_c.count() == mongo_c.count()
 
 
+@skip_if_no_bson
 def test_qop_not_4(monty_find, mongo_find):
     docs = [
         {"a": "apple"},
