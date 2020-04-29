@@ -78,6 +78,8 @@ The configuration process only required on repository creation or modification.
   - **SQLite**
   
   SQLite is NOT the default on-disk storage, need configuration first before get client.
+
+  > Pre-existing sqlite storage file which saved by `montydb<=1.3.0` is not read/writeable after `montydb==2.0.0`.
   
   ```python
   >>> from montydb import set_storage, MontyClient
@@ -110,6 +112,8 @@ You could prefix the repository path with montydb URI scheme.
 ```
 
 ### Utilities
+
+> Pymongo `bson` may required.
 
 * #### `montyimport`
 
