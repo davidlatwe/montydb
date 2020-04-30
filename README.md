@@ -7,6 +7,7 @@
 <a href='https://coveralls.io/github/davidlatwe/MontyDB?branch=master'><img src='https://coveralls.io/repos/github/davidlatwe/MontyDB/badge.svg?branch=master&kill_cache=1' alt='Coverage Status' /></a>
 [![Version](http://img.shields.io/pypi/v/MontyDB.svg?style=flat)](https://pypi.python.org/pypi/MontyDB)
 [![Maintainability](https://api.codeclimate.com/v1/badges/1adb14266d05ef3c9b17/maintainability)](https://codeclimate.com/github/davidlatwe/MontyDB/maintainability)
+[![Join the chat at https://gitter.im/montydb-hq/community](https://badges.gitter.im/montydb-hq/community.svg)](https://gitter.im/montydb-hq/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ###### Inspired by [TinyDB](https://github.com/msiemens/tinydb) and it's extension [TinyMongo](https://github.com/schapman1974/tinymongo).
 
