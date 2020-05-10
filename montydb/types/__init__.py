@@ -236,7 +236,7 @@ else:
                 _encoder._key_is_keyword = False
             candidate = s
             serialized += s
-        return serialized
+        return serialized.encode()
 
     def object_hook(obj, opts=DEFAULT_CODEC_OPTIONS):
         if "$oid" in obj:
