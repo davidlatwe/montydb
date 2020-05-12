@@ -67,7 +67,6 @@ class LMDBKVEngine(object):
             with env.begin(db, write=True) as txn:
                 for doc_id, encoded_doc in pairs:
                     id = _to_bytes(str(doc_id))
-                    # print("->", id)
                     if not txn.put(id, encoded_doc, overwrite=overwrite):
                         dup = True
                         break
