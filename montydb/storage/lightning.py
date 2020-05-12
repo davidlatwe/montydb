@@ -189,6 +189,7 @@ class LMDBCollection(AbstractCollection):
 
     def _ensure_table(func):
         def make_table(self, *args, **kwargs):
+            environment = None
             if not self._database.collection_exists(self._name):
                 environment = self._database.collection_create(self._name)
             return func(self, env=environment, *args, **kwargs)
