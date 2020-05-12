@@ -320,7 +320,7 @@ def test_sort_18(monty_sort, mongo_sort):
         {"a": [True, "y"]},
         {"a": []},
     ]
-    sort = [("a", -1)]
+    sort = [("_id", 1), ("a", -1)]
 
     monty_c = monty_sort(docs, sort)
     mongo_c = mongo_sort(docs, sort)
@@ -367,7 +367,7 @@ def test_sort_19(monty_sort, mongo_sort):
         {"a": datetime(1900, 1, 1)},
         {"a": datetime(1900, 1, 2)},
     ]
-    sort = [("a", 1)]
+    sort = [("_id", 1), ("a", 1)]
 
     monty_c = monty_sort(docs, sort)
     mongo_c = mongo_sort(docs, sort)
