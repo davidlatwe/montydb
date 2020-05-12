@@ -63,11 +63,7 @@ class LMDBKVEngine(object):
 
         dup = False
         with environment as env:
-            # (TODO) Use int number as key and implement this to all storage,
-            #        as a default index.
-            #        On deletion, remember the int number key in query and
-            #        use it for deletion, not use document id.
-            db = env.open_db(self.dbname, reverse_key=False)
+            db = env.open_db(self.dbname)
             with env.begin(db, write=True) as txn:
                 for doc_id, encoded_doc in pairs:
                     id = _to_bytes(str(doc_id))
