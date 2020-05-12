@@ -43,28 +43,26 @@ class LMDBKVEngine(object):
         self._path = path
 
     def open(self):
-        return lmdb.open(self._path, **self.opt)
+        environment = lmdb.open(self._path, **self.opt)
+        return environment
 
-    def iter_docs(self):
-        # (TODO) Implement custom context __exit__ to handle error or
-        #        StopIteration ?
+    def iter_docs(self, environment):
         if not os.path.isfile(self._path):
             return []
-        docs = list()
-        with self.open() as env:
-            db = env.open_db(self.dbname, reverse_key=False)
+
+        with environment as env:
+            db = env.open_db(self.dbname)
             with env.begin(db, write=False) as txn:
                 cursor = txn.cursor()
-                for k, encoded_doc in cursor.iternext(keys=True, values=True):
-                    # print(k)
-                    docs.append(encoded_doc)
-        return docs
+                for encoded_doc in cursor.iternext(keys=False, values=True):
+                    yield encoded_doc
 
-    def write(self, pairs, overwrite=False):
+    def write(self, environment, pairs, overwrite=False):
         if not os.path.isfile(self._path):
             return
+
         dup = False
-        with self.open() as env:
+        with environment as env:
             # (TODO) Use int number as key and implement this to all storage,
             #        as a default index.
             #        On deletion, remember the int number key in query and
@@ -80,10 +78,11 @@ class LMDBKVEngine(object):
         if dup:
             raise StorageDuplicateKeyError()
 
-    def delete(self, doc_ids):
+    def delete(self, environment, doc_ids):
         if not os.path.isfile(self._path):
             return
-        with self.open() as env:
+
+        with environment as env:
             db = env.open_db(self.dbname, reverse_key=False)
             with env.begin(db, write=True) as txn:
                 cursor = txn.cursor()
@@ -160,7 +159,9 @@ class LMDBDatabase(AbstractDatabase):
         if not self.database_exists():
             self._storage.database_create(self._name)
         self._conn.set_path(self._col_path(col_name))
-        self._conn.open()
+        environment = self._conn.open()
+
+        return environment
 
     def collection_drop(self, col_name):
         if self.collection_exists(col_name):
@@ -189,20 +190,23 @@ class LMDBCollection(AbstractCollection):
     def _ensure_table(func):
         def make_table(self, *args, **kwargs):
             if not self._database.collection_exists(self._name):
-                self._database.collection_create(self._name)
-            return func(self, *args, **kwargs)
+                environment = self._database.collection_create(self._name)
+            return func(self, env=environment, *args, **kwargs)
         return make_table
 
     @_ensure_table
-    def write_one(self, doc, check_keys=True):
+    def write_one(self, doc, check_keys=True, env=None):
+        env = env or self._conn.open()
+
         id = doc["_id"]
         encoded = self._encode_doc(doc, check_keys)
-        self._conn.write([(id, encoded)])
+        self._conn.write(env, [(id, encoded)])
 
         return id
 
     @_ensure_table
-    def write_many(self, docs, check_keys=True, ordered=True):
+    def write_many(self, docs, check_keys=True, ordered=True, env=None):
+        env = env or self._conn.open()
         ids = list()
 
         def produce_encoded_docs():
@@ -211,27 +215,33 @@ class LMDBCollection(AbstractCollection):
                 yield id, self._encode_doc(doc, check_keys)
                 ids.append(id)
 
-        self._conn.write(produce_encoded_docs())
+        self._conn.write(env, produce_encoded_docs())
 
         return ids
 
     def update_one(self, doc):
+        env = self._conn.open()
+
         id = doc["_id"]
         encoded = self._encode_doc(doc)
-        self._conn.write([(id, encoded)], overwrite=True)
+        self._conn.write(env, [(id, encoded)], overwrite=True)
 
     def update_many(self, docs):
+        env = self._conn.open()
+
         def produce_encoded_docs():
             for doc in docs:
                 yield doc["_id"], self._encode_doc(doc)
 
-        self._conn.write(produce_encoded_docs(), overwrite=True)
+        self._conn.write(env, produce_encoded_docs(), overwrite=True)
 
     def delete_one(self, id):
-        self._conn.delete([id])
+        env = self._conn.open()
+        self._conn.delete(env, [id])
 
     def delete_many(self, ids):
-        self._conn.delete(ids)
+        env = self._conn.open()
+        self._conn.delete(env, ids)
 
 
 LMDBDatabase.contractor_cls = LMDBCollection
@@ -244,9 +254,12 @@ class LMDBCursor(AbstractCursor):
     def __init__(self, collection, subject):
         super(LMDBCursor, self).__init__(collection, subject)
         self._conn = self._collection._conn
+        self._env = self._conn.open()
 
     def query(self, max_scan):
-        docs = (self._decode_doc(doc) for doc in self._conn.iter_docs())
+        docs = (self._decode_doc(doc)
+                for doc in self._conn.iter_docs(self._env))
+
         if not max_scan:
             return docs
         else:
