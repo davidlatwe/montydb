@@ -16,7 +16,7 @@ def pytest_addoption(parser):
                         * memory (default)
                         * sqlite
                         * flatfile
-                        * lmdb
+                        * lightning (lmdb)
                      """)
 
 
