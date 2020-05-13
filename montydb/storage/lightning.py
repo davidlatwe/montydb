@@ -14,8 +14,6 @@ from . import (
     StorageDuplicateKeyError,
 )
 
-# Functional > Performence > Natural
-
 LMDB_DB_EXT = ".mdb"
 
 
