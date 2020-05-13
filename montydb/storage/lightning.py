@@ -48,7 +48,7 @@ class LMDBKVEngine(object):
 
     def iter_docs(self, environment):
         if not os.path.isfile(self._path):
-            return []
+            return
 
         with environment as env:
             db = env.open_db(self.dbname)
