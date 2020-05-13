@@ -91,7 +91,7 @@ def mongo_distinct(mongo_database):
 def insert_and_update(db, docs, spec, find, upsert, array_filters):
     col = insert(db, docs)
     col.update_many(find or {}, spec, upsert, array_filters=array_filters)
-    return col.find({}, {"_id": 0})
+    return col.find({}, {"_id": 0}, sort=[("_id", 1)])
 
 
 @pytest.fixture
@@ -113,7 +113,7 @@ def mongo_update(mongo_database):
 def insert_and_replace(db, docs, find, replacement, upsert):
     col = insert(db, docs)
     col.replace_one(find or {}, replacement, upsert)
-    return col.find({}, {"_id": 0})
+    return col.find({}, {"_id": 0}, sort=[("_id", 1)])
 
 
 @pytest.fixture
