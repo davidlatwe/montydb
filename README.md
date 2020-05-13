@@ -25,6 +25,7 @@
 `pip install montydb`
 
   ##### Optinal Requirements
+  - *`lmdb` (for LMDB storage `lightning`)*
   - *`pymongo` (for `bson`)*
 
       `bson` is opt-out by default even it's installed, set env var `MONTY_ENABLE_BSON=1` to enable it.

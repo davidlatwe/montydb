@@ -49,5 +49,6 @@ setup(
     tests_require=(
         "pytest-cov",
         "pymongo",
+        "lmdb",
     ),
 )
