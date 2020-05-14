@@ -92,7 +92,8 @@ def test_utils_montyimport(tmp_monty_repo):
         montyimport(database, collection, JSON_DUMP)
 
         client = MontyClient()
-        for i, doc in enumerate(client[database][collection].find()):
+        col = client[database][collection]
+        for i, doc in enumerate(col.find(sort=[("_id", 1)])):
             assert doc == BSON.encode(DOCUMENTS[i]).decode()
 
         os.remove(JSON_DUMP)
@@ -106,10 +107,18 @@ def test_utils_montyexport(tmp_monty_repo):
     with open_repo(tmp_monty_repo):
         montyexport(database, collection, JSON_DUMP)
 
+        loaded_examples = list()
+        loaded_exported = list()
+
         with open(JSON_DUMP, "r") as dump:
             data = dump.read().strip()
             for d, s in zip(data.split("\n"), SERIALIZED.split("\n")):
-                assert json_util.loads(d) == json_util.loads(s)
+                loaded_exported.append(json_util.loads(d))
+                loaded_examples.append(json_util.loads(s))
+
+        sort = (lambda l: sorted(l, key=lambda i: i["_id"]))
+        for d, s in zip(sort(loaded_exported), sort(loaded_examples)):
+            assert d == s
 
         os.remove(JSON_DUMP)
 
@@ -129,16 +138,21 @@ def test_utils_montyrestore(tmp_monty_repo):
         montyrestore(database, collection, BSON_DUMP)
 
         client = MontyClient()
-        for i, doc in enumerate(client[database][collection].find()):
+        col = client[database][collection]
+        for i, doc in enumerate(col.find(sort=[("_id", 1)])):
             assert doc == BSON.encode(DOCUMENTS[i]).decode()
 
         os.remove(BSON_DUMP)
 
 
 @skip_if_no_bson
-def test_utils_montydump(tmp_monty_repo):
+def test_utils_montydump(storage, tmp_monty_repo):
     database = "dump_db_BSON"
     collection = "dump_col_BSON"
+
+    if storage == "lightning":
+        pytest.skip("LMDB's document natural order is lexicographic, not easy "
+                    "to match with MongoDB's natural order but safe to skip.")
 
     with open_repo(tmp_monty_repo):
         montydump(database, collection, BSON_DUMP)

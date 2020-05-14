@@ -35,10 +35,10 @@ before_install:
   - pip install pytest-cov
   - pip install pytest-env-info
   - pip install coveralls
-  - pip install codecov
 
 install:
   - pip install pymongo
+  - pip install lmdb
   - python setup.py install
 
 before_script:
@@ -50,15 +50,15 @@ before_script:
   - ./cc-test-reporter before-build
 
 script:
-  - pytest --cov montydb --storage sqlite
+  - pytest --cov montydb --storage memory
   - pytest --cov montydb --storage flatfile --cov-append
-  - pytest --cov montydb --storage memory --cov-append
+  - pytest --cov montydb --storage lightning --cov-append
+  - pytest --cov montydb --storage sqlite --cov-append
 
 after_script:
   - pkill mongod
 
 after_success:
-  - codecov
   - coveralls
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
 

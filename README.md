@@ -25,6 +25,7 @@
 `pip install montydb`
 
   ##### Optinal Requirements
+  - *`lmdb` (for LMDB storage `lightning`)*
   - *`pymongo` (for `bson`)*
 
       `bson` is opt-out by default even it's installed, set env var `MONTY_ENABLE_BSON=1` to enable it.
@@ -74,6 +75,25 @@ The configuration process only required on repository creation or modification.
   ```yaml
   [flatfile]
   cache_modified: 0  # how many document CRUD cached before flush to disk.
+  ```
+
+    - **LMDB (Lightning Memory-Mapped Database)**
+  
+  LMDB is NOT the default on-disk storage, need configuration first before get client.
+
+  > Newly implemented.
+  
+  ```python
+  >>> from montydb import set_storage, MontyClient
+  >>> set_storage("/db/repo", storage="lightning")
+  >>> client = MontyClient("/db/repo")
+  ```
+
+  LMDB config:
+
+  ```yaml
+  [lightning]
+  map_size: 10485760  # Maximum size database may grow to.
   ```
 
   - **SQLite**

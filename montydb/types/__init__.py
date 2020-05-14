@@ -236,7 +236,7 @@ else:
                 _encoder._key_is_keyword = False
             candidate = s
             serialized += s
-        return serialized
+        return serialized.encode()
 
     def object_hook(obj, opts=DEFAULT_CODEC_OPTIONS):
         if "$oid" in obj:
@@ -429,3 +429,30 @@ class Counter(object):
 
     def __iter__(self):
         return self
+
+
+def on_err_close(generator):
+    """Decorator, to close `generator` passed into the function on error
+
+    Ensure the `generator` which holds the storage database connection to
+    close that connection right on error occurred and then raise the error.
+
+    In some tests, one may leave the connection open and cause next test
+    case fail on startup or teardown, e.g. drop collection that created by
+    previous test. The reason why that previous connection remains open,
+    could be the `generator` which holds the connection context was not
+    being garbage collected (`__exit__` was not triggered) while entring
+    the next test. So we need this at least for now, until better solution
+    or better test cases came up.
+
+    """
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            try:
+                for i in func(*args, **kwargs):
+                    yield i
+            except Exception:
+                generator.close()
+                raise
+        return wrapper
+    return decorator

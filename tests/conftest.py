@@ -16,6 +16,7 @@ def pytest_addoption(parser):
                         * memory (default)
                         * sqlite
                         * flatfile
+                        * lightning (lmdb)
                      """)
 
 
@@ -70,12 +71,8 @@ def monty_client(storage, tmp_monty_repo):
 
     if storage == "memory":
         return montydb.MontyClient(":memory:")
-    elif storage == "sqlite":
-        montydb.set_storage(tmp_monty_repo, storage)
-    elif storage == "flatfile":
-        montydb.set_storage(tmp_monty_repo, storage)
     else:
-        pytest.fail("Unknown storage engine: {!r}".format(storage), False)
+        montydb.set_storage(tmp_monty_repo, storage)
 
     client = montydb.MontyClient(tmp_monty_repo)
     # purge_all_db

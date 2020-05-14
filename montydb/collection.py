@@ -21,6 +21,7 @@ from .types import (
     string_types,
     is_duckument_type,
     Counter,
+    on_err_close,
 )
 from .storage import StorageDuplicateKeyError
 from .errors import (
@@ -320,6 +321,7 @@ class MontyCollection(BaseObject):
             if upsert:
                 self._internal_upsert(filter, updator, raw_result)
         else:
+            @on_err_close(scanner)
             def update_docs():
                 n, m = 0, 0
                 for fieldwalker in scanner:
