@@ -77,7 +77,7 @@ The configuration process only required on repository creation or modification.
   cache_modified: 0  # how many document CRUD cached before flush to disk.
   ```
 
-    - **LMDB (Lightning Memory-Mapped Database)**
+  - **LMDB (Lightning Memory-Mapped Database)**
   
   LMDB is NOT the default on-disk storage, need configuration first before get client.
 
