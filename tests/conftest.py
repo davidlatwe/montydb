@@ -76,7 +76,7 @@ def monty_client(storage, tmp_monty_repo):
 
     client = montydb.MontyClient(tmp_monty_repo)
     # purge_all_db
-    for db in client.database_names():
+    for db in client.list_database_names():
         client.drop_database(db)
     return client
 
@@ -84,10 +84,10 @@ def monty_client(storage, tmp_monty_repo):
 @pytest.fixture(scope="session")
 def mongo_client():
     client = pymongo.MongoClient("mongodb://localhost:27017")
-    existed_dbs = client.database_names() + ["admin", "config"]
+    existed_dbs = client.list_database_names() + ["admin", "config"]
     yield client
     # db cleanup
-    for db in client.database_names():
+    for db in client.list_database_names():
         if db in existed_dbs:
             continue
         client.drop_database(db)
