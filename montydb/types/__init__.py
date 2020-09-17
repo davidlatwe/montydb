@@ -9,6 +9,7 @@ import datetime
 from collections import OrderedDict
 
 MONTY_ENABLE_BSON = bool(os.getenv("MONTY_ENABLE_BSON", False))
+MONTY_ENCODE_ID = bool(os.getenv("MONTY_ENCODE_ID", True))
 
 PY3 = sys.version_info[0] == 3
 
@@ -82,7 +83,7 @@ else:
 
 if MONTY_ENABLE_BSON:
 
-    from bson import SON, BSON
+    from bson import SON, BSON, _ENCODERS
     from bson.timestamp import Timestamp
     from bson.objectid import ObjectId
     from bson.min_key import MinKey
@@ -119,6 +120,15 @@ if MONTY_ENABLE_BSON:
 
     def json_dumps(doc):
         return _dumps(doc, json_options=CANONICAL_JSON_OPTIONS)
+
+    def _id_encode(id, codec_options=DEFAULT_CODEC_OPTIONS):
+        # args: name, value, check_keys, opts
+        return _ENCODERS[type(id)](b"", id, False, codec_options)
+
+    if MONTY_ENCODE_ID:
+        id_encode = _id_encode
+    else:
+        id_encode = (lambda id: str(id))
 
 else:
 
@@ -264,6 +274,14 @@ else:
 
     def json_dumps(doc):
         return _dumps(doc, default=BSONEncoder().default)
+
+    def _id_encode(id, *args, **kwargs):
+        return document_encode(id)
+
+    if MONTY_ENCODE_ID:
+        id_encode = _id_encode
+    else:
+        id_encode = (lambda id: str(id))
 
 
 custom_json_hooks = {}

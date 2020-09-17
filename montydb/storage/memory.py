@@ -2,6 +2,7 @@
 from itertools import islice
 from collections import OrderedDict
 
+from ..types import id_encode
 from . import (
     AbstractStorage,
     AbstractDatabase,
@@ -90,33 +91,33 @@ class MemoryCollection(AbstractCollection):
             raise StorageDuplicateKeyError()
 
     def write_one(self, doc, check_keys=True):
-        id = doc["_id"]
-        self._id_unique(str(id))
-        self._col[str(id)] = self._encode_doc(doc, check_keys)
+        id = id_encode(doc["_id"])
+        self._id_unique(id)
+        self._col[id] = self._encode_doc(doc, check_keys)
         return id
 
     def write_many(self, docs, check_keys=True, ordered=True):
         ids = list()
         for doc in docs:
-            id = doc["_id"]
-            self._id_unique(str(id))
-            self._col[str(id)] = self._encode_doc(doc, check_keys)
+            id = id_encode(doc["_id"])
+            self._id_unique(id)
+            self._col[id] = self._encode_doc(doc, check_keys)
             ids.append(id)
         return ids
 
     def update_one(self, doc):
-        self._col[str(doc["_id"])] = self._encode_doc(doc)
+        self._col[id_encode(doc["_id"])] = self._encode_doc(doc)
 
     def update_many(self, docs):
         for doc in docs:
-            self._col[str(doc["_id"])] = self._encode_doc(doc)
+            self._col[id_encode(doc["_id"])] = self._encode_doc(doc)
 
     def delete_one(self, id):
-        del self._col[str(id)]
+        del self._col[id_encode(id)]
 
     def delete_many(self, ids):
         for id in ids:
-            del self._col[str(id)]
+            del self._col[id_encode(id)]
 
 
 MemoryDatabase.contractor_cls = MemoryCollection
