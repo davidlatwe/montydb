@@ -1,6 +1,6 @@
 
-def count_documents(cursor, spec):
-    return cursor.collection.count_documents(spec)
+def count_documents(cursor, spec=None):
+    return cursor.collection.count_documents(spec or {})
 
 
 def test_replace_one_1(monty_replace, mongo_replace):
@@ -14,8 +14,8 @@ def test_replace_one_1(monty_replace, mongo_replace):
     monty_c = monty_replace(docs, spec, replacement)
     mongo_c = mongo_replace(docs, spec, replacement)
 
-    assert count_documents(mongo_c, spec) == 2
-    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
+    assert count_documents(mongo_c) == 2
+    assert count_documents(monty_c) == count_documents(mongo_c)
     assert next(mongo_c) == next(monty_c)
     assert next(mongo_c) == next(monty_c)
 
@@ -31,8 +31,8 @@ def test_replace_one_2(monty_replace, mongo_replace):
     monty_c = monty_replace(docs, spec, replacement, upsert=True)
     mongo_c = mongo_replace(docs, spec, replacement, upsert=True)
 
-    assert count_documents(mongo_c, spec) == 3
-    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
+    assert count_documents(mongo_c) == 3
+    assert count_documents(monty_c) == count_documents(mongo_c)
     assert next(mongo_c) == next(monty_c)
     assert next(mongo_c) == next(monty_c)
 
@@ -48,8 +48,8 @@ def test_replace_one_with_dot(monty_replace, mongo_replace):
     monty_c = monty_replace(docs, spec, replacement)
     mongo_c = mongo_replace(docs, spec, replacement)
 
-    assert count_documents(mongo_c, spec) == 2
-    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
+    assert count_documents(mongo_c) == 2
+    assert count_documents(monty_c) == count_documents(mongo_c)
     assert next(mongo_c) == next(monty_c)
     assert next(mongo_c) == next(monty_c)
 
@@ -65,7 +65,7 @@ def test_replace_one_upsert_with_dot(monty_replace, mongo_replace):
     monty_c = monty_replace(docs, spec, replacement, upsert=True)
     mongo_c = mongo_replace(docs, spec, replacement, upsert=True)
 
-    assert count_documents(mongo_c, spec) == 3
-    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
+    assert count_documents(mongo_c) == 3
+    assert count_documents(monty_c) == count_documents(mongo_c)
     assert next(mongo_c) == next(monty_c)
     assert next(mongo_c) == next(monty_c)
