@@ -69,7 +69,7 @@ def test_collection_find(monty_collection):
     assert isinstance(cursor, MontyCursor)
 
     db = monty_collection.database
-    assert monty_collection.name in db.collection_names()
+    assert monty_collection.name in db.list_collection_names()
 
 
 def test_collection_find_in_non_existed_collection(monty_collection):
@@ -77,7 +77,7 @@ def test_collection_find_in_non_existed_collection(monty_collection):
     assert isinstance(cursor, MontyCursor)
 
     db = monty_collection.database
-    assert monty_collection.name not in db.collection_names()
+    assert monty_collection.name not in db.list_collection_names()
 
 
 def test_collection_find_one(monty_collection):
@@ -143,9 +143,9 @@ def test_collection_insert_many_has_duplicate_key(monty_collection,
 
 def test_collection_drop(monty_database):
     collection = monty_database.create_collection("drop_me")
-    assert "drop_me" in monty_database.collection_names()
+    assert "drop_me" in monty_database.list_collection_names()
     collection.drop()
-    assert "drop_me" not in monty_database.collection_names()
+    assert "drop_me" not in monty_database.list_collection_names()
 
 
 def test_collection_save(monty_collection, mongo_collection):
