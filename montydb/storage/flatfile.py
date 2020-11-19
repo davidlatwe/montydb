@@ -10,6 +10,7 @@ from ..types import (
     json_loads,
     json_dumps,
     unicode_,
+    id_encode,
 )
 
 from . import (
@@ -228,7 +229,7 @@ class FlatFileCollection(AbstractCollection):
     @_ensure_table
     def write_one(self, doc, check_keys=True):
         _doc = OrderedDict()
-        id = doc["_id"]
+        id = id_encode(doc["_id"])
         if self._flatfile._id_existed(id):
             raise StorageDuplicateKeyError()
 
@@ -243,7 +244,7 @@ class FlatFileCollection(AbstractCollection):
         ids = list()
         has_duplicated_key = False
         for doc in docs:
-            id = doc["_id"]
+            id = id_encode(doc["_id"])
             if id in _docs or self._flatfile._id_existed(id):
                 has_duplicated_key = True
                 break
@@ -260,22 +261,22 @@ class FlatFileCollection(AbstractCollection):
 
     def update_one(self, doc):
         _doc = OrderedDict()
-        _doc[doc["_id"]] = self._encode_doc(doc)
+        _doc[id_encode(doc["_id"])] = self._encode_doc(doc)
         self._flatfile.write(_doc)
 
     def update_many(self, docs):
         _docs = OrderedDict()
         for doc in docs:
-            _docs[doc["_id"]] = self._encode_doc(doc)
+            _docs[id_encode(doc["_id"])] = self._encode_doc(doc)
 
         self._flatfile.write(_docs)
 
     def delete_one(self, id):
-        self._flatfile.delete(id)
+        self._flatfile.delete(id_encode(id))
 
     def delete_many(self, ids):
         for id in ids:
-            self._flatfile.delete(id)
+            self._flatfile.delete(id_encode(id))
 
 
 FlatFileDatabase.contractor_cls = FlatFileCollection

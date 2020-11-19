@@ -4,7 +4,7 @@ import lmdb
 import shutil
 from itertools import islice
 
-from ..types import unicode_
+from ..types import unicode_, _id_encode, MONTY_ENCODE_ID
 from . import (
     AbstractStorage,
     AbstractDatabase,
@@ -19,6 +19,12 @@ LMDB_DB_EXT = ".mdb"
 
 def _to_bytes(s):
     return s.encode()
+
+
+if MONTY_ENCODE_ID:
+    id_encode = _id_encode
+else:
+    id_encode = (lambda id: _to_bytes(str(id)))
 
 
 class LMDBKVEngine(object):
@@ -64,7 +70,7 @@ class LMDBKVEngine(object):
             db = env.open_db(self.dbname)
             with env.begin(db, write=True) as txn:
                 for doc_id, encoded_doc in pairs:
-                    id = _to_bytes(str(doc_id))
+                    id = id_encode(doc_id)
                     if not txn.put(id, encoded_doc, overwrite=overwrite):
                         dup = True
                         break
@@ -80,7 +86,7 @@ class LMDBKVEngine(object):
             with env.begin(db, write=True) as txn:
                 cursor = txn.cursor()
                 for doc_id in doc_ids:
-                    id = _to_bytes(str(doc_id))
+                    id = id_encode(doc_id)
                     if cursor.set_key(id):
                         cursor.delete()
 
