@@ -1,4 +1,11 @@
 
+def order_ignored_eq(a, b):
+    # mongodb 4.0+ return distinct with value sorted
+    assert len(a) == len(b)
+    for elem in a:
+        assert elem in b
+    return True
+
 
 def test_distinct_1(monty_distinct, mongo_distinct):
     docs = [
@@ -50,8 +57,8 @@ def test_distinct_3(monty_distinct, mongo_distinct):
     assert len(mongo_dist) == 5
     assert len(monty_dist) == len(mongo_dist)
 
-    assert mongo_dist == [1, 5, 6, 0, 8]
-    assert monty_dist == mongo_dist
+    assert order_ignored_eq(mongo_dist, [1, 5, 6, 0, 8])
+    assert order_ignored_eq(monty_dist, mongo_dist)
 
 
 def test_distinct_4(monty_distinct, mongo_distinct):
@@ -72,10 +79,10 @@ def test_distinct_4(monty_distinct, mongo_distinct):
     assert len(mongo_dist) == 13
     assert len(monty_dist) == len(mongo_dist)
 
-    assert mongo_dist == [
+    assert order_ignored_eq(mongo_dist, [
         2, 3,
         4, 9, {"m": "n"}, {"o": "p"}, [5, 6], [8], True,
         1, 10,
         6, [3]
-    ]
-    assert monty_dist == mongo_dist
+    ])
+    assert order_ignored_eq(monty_dist, mongo_dist)
