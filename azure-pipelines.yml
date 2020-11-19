@@ -93,7 +93,7 @@ jobs:
         displayName: "pip install .."
 
       - script: |
-          export MONTY_ENABLE_BSON=${{env.bson}}
+          export MONTY_ENABLE_BSON=$(env.bson)
           pytest --cov montydb --storage memory
           pytest --cov montydb --storage flatfile --cov-append
           pytest --cov montydb --storage lightning --cov-append
@@ -143,7 +143,7 @@ jobs:
         displayName: "pip install .."
 
       - script: |
-          export MONTY_ENABLE_BSON=${{env.bson}}
+          export MONTY_ENABLE_BSON=$(env.bson)
           pytest --cov montydb --storage memory
           pytest --cov montydb --storage flatfile --cov-append
           pytest --cov montydb --storage lightning --cov-append
@@ -192,7 +192,7 @@ jobs:
         displayName: "pip install .."
 
       - script: |
-          set MONTY_ENABLE_BSON=${{env.bson}}
+          set MONTY_ENABLE_BSON=$(env.bson)
           pytest --cov montydb --storage memory
           pytest --cov montydb --storage flatfile --cov-append
           pytest --cov montydb --storage lightning --cov-append
