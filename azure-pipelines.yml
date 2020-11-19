@@ -1,0 +1,238 @@
+---
+trigger:
+
+  # Already default, but made explicit here
+  branches:
+    include: ["*"]
+
+  # Ensure Azure triggers a build on a new tag
+  # We use these for GitHub releases
+  tags:
+    include: ["*"]
+
+  paths:
+    # Do not trigger a build on changes at these paths
+    exclude:
+      - docs/*
+      - .gitignore
+      - LICENSE.txt
+      - README.md
+
+
+jobs:
+
+  # -----------------------------------------------------------------------
+  #
+  # Test
+  #
+  # -----------------------------------------------------------------------
+
+  - job: Ubuntu
+    pool:
+      vmImage: "ubuntu-20.04"  # Focal
+    strategy:
+      matrix:
+        py27-bson:
+          python.version: "2.7"
+          env.bson: "true"
+
+        py27-nobson:
+          python.version: "2.7"
+          env.bson: ""
+
+        py35-bson:
+          python.version: "3.5"
+          env.bson: "true"
+
+        py35-nobson:
+          python.version: "3.5"
+          env.bson: ""
+
+        py36-bson:
+          python.version: "3.6"
+          env.bson: "true"
+
+        py36-nobson:
+          python.version: "3.6"
+          env.bson: ""
+
+        py37-bson:
+          python.version: "3.7"
+          env.bson: "true"
+
+        py37-nobson:
+          python.version: "3.7"
+          env.bson: ""
+
+        py38-bson:
+          python.version: "3.8"
+          env.bson: "true"
+
+        py38-nobson:
+          python.version: "3.8"
+          env.bson: ""
+
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "$(python.version)"
+        displayName: "Use Python $(python.version)"
+
+      - script: |
+          docker run --name mongo-latest -p 27017:27017 -d mongo:latest
+        displayName: "docker mongo"
+
+      - script: |
+          pip install pip -U
+          pip install lmdb
+          pip install pymongo
+          pip install pytest-cov
+          pip install pytest-env-info
+          pip install pytest-azurepipelines
+          pip install coveralls
+        displayName: "pip install .."
+
+      - script: |
+          export MONTY_ENABLE_BSON=${{env.bson}}
+          pytest --cov montydb --storage memory
+          pytest --cov montydb --storage flatfile --cov-append
+          pytest --cov montydb --storage lightning --cov-append
+          pytest --cov montydb --storage sqlite --cov-append
+        displayName: "Run tests"
+
+
+  - job: MacOS
+    pool:
+      vmImage: "macOS-10.15"
+    strategy:
+      matrix:
+        py37-bson:
+          python.version: "3.7"
+          env.bson: "true"
+
+        py37-nobson:
+          python.version: "3.7"
+          env.bson: ""
+
+        py38-bson:
+          python.version: "3.8"
+          env.bson: "true"
+
+        py38-nobson:
+          python.version: "3.8"
+          env.bson: ""
+
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "$(python.version)"
+        displayName: "Use Python $(python.version)"
+
+      - script: |
+          docker run --name mongo-latest -p 27017:27017 -d mongo:latest
+        displayName: "docker mongo"
+
+      - script: |
+          pip install pip -U
+          pip install lmdb
+          pip install pymongo
+          pip install pytest-cov
+          pip install pytest-env-info
+          pip install pytest-azurepipelines
+          pip install coveralls
+        displayName: "pip install .."
+
+      - script: |
+          export MONTY_ENABLE_BSON=${{env.bson}}
+          pytest --cov montydb --storage memory
+          pytest --cov montydb --storage flatfile --cov-append
+          pytest --cov montydb --storage lightning --cov-append
+          pytest --cov montydb --storage sqlite --cov-append
+        displayName: "Run tests"
+
+  - job: Windows
+    pool:
+      vmImage: vs2017-win2016
+    strategy:
+      matrix:
+        py37-bson:
+          python.version: "3.7"
+          env.bson: "true"
+
+        py37-nobson:
+          python.version: "3.7"
+          env.bson: ""
+
+        py38-bson:
+          python.version: "3.8"
+          env.bson: "true"
+
+        py38-nobson:
+          python.version: "3.8"
+          env.bson: ""
+
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "$(python.version)"
+        displayName: "Use Python $(python.version)"
+
+      - script: |
+          docker run --name mongo-latest -p 27017:27017 -d mongo:latest
+        displayName: "docker mongo"
+
+      - script: |
+          pip install pip -U
+          pip install lmdb
+          pip install pymongo
+          pip install pytest-cov
+          pip install pytest-env-info
+          pip install pytest-azurepipelines
+          pip install coveralls
+        displayName: "pip install .."
+
+      - script: |
+          set MONTY_ENABLE_BSON=${{env.bson}}
+          pytest --cov montydb --storage memory
+          pytest --cov montydb --storage flatfile --cov-append
+          pytest --cov montydb --storage lightning --cov-append
+          pytest --cov montydb --storage sqlite --cov-append
+        displayName: "Run tests"
+
+
+  # -----------------------------------------------------------------------
+  #
+  # Deploy to PyPI
+  #
+  # -----------------------------------------------------------------------
+
+  - job: Deploy
+    condition: startsWith(variables['Build.SourceBranch'], 'refs/tags')
+    pool:
+      vmImage: "ubuntu-latest"
+    strategy:
+      matrix:
+        Python37:
+          python.version: "3.7"
+
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "$(python.version)"
+        displayName: "Use Python $(python.version)"
+
+      - script: |
+          pip install wheel twine
+          python setup.py sdist bdist_wheel
+          echo [distutils] > ~/.pypirc
+          echo index-servers=pypi >> ~/.pypirc
+          echo [pypi] >> ~/.pypirc
+          echo username=$_LOGIN >> ~/.pypirc
+          echo password=$_PASSWORD >> ~/.pypirc
+          twine upload dist/*
+        displayName: "Deploy to PyPI"
+
+        # Decrypt secret variables provided by Azure web console
+        env:
+          _LOGIN: $(PYPI_LOGIN)
+          _PASSWORD: $(PYPI_PASSWORD)
