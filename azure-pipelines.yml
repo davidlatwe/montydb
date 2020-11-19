@@ -94,6 +94,7 @@ jobs:
 
       - script: |
           export MONTY_ENABLE_BSON=$(env.bson)
+          echo MONTY_ENABLE_BSON=$MONTY_ENABLE_BSON
           pytest --cov montydb --storage memory
           pytest --cov montydb --storage flatfile --cov-append
           pytest --cov montydb --storage lightning --cov-append
@@ -144,6 +145,7 @@ jobs:
 
       - script: |
           export MONTY_ENABLE_BSON=$(env.bson)
+          echo MONTY_ENABLE_BSON=$MONTY_ENABLE_BSON
           pytest --cov montydb --storage memory
           pytest --cov montydb --storage flatfile --cov-append
           pytest --cov montydb --storage lightning --cov-append
@@ -193,6 +195,7 @@ jobs:
 
       - script: |
           set MONTY_ENABLE_BSON=$(env.bson)
+          echo MONTY_ENABLE_BSON=%MONTY_ENABLE_BSON%
           pytest --cov montydb --storage memory
           pytest --cov montydb --storage flatfile --cov-append
           pytest --cov montydb --storage lightning --cov-append
