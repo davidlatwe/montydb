@@ -4,14 +4,7 @@ import time
 from collections import defaultdict, OrderedDict
 from datetime import datetime
 
-from bson import decode_all, BSON
-from bson.codec_options import CodecOptions
-from bson.py3compat import string_type
-from bson.json_util import (
-    loads as _loads,
-    dumps as _dumps,
-    RELAXED_JSON_OPTIONS as _default_json_opts,
-)
+from ..types import string_types, json_loads, json_dumps
 from ..client import MontyClient
 from ..errors import DuplicateKeyError
 
@@ -49,13 +42,12 @@ def montyimport(database,
 
     """
     collection = _collection(database, collection)
-    opt = json_options or _default_json_opts
 
     with open(file, "r") as fp:
         lines = [line.strip() for line in fp.readlines()]
         serialized = "[{}]".format(", ".join(lines))
 
-    documents = _loads(serialized, json_options=opt)
+    documents = json_loads(serialized, json_options=json_options)
 
     if mode == "insert":
         for doc in documents:
@@ -102,21 +94,20 @@ def montyexport(database,
 
     """
     collection = _collection(database, collection)
-    opt = json_options or _default_json_opts
     fileds = fileds or []
 
     out = os.path.abspath(out)
     if not os.path.isdir(os.path.dirname(out)):
         os.makedirs(os.path.dirname(out))
 
-    if isinstance(fileds, string_type):
+    if isinstance(fileds, string_types):
         fileds = [fileds]
 
     projection = {field: True for field in fileds} or None
 
     with open(out, "w") as fp:
         for doc in collection.find(query, projection=projection):
-            serialized = _dumps(doc, json_options=opt)
+            serialized = json_dumps(doc, json_options=json_options)
             fp.write(serialized + "\n")
 
 
@@ -124,6 +115,7 @@ def montyrestore(database, collection, dumpfile):
     """Loads a binary database dump into a MontyCollection instance
 
     Should be able to accept the dump created by `mongodump`.
+    bson required.
 
     Example:
         >>> from montydb import open_repo, utils
@@ -137,6 +129,8 @@ def montyrestore(database, collection, dumpfile):
         dumpfile (str): File path to load from
 
     """
+    from bson import decode_all
+
     collection = _collection(database, collection)
 
     with open(dumpfile, "rb") as fp:
@@ -152,6 +146,7 @@ def montydump(database, collection, dumpfile):
     """Creates a binary export from a MontyCollection instance
 
     The export should be able to be accepted by `mongorestore`.
+    bson required.
 
     Example:
         >>> from montydb import open_repo, utils
@@ -165,6 +160,8 @@ def montydump(database, collection, dumpfile):
         dumpfile (str): File path to export to
 
     """
+    from bson import BSON
+
     collection = _collection(database, collection)
 
     dumpfile = os.path.abspath(dumpfile)
@@ -186,6 +183,8 @@ class MongoQueryRecorder(object):
 
     This works via filtering the database profile data and reproduce the
     queries of `find` and `distinct` commands.
+
+    bson required.
 
     Example:
         >>> from pymongo import MongoClient
@@ -259,6 +258,8 @@ class MongoQueryRecorder(object):
             dict: A dict of {collection: list of documents}
 
         """
+        from bson.codec_options import CodecOptions
+
         filter = {
             "$or": [
                 {

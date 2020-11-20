@@ -115,11 +115,13 @@ if MONTY_ENABLE_BSON:
     def document_decode(doc, codec_options=DEFAULT_CODEC_OPTIONS):
         return BSON(doc).decode(codec_options)
 
-    def json_loads(serialized):
-        return _loads(serialized, json_options=CANONICAL_JSON_OPTIONS)
+    def json_loads(serialized, json_options=None):
+        json_options = json_options or CANONICAL_JSON_OPTIONS
+        return _loads(serialized, json_options=json_options)
 
-    def json_dumps(doc):
-        return _dumps(doc, json_options=CANONICAL_JSON_OPTIONS)
+    def json_dumps(doc, json_options=None):
+        json_options = json_options or CANONICAL_JSON_OPTIONS
+        return _dumps(doc, json_options=json_options)
 
     def _id_encode(id, codec_options=DEFAULT_CODEC_OPTIONS):
         # args: name, value, check_keys, opts
@@ -269,10 +271,10 @@ else:
             object_pairs_hook=lambda pairs: object_hook(cls(pairs), opts)
         )
 
-    def json_loads(serialized):
+    def json_loads(serialized, *args, **kwarg):
         return _loads(serialized, object_hook=object_hook)
 
-    def json_dumps(doc):
+    def json_dumps(doc, *args, **kwarg):
         return _dumps(doc, default=BSONEncoder().default)
 
     def _id_encode(id, *args, **kwargs):
