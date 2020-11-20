@@ -238,11 +238,11 @@ class MongoQueryRecorder(object):
         """Start recording and set database profile level to 2"""
         self._mongodb.command({"profile": 2})
         self._rec_stime = datetime.utcnow()
-        time.sleep(0.01)  # Wait for db
+        time.sleep(0.1)  # Wait for db
 
     def stop(self):
         """Stop recording and set database profile level to 0"""
-        time.sleep(0.01)  # Wait for db
+        time.sleep(0.1)  # Wait for db
         self._rec_etime = datetime.utcnow()
         self._mongodb.command({"profile": 0})
 
