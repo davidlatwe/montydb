@@ -13,6 +13,10 @@ from montydb.types import (
 from ...conftest import skip_if_no_bson
 
 
+def count_documents(cursor, spec=None):
+    return cursor.collection.count_documents(spec or {})
+
+
 def test_qop_in_1(monty_find, mongo_find):
     docs = [
         {"a": 0},
@@ -23,8 +27,8 @@ def test_qop_in_1(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -38,8 +42,8 @@ def test_qop_in_2(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -54,8 +58,8 @@ def test_qop_in_3(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -70,8 +74,8 @@ def test_qop_in_4(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -86,8 +90,8 @@ def test_qop_in_5(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -101,8 +105,8 @@ def test_qop_in_6(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -115,8 +119,8 @@ def test_qop_in_7(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 0
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 0
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
 
 
 def test_qop_in_8(monty_find, mongo_find):
@@ -129,8 +133,8 @@ def test_qop_in_8(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
     mongo_c.rewind()
     assert next(mongo_c)["_id"] == 1
@@ -146,8 +150,8 @@ def test_qop_in_9(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -161,8 +165,8 @@ def test_qop_in_10(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -175,8 +179,8 @@ def test_qop_in_11(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -232,8 +236,8 @@ def test_qop_in_15(monty_find, mongo_find):
     mongo_c = mongo_find(docs, spec)
 
     count = 1 if PY3 else 0
-    assert mongo_c.count() == count
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == count
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     if PY3:
         assert next(mongo_c) == next(monty_c)
         mongo_c.rewind()

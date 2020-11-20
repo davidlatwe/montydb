@@ -17,6 +17,7 @@ from .engine.weighted import Weighted
 from .engine.queries import QueryFilter
 from .engine.update import Updator
 from .types import (
+    abc,
     ObjectId,
     string_types,
     is_duckument_type,
@@ -149,7 +150,7 @@ class MontyCollection(BaseObject):
                     bypass_document_validation=False, *args, **kwargs):
         """
         """
-        if not isinstance(documents, collections.Iterable) or not documents:
+        if not isinstance(documents, abc.Iterable) or not documents:
             raise TypeError("documents must be a non-empty list")
 
         if bypass_document_validation:
@@ -376,7 +377,7 @@ class MontyCollection(BaseObject):
         """
         """
         if (filter is not None and not
-                isinstance(filter, collections.Mapping)):
+                isinstance(filter, abc.Mapping)):
             filter = {"_id": filter}
 
         cursor = self.find(filter, *args, **kwargs)

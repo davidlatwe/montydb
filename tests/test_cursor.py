@@ -55,8 +55,7 @@ def test_cursor_skip_neg_int_2(monty_collection):
 
 
 def test_cursor_limit(monty_collection):
-    cur = monty_collection.find({}, limit=5)
-    assert cur.count(with_limit_and_skip=True) == 5
+    assert monty_collection.count_documents({}, limit=5) == 5
 
 
 def test_cursor_limit_not_int(monty_collection):
@@ -89,7 +88,7 @@ def test_cursor_get_item_with_neg_int(monty_collection):
 def test_cursor_get_item_with_slice(monty_collection):
     cur = monty_collection.find({})
     cur = cur[1:5]
-    assert cur.count(with_limit_and_skip=True) == 4
+    assert len(list(cur)) == 4
     for i, doc in enumerate(cur, 1):
         assert doc["doc"] == i
 
@@ -122,7 +121,7 @@ def test_cursor_get_item_with_slice_and_stop_eq_start(monty_collection):
 def test_cursor_get_item_with_slice_none(monty_collection):
     cur = monty_collection.find({})
     cur = cur[None:None]
-    assert cur.count(with_limit_and_skip=True) == 20
+    assert len(list(cur)) == 20
 
 
 def test_cursor_get_item_but_out_of_range(monty_collection):

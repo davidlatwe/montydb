@@ -1,4 +1,7 @@
 
+def count_documents(cursor, spec=None):
+    return cursor.collection.count_documents(spec or {})
+
 
 def test_projection_regular_1(monty_proj, mongo_proj):
     docs = [
@@ -10,8 +13,8 @@ def test_projection_regular_1(monty_proj, mongo_proj):
     monty_c = monty_proj(docs, spec, proj)
     mongo_c = mongo_proj(docs, spec, proj)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -27,8 +30,8 @@ def test_projection_regular_2(monty_proj, mongo_proj):
     monty_c = monty_proj(docs, spec, proj)
     mongo_c = mongo_proj(docs, spec, proj)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -44,6 +47,6 @@ def test_projection_regular_3(monty_proj, mongo_proj):
     monty_c = monty_proj(docs, spec, proj)
     mongo_c = mongo_proj(docs, spec, proj)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)

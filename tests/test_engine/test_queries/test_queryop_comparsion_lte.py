@@ -19,6 +19,10 @@ from datetime import datetime
 from ...conftest import skip_if_no_bson
 
 
+def count_documents(cursor, spec=None):
+    return cursor.collection.count_documents(spec or {})
+
+
 def test_qop_lte_1(monty_find, mongo_find):
     docs = [
         {"a": []},
@@ -29,8 +33,8 @@ def test_qop_lte_1(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -44,8 +48,8 @@ def test_qop_lte_2(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -60,8 +64,8 @@ def test_qop_lte_3(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -75,8 +79,8 @@ def test_qop_lte_4(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -91,8 +95,8 @@ def test_qop_lte_5(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -106,8 +110,8 @@ def test_qop_lte_6(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -122,8 +126,8 @@ def test_qop_lte_7(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -137,8 +141,8 @@ def test_qop_lte_8(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -155,8 +159,8 @@ def test_qop_lte_9(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -173,8 +177,8 @@ def test_qop_lte_10(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -192,8 +196,8 @@ def test_qop_lte_11(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -211,8 +215,8 @@ def test_qop_lte_12(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -233,8 +237,8 @@ def test_qop_lte_13(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 4
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 4
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(4):
         assert next(mongo_c) == next(monty_c)
 
@@ -252,8 +256,8 @@ def test_qop_lte_14(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -267,8 +271,8 @@ def test_qop_lte_15(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -283,8 +287,8 @@ def test_qop_lte_16(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -299,8 +303,8 @@ def test_qop_lte_17(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 0
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 0
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
 
 
 def test_qop_lte_18(monty_find, mongo_find):
@@ -313,8 +317,8 @@ def test_qop_lte_18(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -328,8 +332,8 @@ def test_qop_lte_19(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -350,8 +354,8 @@ def test_qop_lte_20(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 4
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 4
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(4):
         assert next(mongo_c) == next(monty_c)
 
@@ -371,8 +375,8 @@ def test_qop_lte_21(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -394,8 +398,8 @@ def test_qop_lte_22(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 4 if PY3 else 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 4 if PY3 else 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     if PY3:
         for i in range(4):
             assert next(mongo_c) == next(monty_c)
@@ -420,8 +424,8 @@ def test_qop_lte_23(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 4 if PY3 else 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 4 if PY3 else 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     if PY3:
         for i in range(4):
             assert next(mongo_c) == next(monty_c)
@@ -442,8 +446,8 @@ def test_qop_lte_24(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -462,8 +466,8 @@ def test_qop_lte_25(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -480,8 +484,8 @@ def test_qop_lte_26(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -501,8 +505,8 @@ def test_qop_lte_27(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -541,8 +545,8 @@ def test_qop_lte_29(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 4
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 4
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(4):
         assert next(mongo_c) == next(monty_c)
 
@@ -565,8 +569,8 @@ def test_qop_lte_30(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 4
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 4
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(4):
         assert next(mongo_c) == next(monty_c)
 
@@ -589,8 +593,8 @@ def test_qop_lte_31(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 5
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 5
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(5):
         assert next(mongo_c) == next(monty_c)
 
@@ -613,7 +617,7 @@ def test_qop_lte_32(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
