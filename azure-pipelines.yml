@@ -27,7 +27,7 @@ jobs:
   #
   # -----------------------------------------------------------------------
 
-  - job: mongodb36
+  - job: mgo36
     pool:
       vmImage: "ubuntu-20.04"  # Focal
     strategy:
@@ -93,7 +93,7 @@ jobs:
           pytest --cov montydb --storage sqlite --cov-append
         displayName: "Run tests"
 
-  - job: mongodb40
+  - job: mgo40
     pool:
       vmImage: "ubuntu-20.04"  # Focal
     strategy:
@@ -159,7 +159,7 @@ jobs:
           pytest --cov montydb --storage sqlite --cov-append
         displayName: "Run tests"
 
-  - job: mongodb42
+  - job: mgo42
     pool:
       vmImage: "ubuntu-20.04"  # Focal
     strategy:
@@ -225,7 +225,7 @@ jobs:
           pytest --cov montydb --storage sqlite --cov-append
         displayName: "Run tests"
 
-  - job: mongodbLatest  # 4.4
+  - job: mgoLatest  # 4.4
     continueOnError: true
     pool:
       vmImage: "ubuntu-20.04"  # Focal
