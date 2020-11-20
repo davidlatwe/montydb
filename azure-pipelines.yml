@@ -226,6 +226,7 @@ jobs:
         displayName: "Run tests"
 
   - job: mongodbLatest  # 4.4
+    continueOnError: true
     pool:
       vmImage: "ubuntu-20.04"  # Focal
     strategy:
