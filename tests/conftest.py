@@ -101,3 +101,8 @@ def monty_database(monty_client):
 @pytest.fixture(scope="session")
 def mongo_database(mongo_client):
     return mongo_client["test_db"]
+
+
+@pytest.fixture(scope="session")
+def mongo_version(mongo_client):
+    return mongo_client.server_info()["versionArray"]

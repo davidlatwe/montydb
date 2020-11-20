@@ -423,7 +423,7 @@ class MontyCollection(BaseObject):
                 weighted = Weighted(v)
                 if weighted not in result:
                     res.append(weighted)
-            return sorted(res)
+            return res
 
         documents = self._storage.query(MontyCursor(self), 0)
 
@@ -436,7 +436,7 @@ class MontyCollection(BaseObject):
             for doc in documents:
                 result += get_value(doc)
 
-        return [weighted.value for weighted in result]
+        return [weighted.value for weighted in sorted(result)]
 
     def drop(self):
         self._database.drop_collection(self._name)
