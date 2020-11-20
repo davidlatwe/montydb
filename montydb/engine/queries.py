@@ -38,7 +38,7 @@ from ..types import (
     re_str_flags_to_int,
 )
 
-from . import MONTY_MONGO_COMPAT_36
+# from . import MONTY_MONGO_COMPAT_36
 
 
 def validate_sort_specifier(sort):
@@ -459,12 +459,15 @@ def _modify_regex_optins(sub_spec):
         "flags": flags
     }
 
-    if (MONTY_MONGO_COMPAT_36
-            and "#" in new_sub_spec["$regex"]["pattern"].rsplit("\n")[-1]):
-        # (NOTE) davidlatwe:
-        #   if pound(#) char exists in $regex string value and not ends with
-        #   newline(\n), Mongo raise error. (but the message seems incomplete)
-        raise OperationFailure("Regular expression is invalid: missing )")
+    # (monument): This is edge case, and only MongoDB 4.0 don't fail the
+    #   operation.
+    #
+    # if (MONTY_MONGO_COMPAT_36
+    #         and "#" in new_sub_spec["$regex"]["pattern"].rsplit("\n")[-1]):
+    #     # (NOTE) davidlatwe:
+    #     #   if pound(#) char exists in $regex string value and not ends with
+    #     #   newline(\n), Mongo raise error. (but the message seems incomplete)
+    #     raise OperationFailure("Regular expression is invalid: missing )")
 
     if _re:
         # Put `re._pattern_type` or `Regex` object back.
