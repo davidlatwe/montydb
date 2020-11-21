@@ -135,11 +135,11 @@ class AbstractStorage(object):
         return NotImplemented
 
     @abstractmethod
-    def database_create(self):
+    def database_create(self, db_name):
         return NotImplemented
 
     @abstractmethod
-    def database_drop(self):
+    def database_drop(self, db_name):
         return NotImplemented
 
     @abstractmethod
@@ -158,15 +158,15 @@ class AbstractDatabase(object):
         raise NotImplementedError("")
 
     @abstractmethod
-    def collection_exists(self):
+    def collection_exists(self, col_name):
         return NotImplemented
 
     @abstractmethod
-    def collection_create(self):
+    def collection_create(self, col_name):
         return NotImplemented
 
     @abstractmethod
-    def collection_drop(self):
+    def collection_drop(self, col_name):
         return NotImplemented
 
     @abstractmethod
