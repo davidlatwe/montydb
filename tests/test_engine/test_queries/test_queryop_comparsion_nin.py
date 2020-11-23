@@ -3,7 +3,7 @@ import pytest
 import re
 
 from montydb.errors import OperationFailure
-from montydb.types import Regex
+from montydb.types import bson_ as bson
 
 from ...conftest import skip_if_no_bson
 
@@ -151,7 +151,7 @@ def test_qop_nin_9(monty_find, mongo_find):
     docs = [
         {"a": "banana"},
     ]
-    spec = {"a": {"$nin": [Regex("^a")]}}
+    spec = {"a": {"$nin": [bson.Regex("^a")]}}
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
@@ -164,9 +164,9 @@ def test_qop_nin_9(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_nin_10(monty_find, mongo_find):
     docs = [
-        {"a": [Regex("*")]},
+        {"a": [bson.Regex("*")]},
     ]
-    spec = {"a": {"$nin": [[Regex("*")]]}}
+    spec = {"a": {"$nin": [[bson.Regex("*")]]}}
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
@@ -194,7 +194,7 @@ def test_qop_nin_12(monty_find, mongo_find):
     docs = [
         {"a": "apple"},
     ]
-    spec = {"a": {"$nin": [Regex("*")]}}
+    spec = {"a": {"$nin": [bson.Regex("*")]}}
 
     monty_c = monty_find(docs, spec)
 

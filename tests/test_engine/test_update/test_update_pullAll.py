@@ -3,7 +3,7 @@ import pytest
 
 from pymongo.errors import WriteError as mongo_write_err
 from montydb.errors import WriteError as monty_write_err
-from montydb.types import Decimal128
+from montydb.types import bson_ as bson
 
 from ...conftest import skip_if_no_bson
 
@@ -71,7 +71,7 @@ def test_update_pullAll_4(monty_update, mongo_update):
 @skip_if_no_bson
 def test_update_pullAll_5(monty_update, mongo_update):
     docs = [
-        {"a": [1, 2, 2.0, Decimal128("2.0"), 3]}
+        {"a": [1, 2, 2.0, bson.Decimal128("2.0"), 3]}
     ]
     spec = {"$pullAll": {"a": [2]}}
 
@@ -88,7 +88,7 @@ def test_update_pullAll_6(monty_update, mongo_update):
     docs = [
         {"a": [1, 2, 2.0, 3]}
     ]
-    spec = {"$pullAll": {"a": [Decimal128("2.0")]}}
+    spec = {"$pullAll": {"a": [bson.Decimal128("2.0")]}}
 
     monty_c = monty_update(docs, spec)
     mongo_c = mongo_update(docs, spec)

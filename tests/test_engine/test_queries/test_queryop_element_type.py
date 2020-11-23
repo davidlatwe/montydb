@@ -1,16 +1,6 @@
 
 import re
-from montydb.types import (
-    ObjectId,
-    Int64,
-    Decimal128,
-    Binary,
-    Timestamp,
-    Regex,
-    Code,
-    MinKey,
-    MaxKey,
-)
+from montydb.types import bson_ as bson
 from datetime import datetime
 
 from ...conftest import skip_if_no_bson
@@ -75,7 +65,7 @@ def test_qop_type_4(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_type_5(monty_find, mongo_find):
     docs = [
-        {"a": Binary(b"0")}
+        {"a": bson.Binary(b"0")}
     ]
     spec = {"a": {"$type": 5}}  # binData
 
@@ -94,7 +84,7 @@ def test_qop_type_6(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_type_7(monty_find, mongo_find):
     docs = [
-        {"a": ObjectId(b"000000000000")}
+        {"a": bson.ObjectId(b"000000000000")}
     ]
     spec = {"a": {"$type": 7}}  # objectId
 
@@ -149,7 +139,7 @@ def test_qop_type_10(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_type_11(monty_find, mongo_find):
     docs = [
-        {"a": Regex("^a")},
+        {"a": bson.Regex("^a")},
         {"a": re.compile("^a")}
     ]
     spec = {"a": {"$type": 11}}  # regex
@@ -169,7 +159,7 @@ def test_qop_type_12(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_type_13(monty_find, mongo_find):
     docs = [
-        {"a": Code("a")}
+        {"a": bson.Code("a")}
     ]
     spec = {"a": {"$type": 13}}  # javascript
 
@@ -188,7 +178,7 @@ def test_qop_type_14(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_type_15(monty_find, mongo_find):
     docs = [
-        {"a": Code("a", {})}
+        {"a": bson.Code("a", {})}
     ]
     spec = {"a": {"$type": 15}}  # javascript with scope
 
@@ -215,7 +205,7 @@ def test_qop_type_16(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_type_17(monty_find, mongo_find):
     docs = [
-        {"a": Timestamp(0, 1)}
+        {"a": bson.Timestamp(0, 1)}
     ]
     spec = {"a": {"$type": 17}}  # timestamp
 
@@ -229,7 +219,7 @@ def test_qop_type_17(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_type_18(monty_find, mongo_find):
     docs = [
-        {"a": Int64(1)}
+        {"a": bson.Int64(1)}
     ]
     spec = {"a": {"$type": 18}}  # long
 
@@ -243,7 +233,7 @@ def test_qop_type_18(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_type_19(monty_find, mongo_find):
     docs = [
-        {"a": Decimal128("1.1")}
+        {"a": bson.Decimal128("1.1")}
     ]
     spec = {"a": {"$type": 19}}  # decimal
 
@@ -257,7 +247,7 @@ def test_qop_type_19(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_type_20(monty_find, mongo_find):
     docs = [
-        {"a": MinKey()}
+        {"a": bson.MinKey()}
     ]
     spec = {"a": {"$type": -1}}  # minKey
 
@@ -271,7 +261,7 @@ def test_qop_type_20(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_type_21(monty_find, mongo_find):
     docs = [
-        {"a": MaxKey()}
+        {"a": bson.MaxKey()}
     ]
     spec = {"a": {"$type": 127}}  # maxKey
 
@@ -326,8 +316,8 @@ def test_qop_type_25(monty_find, mongo_find):
     docs = [
         {"a": 1},
         {"a": 1.1},
-        {"a": Int64(2)},
-        {"a": Decimal128("2.2")}
+        {"a": bson.Int64(2)},
+        {"a": bson.Decimal128("2.2")}
     ]
     spec = {"a": {"$type": "int"}}
 
@@ -344,8 +334,8 @@ def test_qop_type_26(monty_find, mongo_find):
     docs = [
         {"a": 1},
         {"a": 1.1},
-        {"a": Int64(2)},
-        {"a": Decimal128("2.2")}
+        {"a": bson.Int64(2)},
+        {"a": bson.Decimal128("2.2")}
     ]
     spec = {"a": {"$type": "double"}}
 
@@ -362,8 +352,8 @@ def test_qop_type_27(monty_find, mongo_find):
     docs = [
         {"a": 1},
         {"a": 1.1},
-        {"a": Int64(2)},
-        {"a": Decimal128("2.2")}
+        {"a": bson.Int64(2)},
+        {"a": bson.Decimal128("2.2")}
     ]
     spec = {"a": {"$type": "long"}}
 
@@ -380,8 +370,8 @@ def test_qop_type_28(monty_find, mongo_find):
     docs = [
         {"a": 1},
         {"a": 1.1},
-        {"a": Int64(2)},
-        {"a": Decimal128("2.2")}
+        {"a": bson.Int64(2)},
+        {"a": bson.Decimal128("2.2")}
     ]
     spec = {"a": {"$type": "decimal"}}
 
@@ -416,8 +406,8 @@ def test_qop_type_30(monty_find, mongo_find):
     docs = [
         {"a": 1},
         {"a": 1.1},
-        {"a": Int64(2)},
-        {"a": Decimal128("2.2")}
+        {"a": bson.Int64(2)},
+        {"a": bson.Decimal128("2.2")}
     ]
     spec = {"a": {"$type": ["decimal", 16]}}
 

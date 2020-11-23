@@ -1,11 +1,10 @@
 
 import re
 import pytest
-from montydb.types import Regex
+from montydb.types import bson_ as bson
 
 from pymongo.errors import OperationFailure as MongoOpFail
 from montydb.errors import OperationFailure as MontyOpFail
-# from montydb.engine import MONTY_MONGO_COMPAT_36
 
 from ...conftest import skip_if_no_bson
 
@@ -61,7 +60,7 @@ def test_qop_regex_4(monty_find, mongo_find):
         {"a": "apple"},
         {"a": "abble"}
     ]
-    spec = {"a": {"$regex": Regex("^a"), "$nin": ["abble"]}}
+    spec = {"a": {"$regex": bson.Regex("^a"), "$nin": ["abble"]}}
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
@@ -87,14 +86,22 @@ def test_qop_regex_5(monty_find, mongo_find):
 
 
 @skip_if_no_bson
-def test_qop_regex_6(monty_find, mongo_find):
+def test_qop_regex_6(monty_find, mongo_find, mongo_version):
     docs = [
         {"a": "Apple"}
     ]
-    spec = {"a": {"$regex": Regex("^a", "i"), "$options": "x"}}
+    spec = {"a": {"$regex": bson.Regex("^a", "i"), "$options": "x"}}
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
+
+    if mongo_version[:2] == [4, 2]:
+        # options set in both $regex and $options
+        with pytest.raises(MongoOpFail):
+            next(mongo_c)
+        with pytest.raises(MontyOpFail):
+            next(monty_c)
+        return
 
     # If not using `SON` or `OrderedDict`, then depend on the dict key order,
     # if the first key is `$regex`, `$options` will override `regex.flags`,
@@ -150,7 +157,7 @@ def test_qop_regex_9(monty_find, mongo_find):
     docs = [
         {"a": "apple"}
     ]
-    spec = {"a": Regex("^a")}
+    spec = {"a": bson.Regex("^a")}
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)

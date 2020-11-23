@@ -43,11 +43,6 @@ def test_configure_get_storage_engine(tmp_config_repo):
     assert isinstance(storage, MemoryStorage)
 
 
-def test_set_storage_to_memory():
-    with pytest.raises(ConfigurationError):
-        set_storage(storage="memory")
-
-
 def test_storage_module_not_found():
     with pytest.raises(ConfigurationError):
         find_storage_cls("lost")

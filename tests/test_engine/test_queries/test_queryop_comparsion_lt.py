@@ -1,19 +1,7 @@
 
 import pytest
 from montydb.errors import OperationFailure
-from montydb.types import (
-    PY3,
-
-    ObjectId,
-    Int64,
-    Decimal128,
-    Binary,
-    Timestamp,
-    Regex,
-    Code,
-    MinKey,
-    MaxKey,
-)
+from montydb.types import PY3, bson_ as bson
 from datetime import datetime
 
 from ...conftest import skip_if_no_bson
@@ -143,8 +131,8 @@ def test_qop_lt_8(monty_find, mongo_find):
 
 @skip_if_no_bson
 def test_qop_lt_9(monty_find, mongo_find):
-    oid_0 = ObjectId(b"000000000000")
-    oid_1 = ObjectId(b"000000000001")
+    oid_0 = bson.ObjectId(b"000000000000")
+    oid_1 = bson.ObjectId(b"000000000001")
     docs = [
         {"a": oid_0},
         {"a": oid_1}
@@ -178,8 +166,8 @@ def test_qop_lt_10(monty_find, mongo_find):
 
 @skip_if_no_bson
 def test_qop_lt_11(monty_find, mongo_find):
-    ts_0 = Timestamp(0, 1)
-    ts_1 = Timestamp(1, 1)
+    ts_0 = bson.Timestamp(0, 1)
+    ts_1 = bson.Timestamp(1, 1)
     docs = [
         {"a": ts_0},
         {"a": ts_1}
@@ -196,8 +184,8 @@ def test_qop_lt_11(monty_find, mongo_find):
 
 @skip_if_no_bson
 def test_qop_lt_12(monty_find, mongo_find):
-    min_k = MinKey()
-    max_k = MaxKey()
+    min_k = bson.MinKey()
+    max_k = bson.MaxKey()
     docs = [
         {"a": min_k},
         {"a": max_k}
@@ -213,10 +201,10 @@ def test_qop_lt_12(monty_find, mongo_find):
 
 
 @skip_if_no_bson
-def test_qop_lt_13(monty_find, mongo_find):
-    oid_0 = ObjectId(b"000000000000")
-    max_k = MaxKey()
-    min_k = MinKey()
+def test_qop_lt_13(monty_find, mongo_find, mongo_version):
+    oid_0 = bson.ObjectId(b"000000000000")
+    max_k = bson.MaxKey()
+    min_k = bson.MinKey()
     docs = [
         {"a": oid_0},
         {"a": max_k},
@@ -228,15 +216,17 @@ def test_qop_lt_13(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert count_documents(mongo_c, spec) == 3
+    count = 3 if mongo_version[0] == 3 else 0
+
+    assert count_documents(mongo_c, spec) == count
     assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
-    for i in range(3):
+    for i in range(count):
         assert next(mongo_c) == next(monty_c)
 
 
 @skip_if_no_bson
 def test_qop_lt_14(monty_find, mongo_find):
-    ts_0 = Timestamp(0, 1)
+    ts_0 = bson.Timestamp(0, 1)
     dt_1 = datetime(1900, 1, 2)
     docs = [
         {"a": ts_0},
@@ -327,10 +317,10 @@ def test_qop_lt_19(monty_find, mongo_find):
 
 @skip_if_no_bson
 def test_qop_lt_20(monty_find, mongo_find):
-    long_ = Int64(10)
+    long_ = bson.Int64(10)
     int_ = 10
     float_ = 10.0
-    decimal_ = Decimal128("10.0")
+    decimal_ = bson.Decimal128("10.0")
     docs = [
         {"a": long_},
         {"a": int_},
@@ -351,14 +341,14 @@ def test_qop_lt_20(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_lt_21(monty_find, mongo_find):
     docs = [
-        {"a": Decimal128("1.1")},
-        {"a": Decimal128("NaN")},
-        {"a": Decimal128("-NaN")},
-        {"a": Decimal128("sNaN")},
-        {"a": Decimal128("-sNaN")},
-        {"a": Decimal128("Infinity")}
+        {"a": bson.Decimal128("1.1")},
+        {"a": bson.Decimal128("NaN")},
+        {"a": bson.Decimal128("-NaN")},
+        {"a": bson.Decimal128("sNaN")},
+        {"a": bson.Decimal128("-sNaN")},
+        {"a": bson.Decimal128("Infinity")}
     ]
-    spec = {"a": {"$lt": Decimal128("Infinity")}}
+    spec = {"a": {"$lt": bson.Decimal128("Infinity")}}
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
@@ -370,8 +360,8 @@ def test_qop_lt_21(monty_find, mongo_find):
 
 @skip_if_no_bson
 def test_qop_lt_22(monty_find, mongo_find):
-    bin_0 = Binary(b"0")
-    bin_1 = Binary(b"1")
+    bin_0 = bson.Binary(b"0")
+    bin_1 = bson.Binary(b"1")
     byt_0 = b"0"
     byt_1 = b"1"
     docs = [
@@ -396,8 +386,8 @@ def test_qop_lt_22(monty_find, mongo_find):
 
 @skip_if_no_bson
 def test_qop_lt_23(monty_find, mongo_find):
-    bin_0 = Binary(b"0")
-    bin_1 = Binary(b"1")
+    bin_0 = bson.Binary(b"0")
+    bin_1 = bson.Binary(b"1")
     byt_0 = b"0"
     byt_1 = b"1"
     docs = [
@@ -422,8 +412,8 @@ def test_qop_lt_23(monty_find, mongo_find):
 
 @skip_if_no_bson
 def test_qop_lt_24(monty_find, mongo_find):
-    code_0 = Code("0")
-    code_1 = Code("1")
+    code_0 = bson.Code("0")
+    code_1 = bson.Code("1")
     docs = [
         {"a": code_0},
         {"a": code_1}
@@ -440,9 +430,9 @@ def test_qop_lt_24(monty_find, mongo_find):
 
 @skip_if_no_bson
 def test_qop_lt_25(monty_find, mongo_find):
-    code_0 = Code("0")
-    code_1 = Code("1")
-    code_1s = Code("1", {})
+    code_0 = bson.Code("0")
+    code_1 = bson.Code("1")
+    code_1s = bson.Code("1", {})
     docs = [
         {"a": code_0},
         {"a": code_1s}
@@ -459,8 +449,8 @@ def test_qop_lt_25(monty_find, mongo_find):
 
 @skip_if_no_bson
 def test_qop_lt_26(monty_find, mongo_find):
-    code_0s = Code("0", {})
-    code_1s = Code("1", {})
+    code_0s = bson.Code("0", {})
+    code_1s = bson.Code("1", {})
     docs = [
         {"a": code_0s},
         {"a": code_1s}
@@ -477,9 +467,9 @@ def test_qop_lt_26(monty_find, mongo_find):
 
 @skip_if_no_bson
 def test_qop_lt_27(monty_find, mongo_find):
-    code_1as = Code("1", {"a": 5})
-    code_1bs = Code("1", {"b": 5})
-    code_1cs = Code("1", {"c": 5})
+    code_1as = bson.Code("1", {"a": 5})
+    code_1bs = bson.Code("1", {"b": 5})
+    code_1cs = bson.Code("1", {"c": 5})
     docs = [
         {"a": code_1as},
         {"a": code_1bs},
@@ -497,8 +487,8 @@ def test_qop_lt_27(monty_find, mongo_find):
 
 @skip_if_no_bson
 def test_qop_lt_28(monty_find, mongo_find):
-    regex_0 = Regex("^0")
-    regex_a = Regex("^a")
+    regex_0 = bson.Regex("^0")
+    regex_a = bson.Regex("^a")
     docs = [
         {"a": regex_0},
     ]
@@ -514,17 +504,17 @@ def test_qop_lt_28(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_lt_29(monty_find, mongo_find):
     docs = [
-        {"a": Decimal128("1.1")},
-        {"a": Decimal128("NaN")},
-        {"a": Decimal128("-NaN")},
-        {"a": Decimal128("sNaN")},
-        {"a": Decimal128("-sNaN")},
-        {"a": Decimal128("Infinity")},
+        {"a": bson.Decimal128("1.1")},
+        {"a": bson.Decimal128("NaN")},
+        {"a": bson.Decimal128("-NaN")},
+        {"a": bson.Decimal128("sNaN")},
+        {"a": bson.Decimal128("-sNaN")},
+        {"a": bson.Decimal128("Infinity")},
         {"a": 0},
         {"a": -10.0},
         {"a": 10.0},
     ]
-    spec = {"a": {"$lt": Decimal128("NaN")}}
+    spec = {"a": {"$lt": bson.Decimal128("NaN")}}
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
@@ -536,17 +526,17 @@ def test_qop_lt_29(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_lt_30(monty_find, mongo_find):
     docs = [
-        {"a": Decimal128("1.1")},
-        {"a": Decimal128("NaN")},
-        {"a": Decimal128("-NaN")},
-        {"a": Decimal128("sNaN")},
-        {"a": Decimal128("-sNaN")},
-        {"a": Decimal128("Infinity")},
+        {"a": bson.Decimal128("1.1")},
+        {"a": bson.Decimal128("NaN")},
+        {"a": bson.Decimal128("-NaN")},
+        {"a": bson.Decimal128("sNaN")},
+        {"a": bson.Decimal128("-sNaN")},
+        {"a": bson.Decimal128("Infinity")},
         {"a": 0},
         {"a": -10.0},
         {"a": 10.0},
     ]
-    spec = {"a": {"$lt": Decimal128("-NaN")}}
+    spec = {"a": {"$lt": bson.Decimal128("-NaN")}}
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
@@ -558,17 +548,17 @@ def test_qop_lt_30(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_lt_31(monty_find, mongo_find):
     docs = [
-        {"a": Decimal128("1.1")},
-        {"a": Decimal128("NaN")},
-        {"a": Decimal128("-NaN")},
-        {"a": Decimal128("sNaN")},
-        {"a": Decimal128("-sNaN")},
-        {"a": Decimal128("Infinity")},
+        {"a": bson.Decimal128("1.1")},
+        {"a": bson.Decimal128("NaN")},
+        {"a": bson.Decimal128("-NaN")},
+        {"a": bson.Decimal128("sNaN")},
+        {"a": bson.Decimal128("-sNaN")},
+        {"a": bson.Decimal128("Infinity")},
         {"a": 0},
         {"a": -10.0},
         {"a": 10.0},
     ]
-    spec = {"a": {"$lt": Decimal128("Infinity")}}
+    spec = {"a": {"$lt": bson.Decimal128("Infinity")}}
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
@@ -582,12 +572,12 @@ def test_qop_lt_31(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_lt_32(monty_find, mongo_find):
     docs = [
-        {"a": Decimal128("1.1")},
-        {"a": Decimal128("NaN")},
-        {"a": Decimal128("-NaN")},
-        {"a": Decimal128("sNaN")},
-        {"a": Decimal128("-sNaN")},
-        {"a": Decimal128("Infinity")},
+        {"a": bson.Decimal128("1.1")},
+        {"a": bson.Decimal128("NaN")},
+        {"a": bson.Decimal128("-NaN")},
+        {"a": bson.Decimal128("sNaN")},
+        {"a": bson.Decimal128("-sNaN")},
+        {"a": bson.Decimal128("Infinity")},
         {"a": 0},
         {"a": -10.0},
         {"a": 10.0},

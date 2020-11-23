@@ -1,6 +1,6 @@
 
 import re
-from montydb.types import Regex
+from montydb.types import bson_ as bson
 from ...conftest import skip_if_no_bson
 
 
@@ -54,7 +54,7 @@ def test_qop_not_4(monty_find, mongo_find):
     docs = [
         {"a": "apple"},
     ]
-    spec = {"a": {"$not": Regex("^a")}}
+    spec = {"a": {"$not": bson.Regex("^a")}}
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)

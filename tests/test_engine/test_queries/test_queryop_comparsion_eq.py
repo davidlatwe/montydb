@@ -1,12 +1,5 @@
 
-from montydb.types import (
-    PY3,
-
-    Int64,
-    Decimal128,
-    Binary,
-    Code,
-)
+from montydb.types import PY3, bson_ as bson
 
 from ...conftest import skip_if_no_bson
 
@@ -98,8 +91,8 @@ def test_qop_eq_5(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_eq_6(monty_find, mongo_find):
     docs = [
-        {"a": [{"b": Binary(b"00")}]},
-        {"a": [{"b": Binary(b"01")}]},
+        {"a": [{"b": bson.Binary(b"00")}]},
+        {"a": [{"b": bson.Binary(b"01")}]},
     ]
     spec = {"a.b": {"$eq": b"01"}}
 
@@ -118,7 +111,7 @@ def test_qop_eq_6(monty_find, mongo_find):
 @skip_if_no_bson
 def test_qop_eq_7(monty_find, mongo_find):
     docs = [
-        {"a": [{"b": Code("a")}]},
+        {"a": [{"b": bson.Code("a")}]},
     ]
     spec = {"a.b": {"$eq": "a"}}
 
@@ -134,7 +127,7 @@ def test_qop_eq_8(monty_find, mongo_find):
     docs = [
         {"a": [{"b": "a"}]},
     ]
-    spec = {"a.b": {"$eq": Code("a")}}
+    spec = {"a.b": {"$eq": bson.Code("a")}}
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
@@ -148,7 +141,7 @@ def test_qop_eq_9(monty_find, mongo_find):
     docs = [
         {"a": 1},
     ]
-    spec = {"a": {"$eq": Int64(1)}}
+    spec = {"a": {"$eq": bson.Int64(1)}}
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
@@ -163,7 +156,7 @@ def test_qop_eq_10(monty_find, mongo_find):
         {"a": 1},
         {"a": 1.0},
     ]
-    spec = {"a": {"$eq": Decimal128("1")}}
+    spec = {"a": {"$eq": bson.Decimal128("1")}}
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
@@ -178,7 +171,7 @@ def test_qop_eq_11(monty_find, mongo_find):
         {"a": 1},
         {"a": 1.0},
     ]
-    spec = {"a": {"$eq": Decimal128("1.0")}}
+    spec = {"a": {"$eq": bson.Decimal128("1.0")}}
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
