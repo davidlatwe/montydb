@@ -30,7 +30,6 @@ class BSON_(types.ModuleType):
     from bson.codec_options import (
         CodecOptions,
         DEFAULT_CODEC_OPTIONS,
-        _parse_codec_options,
     )
     from bson.errors import (
         BSONError,
@@ -51,7 +50,8 @@ class BSON_(types.ModuleType):
 
     @classmethod
     def parse_codec_options(cls, options):
-        return cls._parse_codec_options(options)
+        from bson.codec_options import _parse_codec_options
+        return _parse_codec_options(options)
 
     @classmethod
     def document_encode(cls,
