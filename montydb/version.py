@@ -1,6 +1,6 @@
 
 VERSION_MAJOR = 2
-VERSION_MINOR = 2
+VERSION_MINOR = 3
 VERSION_PATCH = 0
 
 version_info = (VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
@@ -9,8 +9,8 @@ __version__ = version
 
 
 MONGO_VER_MAJOR = 4
-MONGO_VER_MINOR = 0
-MONGO_VER_PATCH = 11
+MONGO_VER_MINOR = 2
+MONGO_VER_PATCH = 10
 
 mongo_version_info = (MONGO_VER_MAJOR, MONGO_VER_MINOR, MONGO_VER_PATCH)
 mongo_version = "%i.%i.%i" % mongo_version_info
