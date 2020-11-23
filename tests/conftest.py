@@ -21,7 +21,7 @@ def pytest_addoption(parser):
                      """)
     parser.addoption("--use_bson",
                      action="store_true",
-                     default=True,
+                     default=False,
                      help="Use bson in tests")
 
 
