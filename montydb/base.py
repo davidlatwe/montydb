@@ -28,9 +28,7 @@ from .types import (
     iteritems,
     integer_types,
     string_types,
-    RawBSONDocument,
-    CodecOptions,
-    parse_codec_options,
+    bson_ as bson,
 )
 
 ASCENDING = 1
@@ -39,7 +37,7 @@ DESCENDING = -1
 
 def validate_is_document_type(option, value):
     """Validate the type of method arguments that expect a MongoDB document."""
-    if not isinstance(value, (MutableMapping, RawBSONDocument)):
+    if not isinstance(value, (MutableMapping, bson.RawBSONDocument)):
         raise TypeError("%s must be an instance of dict, bson.son.SON, "
                         "bson.raw_bson.RawBSONDocument, or "
                         "a type that inherits from "
@@ -90,7 +88,7 @@ def validate_ok_for_replace(replacement):
     """Validate a replacement document."""
     validate_is_mapping("replacement", replacement)
     # Replacement can be {}
-    if replacement and not isinstance(replacement, RawBSONDocument):
+    if replacement and not isinstance(replacement, bson.RawBSONDocument):
         first = next(iter(replacement))
         if first.startswith('$'):
             raise ValueError('replacement can not include $ operators')
@@ -204,7 +202,7 @@ class ClientOptions(object):
 
     def __init__(self, options, storage_wconcern=None):
         self.__options = options
-        self.__codec_options = parse_codec_options(options)
+        self.__codec_options = bson.parse_codec_options(options)
 
         if storage_wconcern is not None:
             self.__write_concern = storage_wconcern
@@ -236,7 +234,7 @@ class BaseObject(object):
 
     def __init__(self, codec_options, write_concern):
 
-        if not isinstance(codec_options, CodecOptions):
+        if not isinstance(codec_options, bson.CodecOptions):
             raise TypeError("codec_options must be an "  # pragma: no cover
                             "instance of bson.codec_options.CodecOptions")
         self.__codec_options = codec_options

@@ -4,7 +4,7 @@ import lmdb
 import shutil
 from itertools import islice
 
-from ..types import unicode_
+from ..types import unicode_, to_bytes, bson_ as bson
 from . import (
     AbstractStorage,
     AbstractDatabase,
@@ -14,17 +14,14 @@ from . import (
     StorageDuplicateKeyError,
 )
 
+
 LMDB_DB_EXT = ".mdb"
-
-
-def _to_bytes(s):
-    return s.encode()
 
 
 class LMDBKVEngine(object):
     """Per collection"""
 
-    dbname = _to_bytes("documents")
+    dbname = to_bytes("documents")
 
     def __init__(self, options=None):
         """
@@ -64,7 +61,7 @@ class LMDBKVEngine(object):
             db = env.open_db(self.dbname)
             with env.begin(db, write=True) as txn:
                 for doc_id, encoded_doc in pairs:
-                    id = _to_bytes(str(doc_id))
+                    id = bson.id_encode(doc_id)
                     if not txn.put(id, encoded_doc, overwrite=overwrite):
                         dup = True
                         break
@@ -80,7 +77,7 @@ class LMDBKVEngine(object):
             with env.begin(db, write=True) as txn:
                 cursor = txn.cursor()
                 for doc_id in doc_ids:
-                    id = _to_bytes(str(doc_id))
+                    id = bson.id_encode(doc_id)
                     if cursor.set_key(id):
                         cursor.delete()
 

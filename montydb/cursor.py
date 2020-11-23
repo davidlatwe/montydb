@@ -7,10 +7,10 @@ from .errors import InvalidOperation, OperationFailure
 from .engine.queries import QueryFilter, ordering
 from .engine.project import Projector
 from .types import (
-    SON,
     RE_PATTERN_TYPE,
     iteritems,
     integer_types,
+    bson_ as bson,
 )
 from .base import (
     validate_boolean,
@@ -214,7 +214,8 @@ class MontyCursor(object):
         memo[val_id] = y
 
         for key, value in iterator:
-            if isinstance(value, (dict, list)) and not isinstance(value, SON):
+            if (isinstance(value, (dict, list))
+                    and not isinstance(value, bson.SON)):
                 value = self._deepcopy(value, memo)
             elif not isinstance(value, RE_PATTERN_TYPE):
                 value = copy.deepcopy(value, memo)

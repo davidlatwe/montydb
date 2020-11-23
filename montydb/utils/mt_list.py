@@ -1,12 +1,9 @@
 
-from bson import ObjectId
-from bson.py3compat import integer_types
-from bson.codec_options import DEFAULT_CODEC_OPTIONS
-
 from ..engine.field_walker import FieldWalker
 from ..engine.weighted import Weighted
 from ..engine.queries import QueryFilter, ordering
 from ..engine.project import Projector
+from ..types import integer_types, init_bson, bson_ as bson
 from ..base import (
     _fields_list_to_dict,
     _index_document,
@@ -28,9 +25,14 @@ class MontyList(list):
     pymongo's Collection and Cursor.
     """
 
-    def __init__(self, documents=None, name=None, doc_type=None):
-        super(MontyList, self).extend(documents or [])
-        self.name = name or ObjectId()
+    def __init__(self,
+                 documents=None,
+                 name=None,
+                 doc_type=None,
+                 use_bson=None):
+        super(MontyList, self).__init__(documents or [])
+        init_bson(use_bson=use_bson)
+        self.name = name or bson.ObjectId()
         self.doc_type = doc_type or dict  # Set `dict` as default doc type
         self.rewind()
 

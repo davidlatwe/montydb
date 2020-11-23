@@ -1,5 +1,5 @@
+
 import warnings
-import collections
 from copy import deepcopy
 
 from .base import (
@@ -17,7 +17,8 @@ from .engine.weighted import Weighted
 from .engine.queries import QueryFilter
 from .engine.update import Updator
 from .types import (
-    ObjectId,
+    abc,
+    bson_ as bson,
     string_types,
     is_duckument_type,
     Counter,
@@ -130,7 +131,7 @@ class MontyCollection(BaseObject):
             pass
 
         if "_id" not in document:
-            document["_id"] = ObjectId()
+            document["_id"] = bson.ObjectId()
 
         try:
             result = self._storage.write_one(self, document)
@@ -149,7 +150,7 @@ class MontyCollection(BaseObject):
                     bypass_document_validation=False, *args, **kwargs):
         """
         """
-        if not isinstance(documents, collections.Iterable) or not documents:
+        if not isinstance(documents, abc.Iterable) or not documents:
             raise TypeError("documents must be a non-empty list")
 
         if bypass_document_validation:
@@ -157,7 +158,7 @@ class MontyCollection(BaseObject):
 
         def set_id(doc):
             if "_id" not in doc:
-                doc["_id"] = ObjectId()
+                doc["_id"] = bson.ObjectId()
             # Keep _id in track for error message
             return doc["_id"]
 
@@ -208,7 +209,7 @@ class MontyCollection(BaseObject):
         except StopIteration:
             if upsert:
                 if "_id" not in replacement:
-                    replacement["_id"] = ObjectId()
+                    replacement["_id"] = bson.ObjectId()
                 raw_result["upserted"] = replacement["_id"]
                 raw_result["n"] = 1
                 self._storage.write_one(self, replacement, check_keys=False)
@@ -257,7 +258,7 @@ class MontyCollection(BaseObject):
 
         document = _remove_dollar_key(deepcopy(query_spec))
         if "_id" not in document:
-            document["_id"] = ObjectId()
+            document["_id"] = bson.ObjectId()
         raw_result["upserted"] = document["_id"]
         raw_result["n"] = 1
 
@@ -376,7 +377,7 @@ class MontyCollection(BaseObject):
         """
         """
         if (filter is not None and not
-                isinstance(filter, collections.Mapping)):
+                isinstance(filter, abc.Mapping)):
             filter = {"_id": filter}
 
         cursor = self.find(filter, *args, **kwargs)
@@ -384,27 +385,14 @@ class MontyCollection(BaseObject):
             return result
         return None
 
-    def count(self, filter=None):
+    def count(self, filter=None, **kwargs):
         warnings.warn("count is deprecated. Use Collection.count_documents "
                       "instead.", DeprecationWarning, stacklevel=2)
+        return self.count_documents(filter, **kwargs)
 
-        documents = self._storage.query(MontyCursor(self), 0)
-        if filter:
-            return self.__count_with_filter(documents, filter)
-        else:
-            return len(list(documents))
-
-    def count_documents(self, filter):
-        documents = self._storage.query(MontyCursor(self), 0)
-        return self.__count_with_filter(documents, filter)
-
-    def __count_with_filter(self, documents, filter):
-        count = 0
-        queryfilter = QueryFilter(filter)
-        for doc in documents:
-            if queryfilter(doc):
-                count += 1
-        return count
+    def count_documents(self, filter, **kwargs):
+        cursor = MontyCursor(self, filter=filter, **kwargs)
+        return len(list(cursor))
 
     def distinct(self, key, filter=None, **kwargs):
         """
@@ -423,7 +411,7 @@ class MontyCollection(BaseObject):
                 weighted = Weighted(v)
                 if weighted not in result:
                     res.append(weighted)
-            return sorted(res)
+            return res
 
         documents = self._storage.query(MontyCursor(self), 0)
 
@@ -436,7 +424,7 @@ class MontyCollection(BaseObject):
             for doc in documents:
                 result += get_value(doc)
 
-        return [weighted.value for weighted in result]
+        return [weighted.value for weighted in sorted(result)]
 
     def drop(self):
         self._database.drop_collection(self._name)

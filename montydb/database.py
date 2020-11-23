@@ -56,6 +56,8 @@ class MontyDatabase(BaseObject):
     def collection_names(self):
         return self.client._storage.collection_list(self)
 
+    list_collection_names = collection_names
+
     def create_collection(self,
                           name,
                           codec_options=None,

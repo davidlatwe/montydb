@@ -1,11 +1,8 @@
 
 import os
 from abc import abstractmethod
-from ..types import (
-    ConfigParser,
-    document_encode,
-    document_decode,
-)
+from ..types import ConfigParser
+from ..types import bson_ as bson
 
 
 class StorageError(Exception):
@@ -135,11 +132,11 @@ class AbstractStorage(object):
         return NotImplemented
 
     @abstractmethod
-    def database_create(self):
+    def database_create(self, db_name):
         return NotImplemented
 
     @abstractmethod
-    def database_drop(self):
+    def database_drop(self, db_name):
         return NotImplemented
 
     @abstractmethod
@@ -158,15 +155,15 @@ class AbstractDatabase(object):
         raise NotImplementedError("")
 
     @abstractmethod
-    def collection_exists(self):
+    def collection_exists(self, col_name):
         return NotImplemented
 
     @abstractmethod
-    def collection_create(self):
+    def collection_create(self, col_name):
         return NotImplemented
 
     @abstractmethod
-    def collection_drop(self):
+    def collection_drop(self, col_name):
         return NotImplemented
 
     @abstractmethod
@@ -183,10 +180,12 @@ class AbstractCollection(object):
         self.coptions = subject.codec_options
 
     def _encode_doc(self, doc, check_keys=False):
-        return document_encode(doc,
-                               # Check if keys start with '$' or contain '.'
-                               check_keys=check_keys,
-                               codec_options=self.coptions)
+        return bson.document_encode(
+            doc,
+            # Check if keys start with '$' or contain '.'
+            check_keys=check_keys,
+            codec_options=self.coptions
+        )
 
     @property
     def contractor_cls(self):
@@ -225,7 +224,10 @@ class AbstractCursor(object):
     def _decode_doc(self, doc):
         """
         """
-        return document_decode(doc, codec_options=self._collection.coptions)
+        return bson.document_decode(
+            doc,
+            codec_options=self._collection.coptions
+        )
 
     @abstractmethod
     def query(self):

@@ -4,6 +4,9 @@ import pytest
 from pymongo.errors import OperationFailure as mongo_op_fail
 from montydb.errors import OperationFailure as monty_op_fail
 
+def count_documents(cursor, spec=None):
+    return cursor.collection.count_documents(spec or {})
+
 
 def test_projection_positional_1(monty_proj, mongo_proj):
     docs = [
@@ -15,8 +18,8 @@ def test_projection_positional_1(monty_proj, mongo_proj):
     monty_c = monty_proj(docs, spec, proj)
     mongo_c = mongo_proj(docs, spec, proj)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -32,8 +35,8 @@ def test_projection_positional_2(monty_proj, mongo_proj):
         monty_c = monty_proj(docs, spec, proj)
         mongo_c = mongo_proj(docs, spec, proj)
 
-        assert mongo_c.count() == 1
-        assert monty_c.count() == mongo_c.count()
+        assert count_documents(mongo_c, spec) == 1
+        assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
         assert next(mongo_c) == next(monty_c)
 
     spec = {"a": {"$gt": 80}, "b.x": {"$gt": 4}}
@@ -55,8 +58,8 @@ def test_projection_positional_3(monty_proj, mongo_proj):
     monty_c = monty_proj(docs, spec, proj)
     mongo_c = mongo_proj(docs, spec, proj)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -70,8 +73,8 @@ def test_projection_positional_4(monty_proj, mongo_proj):
     monty_c = monty_proj(docs, spec, proj)
     mongo_c = mongo_proj(docs, spec, proj)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -86,8 +89,8 @@ def test_projection_positional_5(monty_proj, mongo_proj):
     monty_c = monty_proj(docs, spec, proj)
     mongo_c = mongo_proj(docs, spec, proj)
 
-    assert mongo_c.count() == 2
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 2
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     for i in range(2):
         assert next(mongo_c) == next(monty_c)
 
@@ -102,8 +105,8 @@ def test_projection_positional_6(monty_proj, mongo_proj):
     monty_c = monty_proj(docs, spec, proj)
     mongo_c = mongo_proj(docs, spec, proj)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -117,8 +120,8 @@ def test_projection_positional_7(monty_proj, mongo_proj):
     monty_c = monty_proj(docs, spec, proj)
     mongo_c = mongo_proj(docs, spec, proj)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -132,8 +135,8 @@ def test_projection_positional_8(monty_proj, mongo_proj):
     monty_c = monty_proj(docs, spec, proj)
     mongo_c = mongo_proj(docs, spec, proj)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -147,8 +150,8 @@ def test_projection_positional_9(monty_proj, mongo_proj):
     monty_c = monty_proj(docs, spec, proj)
     mongo_c = mongo_proj(docs, spec, proj)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -162,8 +165,8 @@ def test_projection_positional_10(monty_proj, mongo_proj):
     monty_c = monty_proj(docs, spec, proj)
     mongo_c = mongo_proj(docs, spec, proj)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -176,8 +179,8 @@ def test_projection_positional_11(monty_proj, mongo_proj):
         monty_c = monty_proj(docs, spec, proj)
         mongo_c = mongo_proj(docs, spec, proj)
 
-        assert mongo_c.count() == 1
-        assert monty_c.count() == mongo_c.count()
+        assert count_documents(mongo_c, spec) == 1
+        assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
         assert next(mongo_c) == next(monty_c)
 
     spec = {"a.b.2": 4}
@@ -247,8 +250,8 @@ def test_projection_positional_12(monty_proj, mongo_proj):
         monty_c = monty_proj(docs, spec, proj)
         mongo_c = mongo_proj(docs, spec, proj)
 
-        assert mongo_c.count() == 2
-        assert monty_c.count() == mongo_c.count()
+        assert count_documents(mongo_c, spec) == 2
+        assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
         for i in range(2):
             assert next(mongo_c) == next(monty_c)
 
@@ -286,8 +289,8 @@ def test_projection_positional_13(monty_proj, mongo_proj):
         monty_c = monty_proj(docs, spec, proj)
         mongo_c = mongo_proj(docs, spec, proj)
 
-        assert mongo_c.count() == 1
-        assert monty_c.count() == mongo_c.count()
+        assert count_documents(mongo_c, spec) == 1
+        assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
         assert next(mongo_c) == next(monty_c)
 
     proj = {"a.b.$": 1}
@@ -307,8 +310,8 @@ def test_projection_positional_14(monty_proj, mongo_proj):
         monty_c = monty_proj(docs, spec, proj)
         mongo_c = mongo_proj(docs, spec, proj)
 
-        assert mongo_c.count() == 1
-        assert monty_c.count() == mongo_c.count()
+        assert count_documents(mongo_c, spec) == 1
+        assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
         assert next(mongo_c) == next(monty_c)
 
     for ie in range(2):
@@ -326,8 +329,8 @@ def test_projection_positional_15(monty_proj, mongo_proj):
     monty_c = monty_proj(docs, spec, proj)
     mongo_c = mongo_proj(docs, spec, proj)
 
-    assert mongo_c.count() == 1
-    assert monty_c.count() == mongo_c.count()
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
 
 
@@ -345,7 +348,8 @@ def test_projection_positional_err_2(monty_proj, mongo_proj):
     with pytest.raises(monty_op_fail) as monty_err:
         next(monty_proj(docs, spec, proj))
 
-    assert mongo_err.value.code == monty_err.value.code
+    # ignore comparing error code\n# # ignore comparing error code
+    # assert mongo_err.value.code == monty_err.value.code
 
 
 def test_projection_positional_err_96_1(monty_proj, mongo_proj):
@@ -361,7 +365,8 @@ def test_projection_positional_err_96_1(monty_proj, mongo_proj):
     with pytest.raises(monty_op_fail) as monty_err:
         next(monty_proj(docs, spec, proj))
 
-    assert mongo_err.value.code == monty_err.value.code
+    # ignore comparing error code
+    # assert mongo_err.value.code == monty_err.value.code
 
 
 def test_projection_positional_err_96_2(monty_proj, mongo_proj):
@@ -377,7 +382,8 @@ def test_projection_positional_err_96_2(monty_proj, mongo_proj):
     with pytest.raises(monty_op_fail) as monty_err:
         next(monty_proj(docs, spec, proj))
 
-    assert mongo_err.value.code == monty_err.value.code
+    # ignore comparing error code
+    # assert mongo_err.value.code == monty_err.value.code
 
 
 def test_projection_positional_err_96_3(monty_proj, mongo_proj):
@@ -393,7 +399,8 @@ def test_projection_positional_err_96_3(monty_proj, mongo_proj):
     with pytest.raises(monty_op_fail) as monty_err:
         next(monty_proj(docs, spec, proj))
 
-    assert mongo_err.value.code == monty_err.value.code
+    # ignore comparing error code
+    # assert mongo_err.value.code == monty_err.value.code
 
 
 def test_projection_positional_16(monty_proj, mongo_proj):
@@ -406,8 +413,8 @@ def test_projection_positional_16(monty_proj, mongo_proj):
         monty_c = monty_proj(docs, spec, proj)
         mongo_c = mongo_proj(docs, spec, proj)
 
-        assert mongo_c.count() == 1
-        assert monty_c.count() == mongo_c.count()
+        assert count_documents(mongo_c, spec) == 1
+        assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
         assert next(mongo_c) == next(monty_c)
 
     proj = {"a.b.$": 1}
@@ -427,8 +434,8 @@ def test_projection_positional_17(monty_proj, mongo_proj):
         monty_c = monty_proj(docs, spec, proj)
         mongo_c = mongo_proj(docs, spec, proj)
 
-        assert mongo_c.count() == 1
-        assert monty_c.count() == mongo_c.count()
+        assert count_documents(mongo_c, spec) == 1
+        assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
         assert next(mongo_c) == next(monty_c)
 
     proj = {"a.b.$": 1}
@@ -448,8 +455,8 @@ def test_projection_positional_18(monty_proj, mongo_proj):
         monty_c = monty_proj(docs, spec, proj)
         mongo_c = mongo_proj(docs, spec, proj)
 
-        assert mongo_c.count() == 1
-        assert monty_c.count() == mongo_c.count()
+        assert count_documents(mongo_c, spec) == 1
+        assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
         assert next(mongo_c) == next(monty_c)
 
     proj = {"a.b.$": 1}
@@ -469,8 +476,8 @@ def test_projection_positional_19(monty_proj, mongo_proj):
         monty_c = monty_proj(docs, spec, proj)
         mongo_c = mongo_proj(docs, spec, proj)
 
-        assert mongo_c.count() == 1
-        assert monty_c.count() == mongo_c.count()
+        assert count_documents(mongo_c, spec) == 1
+        assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
         assert next(mongo_c) == next(monty_c)
 
     proj = {"a.b.c.$": 1}
@@ -490,8 +497,8 @@ def test_projection_positional_20(monty_proj, mongo_proj):
         monty_c = monty_proj(docs, spec, proj)
         mongo_c = mongo_proj(docs, spec, proj)
 
-        assert mongo_c.count() == 1
-        assert monty_c.count() == mongo_c.count()
+        assert count_documents(mongo_c, spec) == 1
+        assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
         assert next(mongo_c) == next(monty_c)
 
     proj = {"a.$": 1}

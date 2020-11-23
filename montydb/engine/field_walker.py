@@ -676,7 +676,7 @@ class FieldWalker(object):
     When write/delete, you need to commit the changes before it take effect.
 
     Example:
-        >>> from montydb.engine.core import FieldWalker
+        >>> from montydb.engine.field_walker import FieldWalker
         >>> doc = {"name": "Tom", "detail": {"age": None, "weight": 80}}
         >>> walker = FieldWalker(doc)
         >>> walker.go("name").get().value

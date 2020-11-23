@@ -28,7 +28,7 @@ from random import SystemRandom
 
 # (NOTE) modify for vendorizing
 import sys
-from . import InvalidId
+from . import bson_ as bson
 from .tz_util import utc
 PY3 = sys.version_info[0] == 3
 if PY3:
@@ -50,7 +50,7 @@ _MAX_COUNTER_VALUE = 0xFFFFFF
 
 
 def _raise_invalid_id(oid):
-    raise InvalidId(
+    raise bson.InvalidId(
         "%r is not a valid ObjectId, it must be a 12-byte input"
         " or a 24-character hex string" % oid)
 
@@ -174,7 +174,7 @@ class ObjectId(object):
         try:
             ObjectId(oid)
             return True
-        except (InvalidId, TypeError):
+        except (bson.InvalidId, TypeError):
             return False
 
     @classmethod

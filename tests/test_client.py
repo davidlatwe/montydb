@@ -61,8 +61,8 @@ def test_client_database_names(monty_client, mongo_client):
         _create_db(monty_client, db)
         _create_db(mongo_client, db)
 
-    monty_db_names = monty_client.database_names()
-    mongo_db_names = mongo_client.database_names()
+    monty_db_names = monty_client.list_database_names()
+    mongo_db_names = mongo_client.list_database_names()
     for mtdb in monty_db_names:
         assert mtdb in mongo_db_names
 
@@ -70,11 +70,11 @@ def test_client_database_names(monty_client, mongo_client):
 def test_client_drop_database(monty_client):
     _create_db(monty_client, "drop_me")
     monty_client.drop_database("drop_me")
-    assert "drop_me" not in monty_client.database_names()
+    assert "drop_me" not in monty_client.list_database_names()
 
     db_inst = monty_client.get_database("drop_db_inst")
     monty_client.drop_database(db_inst)
-    assert "drop_db_inst" not in monty_client.database_names()
+    assert "drop_db_inst" not in monty_client.list_database_names()
 
     with pytest.raises(TypeError):
         monty_client.drop_database(0)

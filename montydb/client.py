@@ -105,6 +105,8 @@ class MontyClient(BaseObject):
         """
         return self._storage.database_list()
 
+    list_database_names = database_names
+
     def drop_database(self, name_or_database):
         """
         Remove database.

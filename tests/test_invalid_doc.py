@@ -1,6 +1,6 @@
 
 import pytest
-from montydb.errors import InvalidDocument
+from montydb import errors
 
 
 @pytest.fixture
@@ -11,10 +11,10 @@ def monty_collection(monty_database):
 
 
 def test_invalid_doc_1(monty_collection):
-    with pytest.raises(InvalidDocument):
+    with pytest.raises(errors.InvalidDocument):
         monty_collection.insert_one({"x.y": "z"})
 
 
 def test_invalid_doc_2(monty_collection):
-    with pytest.raises(InvalidDocument):
+    with pytest.raises(errors.InvalidDocument):
         monty_collection.insert_one({"$m": "n"})

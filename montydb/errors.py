@@ -1,9 +1,18 @@
 
-from .types import (
-    BSONError,
-    InvalidDocument,
-    InvalidId,
-)
+
+def init_bson_err():
+    import sys
+    from .types import bson_ as bson
+    this = sys.modules[__name__]
+
+    class DocumentTooLarge(bson.InvalidDocument):
+        """Raised when an encoded document is too large.
+        """
+
+    setattr(this, "BSONError", bson.BSONError)
+    setattr(this, "InvalidId", bson.InvalidId)
+    setattr(this, "InvalidDocument", bson.InvalidDocument)
+    setattr(this, "DocumentTooLarge", DocumentTooLarge)
 
 
 class MontyError(Exception):
@@ -50,11 +59,6 @@ class InvalidName(MontyError):
 
 class CollectionInvalid(MontyError):
     """Raised when collection validation fails.
-    """
-
-
-class DocumentTooLarge(InvalidDocument):
-    """Raised when an encoded document is too large.
     """
 
 

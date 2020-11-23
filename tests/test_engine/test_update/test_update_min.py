@@ -1,8 +1,5 @@
 
-from montydb.types import (
-    Timestamp,
-    MaxKey,
-)
+from montydb.types import bson_ as bson
 from datetime import datetime
 
 from ...conftest import skip_if_no_bson
@@ -55,7 +52,7 @@ def test_update_min_4(monty_update, mongo_update):
     docs = [
         {"a": {"b": 5}}
     ]
-    spec = {"$min": {"a": MaxKey()}}
+    spec = {"$min": {"a": bson.MaxKey()}}
 
     monty_c = monty_update(docs, spec)
     mongo_c = mongo_update(docs, spec)
@@ -82,16 +79,16 @@ def test_update_min_5(monty_update, mongo_update):
 @skip_if_no_bson
 def test_update_min_6(monty_update, mongo_update):
     docs = [
-        {"a": Timestamp(10, 5)}
+        {"a": bson.Timestamp(10, 5)}
     ]
-    spec = {"$min": {"a": Timestamp(10, 0)}}
+    spec = {"$min": {"a": bson.Timestamp(10, 0)}}
 
     monty_c = monty_update(docs, spec)
     mongo_c = mongo_update(docs, spec)
 
     assert next(mongo_c) == next(monty_c)
     monty_c.rewind()
-    assert next(monty_c) == {"a": Timestamp(10, 0)}
+    assert next(monty_c) == {"a": bson.Timestamp(10, 0)}
 
 
 def test_update_min_7(monty_update, mongo_update):

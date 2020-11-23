@@ -3,22 +3,15 @@ import pytest
 import re
 
 from montydb.engine.weighted import Weighted, _cmp_decimal
-from montydb.types import (
-    PY3,
-
-    ObjectId,
-    Int64,
-    Decimal128,
-    Binary,
-    Timestamp,
-    Regex,
-    Code,
-    MinKey,
-    MaxKey,
-)
+from montydb.types import PY3, init_bson, bson_ as bson
 from datetime import datetime
 
 from ..conftest import skip_if_no_bson
+
+
+@pytest.fixture(scope="module", autouse=True)
+def set_bson(use_bson):
+    init_bson(use_bson)
 
 
 def test_weighted_1():
@@ -38,13 +31,13 @@ def test_weighted_3():
 
 @skip_if_no_bson
 def test_weighted_4():
-    data = Int64(8)
+    data = bson.Int64(8)
     assert Weighted(data) == (2, data)
 
 
 @skip_if_no_bson
 def test_weighted_5():
-    data = Decimal128("5.5")
+    data = bson.Decimal128("5.5")
     assert Weighted(data) == (2, _cmp_decimal(data))
 
 
@@ -55,7 +48,7 @@ def test_weighted_6():
 
 @skip_if_no_bson
 def test_weighted_7():
-    data = Binary(b"001")
+    data = bson.Binary(b"001")
     assert Weighted(data) == (6, data)
 
 
@@ -95,7 +88,7 @@ def test_weighted_13():
 
 
 def test_weighted_14():
-    data = ObjectId(b"000000000001")
+    data = bson.ObjectId(b"000000000001")
     assert Weighted(data) == (7, data)
 
 
@@ -111,19 +104,19 @@ def test_weighted_16():
 
 @skip_if_no_bson
 def test_weighted_17():
-    data = Timestamp(0, 1)
+    data = bson.Timestamp(0, 1)
     assert Weighted(data) == (10, data)
 
 
 @skip_if_no_bson
 def test_weighted_18():
-    data = Regex("^a")
+    data = bson.Regex("^a")
     assert Weighted(data) == (11, "^a", "")
 
 
 @skip_if_no_bson
 def test_weighted_19():
-    data = Regex("^a", "ix")
+    data = bson.Regex("^a", "ix")
     assert Weighted(data) == (11, "^a", "ix")
 
 
@@ -135,25 +128,25 @@ def test_weighted_20():
 
 @skip_if_no_bson
 def test_weighted_21():
-    data = Code("a")
+    data = bson.Code("a")
     assert Weighted(data) == (12, "a", None)
 
 
 @skip_if_no_bson
 def test_weighted_22():
-    data = Code("a", {})
+    data = bson.Code("a", {})
     assert Weighted(data) == (13, "a", ())
 
 
 @skip_if_no_bson
 def test_weighted_23():
-    data = MinKey()
+    data = bson.MinKey()
     assert Weighted(data) == (-1, data)
 
 
 @skip_if_no_bson
 def test_weighted_24():
-    data = MaxKey()
+    data = bson.MaxKey()
     assert Weighted(data) == (127, data)
 
 
@@ -167,7 +160,7 @@ def test_weighted_25():
 
 @skip_if_no_bson
 def test_weighted_26():
-    data = _cmp_decimal(Decimal128("0.1"))
+    data = _cmp_decimal(bson.Decimal128("0.1"))
     assert Weighted(data) == (2, data)
 
 
@@ -179,22 +172,22 @@ def test_weighted__cmp_decimal_err():
 
 @skip_if_no_bson
 def test_weighted__cmp_decimal_ne():
-    assert _cmp_decimal(Decimal128("5.5")) != "NAN"
+    assert _cmp_decimal(bson.Decimal128("5.5")) != "NAN"
 
 
 @skip_if_no_bson
 def test_weighted__cmp_decimal_lt_or_gt():
     if PY3:
         with pytest.raises(TypeError):
-            _cmp_decimal(Decimal128("5.5")) > "NAN"
+            _cmp_decimal(bson.Decimal128("5.5")) > "NAN"
     else:
-        assert (_cmp_decimal(Decimal128("5.5")) > "NAN") is False
+        assert (_cmp_decimal(bson.Decimal128("5.5")) > "NAN") is False
 
 
 @skip_if_no_bson
 def test_weighted__cmp_decimal_le_or_ge():
     if PY3:
         with pytest.raises(TypeError):
-            _cmp_decimal(Decimal128("5.5")) >= "NAN"
+            _cmp_decimal(bson.Decimal128("5.5")) >= "NAN"
     else:
-        assert (_cmp_decimal(Decimal128("5.5")) >= "NAN") is False
+        assert (_cmp_decimal(bson.Decimal128("5.5")) >= "NAN") is False

@@ -8,8 +8,7 @@ from .field_walker import FieldWalker, FieldWriteError
 from .weighted import Weighted, _cmp_decimal
 from .queries import QueryFilter, ordering
 from ..types import (
-    Decimal128,
-    Timestamp,
+    bson_ as bson,
     string_types,
     is_numeric_type,
     is_duckument_type,
@@ -205,15 +204,15 @@ def parse_inc(field, value, array_filters):
                 raise WriteError(msg, code=14)
 
             is_decimal128 = False
-            if isinstance(old_val, Decimal128):
+            if isinstance(old_val, bson.Decimal128):
                 is_decimal128 = True
                 old_val = old_val.to_decimal()
-            if isinstance(inc_val, Decimal128):
+            if isinstance(inc_val, bson.Decimal128):
                 is_decimal128 = True
                 inc_val = inc_val.to_decimal()
 
             if is_decimal128:
-                return Decimal128((old_val or 0) + inc_val)
+                return bson.Decimal128((old_val or 0) + inc_val)
             else:
                 return (old_val or 0) + inc_val
 
@@ -279,15 +278,15 @@ def parse_mul(field, value, array_filters):
                 raise WriteError(msg, code=14)
 
             is_decimal128 = False
-            if isinstance(old_val, Decimal128):
+            if isinstance(old_val, bson.Decimal128):
                 is_decimal128 = True
                 old_val = old_val.to_decimal()
-            if isinstance(mul_val, Decimal128):
+            if isinstance(mul_val, bson.Decimal128):
                 is_decimal128 = True
                 mul_val = mul_val.to_decimal()
 
             if is_decimal128:
-                return Decimal128((old_val or 0) * mul_val)
+                return bson.Decimal128((old_val or 0) * mul_val)
             else:
                 return (old_val or 0.0) * mul_val
 
@@ -378,7 +377,7 @@ def parse_unset(field, _, array_filters):
 def parse_currentDate(field, value, array_filters):
     date_type = {
         "date": datetime.utcnow(),
-        "timestamp": Timestamp(datetime.utcnow(), 1),
+        "timestamp": bson.Timestamp(datetime.utcnow(), 1),
     }
 
     if not isinstance(value, bool):
@@ -574,7 +573,7 @@ def parse_pull_all(field, value, array_filters):
 
             def convert(lst):
                 for val in lst:
-                    if isinstance(val, Decimal128):
+                    if isinstance(val, bson.Decimal128):
                         yield _cmp_decimal(val)
                     else:
                         yield val
