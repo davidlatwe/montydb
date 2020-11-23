@@ -34,35 +34,35 @@ jobs:
       matrix:
         py27-bson:
           python.version: "2.7"
-          env.bson: "true"
+          arg.bson: "--use_bson"
 
-        py27-nobson:
+        py27-:
           python.version: "2.7"
-          env.bson: ""
+          arg.bson: ""
 
         py36-bson:
           python.version: "3.6"
-          env.bson: "true"
+          arg.bson: "--use_bson"
 
-        py36-nobson:
+        py36-:
           python.version: "3.6"
-          env.bson: ""
+          arg.bson: ""
 
         py37-bson:
           python.version: "3.7"
-          env.bson: "true"
+          arg.bson: "--use_bson"
 
-        py37-nobson:
+        py37-:
           python.version: "3.7"
-          env.bson: ""
+          arg.bson: ""
 
         py38-bson:
           python.version: "3.8"
-          env.bson: "true"
+          arg.bson: "--use_bson"
 
-        py38-nobson:
+        py38-:
           python.version: "3.8"
-          env.bson: ""
+          arg.bson: ""
 
     steps:
       - task: UsePythonVersion@0
@@ -85,12 +85,10 @@ jobs:
         displayName: "pip install .."
 
       - script: |
-          export MONTY_ENABLE_BSON=$(env.bson)
-          echo MONTY_ENABLE_BSON=$MONTY_ENABLE_BSON
-          pytest --cov montydb --storage memory
-          pytest --cov montydb --storage flatfile --cov-append
-          pytest --cov montydb --storage lightning --cov-append
-          pytest --cov montydb --storage sqlite --cov-append
+          pytest --cov montydb --storage memory $(arg.bson)
+          pytest --cov montydb --storage flatfile $(arg.bson) --cov-append
+          pytest --cov montydb --storage lightning $(arg.bson) --cov-append
+          pytest --cov montydb --storage sqlite $(arg.bson) --cov-append
         displayName: "Run tests"
 
   - job: mgo40
@@ -100,35 +98,35 @@ jobs:
       matrix:
         py27-bson:
           python.version: "2.7"
-          env.bson: "true"
+          arg.bson: "--use_bson"
 
-        py27-nobson:
+        py27-:
           python.version: "2.7"
-          env.bson: ""
+          arg.bson: ""
 
         py36-bson:
           python.version: "3.6"
-          env.bson: "true"
+          arg.bson: "--use_bson"
 
-        py36-nobson:
+        py36-:
           python.version: "3.6"
-          env.bson: ""
+          arg.bson: ""
 
         py37-bson:
           python.version: "3.7"
-          env.bson: "true"
+          arg.bson: "--use_bson"
 
-        py37-nobson:
+        py37-:
           python.version: "3.7"
-          env.bson: ""
+          arg.bson: ""
 
         py38-bson:
           python.version: "3.8"
-          env.bson: "true"
+          arg.bson: "--use_bson"
 
-        py38-nobson:
+        py38-:
           python.version: "3.8"
-          env.bson: ""
+          arg.bson: ""
 
     steps:
       - task: UsePythonVersion@0
@@ -151,12 +149,10 @@ jobs:
         displayName: "pip install .."
 
       - script: |
-          export MONTY_ENABLE_BSON=$(env.bson)
-          echo MONTY_ENABLE_BSON=$MONTY_ENABLE_BSON
-          pytest --cov montydb --storage memory
-          pytest --cov montydb --storage flatfile --cov-append
-          pytest --cov montydb --storage lightning --cov-append
-          pytest --cov montydb --storage sqlite --cov-append
+          pytest --cov montydb --storage memory $(arg.bson)
+          pytest --cov montydb --storage flatfile $(arg.bson) --cov-append
+          pytest --cov montydb --storage lightning $(arg.bson) --cov-append
+          pytest --cov montydb --storage sqlite $(arg.bson) --cov-append
         displayName: "Run tests"
 
   - job: mgo42
@@ -166,35 +162,35 @@ jobs:
       matrix:
         py27-bson:
           python.version: "2.7"
-          env.bson: "true"
+          arg.bson: "--use_bson"
 
-        py27-nobson:
+        py27-:
           python.version: "2.7"
-          env.bson: ""
+          arg.bson: ""
 
         py36-bson:
           python.version: "3.6"
-          env.bson: "true"
+          arg.bson: "--use_bson"
 
-        py36-nobson:
+        py36-:
           python.version: "3.6"
-          env.bson: ""
+          arg.bson: ""
 
         py37-bson:
           python.version: "3.7"
-          env.bson: "true"
+          arg.bson: "--use_bson"
 
-        py37-nobson:
+        py37-:
           python.version: "3.7"
-          env.bson: ""
+          arg.bson: ""
 
         py38-bson:
           python.version: "3.8"
-          env.bson: "true"
+          arg.bson: "--use_bson"
 
-        py38-nobson:
+        py38-:
           python.version: "3.8"
-          env.bson: ""
+          arg.bson: ""
 
     steps:
       - task: UsePythonVersion@0
@@ -217,12 +213,10 @@ jobs:
         displayName: "pip install .."
 
       - script: |
-          export MONTY_ENABLE_BSON=$(env.bson)
-          echo MONTY_ENABLE_BSON=$MONTY_ENABLE_BSON
-          pytest --cov montydb --storage memory
-          pytest --cov montydb --storage flatfile --cov-append
-          pytest --cov montydb --storage lightning --cov-append
-          pytest --cov montydb --storage sqlite --cov-append
+          pytest --cov montydb --storage memory $(arg.bson)
+          pytest --cov montydb --storage flatfile $(arg.bson) --cov-append
+          pytest --cov montydb --storage lightning $(arg.bson) --cov-append
+          pytest --cov montydb --storage sqlite $(arg.bson) --cov-append
         displayName: "Run tests"
 
   - job: mgoLatest  # 4.4
@@ -233,35 +227,35 @@ jobs:
       matrix:
         py27-bson:
           python.version: "2.7"
-          env.bson: "true"
+          arg.bson: "--use_bson"
 
-        py27-nobson:
+        py27-:
           python.version: "2.7"
-          env.bson: ""
+          arg.bson: ""
 
         py36-bson:
           python.version: "3.6"
-          env.bson: "true"
+          arg.bson: "--use_bson"
 
-        py36-nobson:
+        py36-:
           python.version: "3.6"
-          env.bson: ""
+          arg.bson: ""
 
         py37-bson:
           python.version: "3.7"
-          env.bson: "true"
+          arg.bson: "--use_bson"
 
-        py37-nobson:
+        py37-:
           python.version: "3.7"
-          env.bson: ""
+          arg.bson: ""
 
         py38-bson:
           python.version: "3.8"
-          env.bson: "true"
+          arg.bson: "--use_bson"
 
-        py38-nobson:
+        py38-:
           python.version: "3.8"
-          env.bson: ""
+          arg.bson: ""
 
     steps:
       - task: UsePythonVersion@0
@@ -284,12 +278,10 @@ jobs:
         displayName: "pip install .."
 
       - script: |
-          export MONTY_ENABLE_BSON=$(env.bson)
-          echo MONTY_ENABLE_BSON=$MONTY_ENABLE_BSON
-          pytest --cov montydb --storage memory
-          pytest --cov montydb --storage flatfile --cov-append
-          pytest --cov montydb --storage lightning --cov-append
-          pytest --cov montydb --storage sqlite --cov-append
+          pytest --cov montydb --storage memory $(arg.bson)
+          pytest --cov montydb --storage flatfile $(arg.bson) --cov-append
+          pytest --cov montydb --storage lightning $(arg.bson) --cov-append
+          pytest --cov montydb --storage sqlite $(arg.bson) --cov-append
         displayName: "Run tests"
 
 
