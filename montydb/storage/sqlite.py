@@ -6,7 +6,7 @@ import contextlib
 from collections import OrderedDict
 
 from ..base import WriteConcern
-from ..types import unicode_, id_encode
+from ..types import unicode_, bson_ as bson
 from . import (
     AbstractStorage,
     AbstractDatabase,
@@ -339,7 +339,8 @@ class SQLiteCollection(AbstractCollection):
         try:
             self._conn.write_one(
                 self._col_path,
-                (id_encode(doc["_id"]), self._encode_doc(doc, check_keys),),
+                (bson.id_encode(doc["_id"]),
+                 self._encode_doc(doc, check_keys),),
                 self.wconcern
             )
         except sqlite3.IntegrityError:
@@ -356,7 +357,7 @@ class SQLiteCollection(AbstractCollection):
         keys = self._conn.read_all_keys(self._col_path)
         has_duplicated_key = False
         for doc in docs:
-            id = id_encode(doc["_id"])
+            id = bson.id_encode(doc["_id"])
             if id in keys or id in _docs:
                 has_duplicated_key = True
                 break
@@ -380,7 +381,7 @@ class SQLiteCollection(AbstractCollection):
         """
         self._conn.update_one(
             self._col_path,
-            (self._encode_doc(doc), id_encode(doc["_id"])),
+            (self._encode_doc(doc), bson.id_encode(doc["_id"])),
             self.wconcern
         )
 
@@ -389,21 +390,22 @@ class SQLiteCollection(AbstractCollection):
         """
         self._conn.update_many(
             self._col_path,
-            [(self._encode_doc(doc), id_encode(doc["_id"])) for doc in docs],
+            [(self._encode_doc(doc), bson.id_encode(doc["_id"]))
+             for doc in docs],
             self.wconcern
         )
 
     def delete_one(self, id):
         self._conn.delete_one(
             self._col_path,
-            (id_encode(id),),
+            (bson.id_encode(id),),
             self.wconcern
         )
 
     def delete_many(self, ids):
         self._conn.delete_many(
             self._col_path,
-            [(id_encode(id),) for id in ids],
+            [(bson.id_encode(id),) for id in ids],
             self.wconcern
         )
 

@@ -1,5 +1,5 @@
+
 import warnings
-import collections
 from copy import deepcopy
 
 from .base import (
@@ -18,7 +18,7 @@ from .engine.queries import QueryFilter
 from .engine.update import Updator
 from .types import (
     abc,
-    ObjectId,
+    bson_ as bson,
     string_types,
     is_duckument_type,
     Counter,
@@ -131,7 +131,7 @@ class MontyCollection(BaseObject):
             pass
 
         if "_id" not in document:
-            document["_id"] = ObjectId()
+            document["_id"] = bson.ObjectId()
 
         try:
             result = self._storage.write_one(self, document)
@@ -158,7 +158,7 @@ class MontyCollection(BaseObject):
 
         def set_id(doc):
             if "_id" not in doc:
-                doc["_id"] = ObjectId()
+                doc["_id"] = bson.ObjectId()
             # Keep _id in track for error message
             return doc["_id"]
 
@@ -209,7 +209,7 @@ class MontyCollection(BaseObject):
         except StopIteration:
             if upsert:
                 if "_id" not in replacement:
-                    replacement["_id"] = ObjectId()
+                    replacement["_id"] = bson.ObjectId()
                 raw_result["upserted"] = replacement["_id"]
                 raw_result["n"] = 1
                 self._storage.write_one(self, replacement, check_keys=False)
@@ -258,7 +258,7 @@ class MontyCollection(BaseObject):
 
         document = _remove_dollar_key(deepcopy(query_spec))
         if "_id" not in document:
-            document["_id"] = ObjectId()
+            document["_id"] = bson.ObjectId()
         raw_result["upserted"] = document["_id"]
         raw_result["n"] = 1
 

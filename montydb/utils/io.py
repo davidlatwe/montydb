@@ -4,7 +4,7 @@ import time
 from collections import defaultdict, OrderedDict
 from datetime import datetime
 
-from ..types import string_types, json_loads, json_dumps
+from ..types import string_types, init_bson, bson_
 from ..client import MontyClient
 from ..errors import DuplicateKeyError
 
@@ -18,7 +18,8 @@ def montyimport(database,
                 collection,
                 file,
                 mode="insert",
-                json_options=None):
+                json_options=None,
+                use_bson=False):
     """Imports content from an Extended JSON file into a MontyCollection instance
 
     Example:
@@ -41,13 +42,14 @@ def montyimport(database,
                                     types. Default None.
 
     """
+    init_bson(use_bson)
     collection = _collection(database, collection)
 
     with open(file, "r") as fp:
         lines = [line.strip() for line in fp.readlines()]
         serialized = "[{}]".format(", ".join(lines))
 
-    documents = json_loads(serialized, json_options=json_options)
+    documents = bson_.json_loads(serialized, json_options=json_options)
 
     if mode == "insert":
         for doc in documents:
@@ -71,7 +73,8 @@ def montyexport(database,
                 out,
                 fileds=None,
                 query=None,
-                json_options=None):
+                json_options=None,
+                use_bson=False):
     """Produces a JSON export of data stored in a MontyCollection instance
 
     Example:
@@ -93,6 +96,7 @@ def montyexport(database,
                                     types. Default None.
 
     """
+    init_bson(use_bson)
     collection = _collection(database, collection)
     fileds = fileds or []
 
@@ -107,7 +111,7 @@ def montyexport(database,
 
     with open(out, "w") as fp:
         for doc in collection.find(query, projection=projection):
-            serialized = json_dumps(doc, json_options=json_options)
+            serialized = bson_.json_dumps(doc, json_options=json_options)
             fp.write(serialized + "\n")
 
 

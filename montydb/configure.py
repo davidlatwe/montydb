@@ -3,7 +3,7 @@ import contextlib
 import importlib
 import inspect
 
-from .storage import AbstractStorage
+from .storage import AbstractStorage, memory
 from .errors import ConfigurationError
 from .types import string_types
 
@@ -18,8 +18,19 @@ MEMORY_REPOSITORY = ":memory:"
 
 URI_SCHEME_PREFIX = "montydb://"
 
+MONGO_COMPAT_VERSIONS = ("3.6", "4.0", "4.2")
+
 
 _pinned_repository = {"_": None}
+_session = {}
+_session_default = {
+    "mongo_version": MONGO_COMPAT_VERSIONS[-1],
+    "use_bson": False,
+}
+
+
+def session_config():
+    return _session.copy()
 
 
 def remove_uri_scheme_prefix(uri_or_dir):
@@ -164,37 +175,65 @@ def find_storage_cls(storage_name):
 _storage_ident_fname = ".monty.storage"
 
 
-def set_storage(repository=None, storage=None, use_default=True, **kwargs):
+def set_storage(repository=None,
+                storage=None,
+                mongo_version=None,
+                use_bson=None,
+                **kwargs):
     """Setup storage engine for the database repository
 
     Args:
-        repository (str): A dir path for database to live on disk.
-                          Default to current working dir.
-        storage (str): Storage module name. Default "flatfile".
-        use_default (bool): Use default storage config. Default `True`.
+        repository (str, optional): A dir path for database to live on disk.
+            Default to current working dir.
+        storage (str, optional): Storage module name. Default "flatfile".
+        mongo_version (str, optional): Which mongodb version's behavior should
+            montydb try to match with. Default "4.2", other versions are "3.6",
+            "4.0".
+        use_bson (bool, optional): Use bson module. Default `False`.
 
     keyword args:
         Other keyword args will be parsed as storage config options.
 
     """
+    from .types import bson_ as bson
+
     storage = storage or DEFAULT_STORAGE
 
-    if storage == MEMORY_STORAGE:
-        raise ConfigurationError("Memory storage does not require setup.")
+    if mongo_version and mongo_version not in MONGO_COMPAT_VERSIONS:
+        raise ConfigurationError(
+            "Unknown mongodb version: %s, currently supported versions are: %s"
+            % (mongo_version, ", ".join(MONGO_COMPAT_VERSIONS))
+        )
 
-    repository = provide_repository(repository)
-    setup = os.path.join(repository, _storage_ident_fname)
+    use_bson = bson.bson_used if use_bson is None else use_bson
+    mongo_version = mongo_version or _session.get("mongo_version")
+
+    for key, value in {"use_bson": use_bson,
+                       "mongo_version": mongo_version}.items():
+        if value is None:
+            value = _session_default[key]
+        _session[key] = value
+
+    _bson_init(_session["use_bson"])
+    _mongo_compat(_session["mongo_version"])
+
+    kwargs.update(_session)
 
     storage_cls = find_storage_cls(storage)
 
-    if not os.path.isdir(repository):
-        os.makedirs(repository)
+    if storage == MEMORY_STORAGE:
+        repository = MEMORY_REPOSITORY
+    else:
+        repository = provide_repository(repository)
+        setup = os.path.join(repository, _storage_ident_fname)
 
-    with open(setup, "w") as fp:
-        fp.write(storage)
+        if not os.path.isdir(repository):
+            os.makedirs(repository)
 
-    if kwargs or use_default:
-        storage_cls.save_config(repository, **kwargs)
+        with open(setup, "w") as fp:
+            fp.write(storage)
+
+    storage_cls.save_config(repository, **kwargs)
 
 
 def provide_storage(repository):
@@ -208,14 +247,48 @@ def provide_storage(repository):
 
     """
     if repository == MEMORY_REPOSITORY:
-        return find_storage_cls(MEMORY_STORAGE)
+        storage_name = MEMORY_STORAGE
+        if not memory.is_memory_storage_set():
+            set_storage(repository, storage_name)
 
-    setup = os.path.join(repository, _storage_ident_fname)
+    else:
+        setup = os.path.join(repository, _storage_ident_fname)
+        if not os.path.isfile(setup):
+            set_storage(repository)
 
-    if not os.path.isfile(setup):
-        set_storage(repository)
-
-    with open(setup, "r") as fp:
-        storage_name = fp.readline().strip()
+        with open(setup, "r") as fp:
+            storage_name = fp.readline().strip()
 
     return find_storage_cls(storage_name)
+
+
+def _bson_init(use_bson):
+    from .types import bson_ as bson
+
+    if bson.bson_used and not use_bson:
+        raise ConfigurationError("montydb has been config to use BSON and "
+                                 "cannot be changed in current session.")
+    elif not bson.bson_used and use_bson:
+        raise ConfigurationError("montydb has been config to opt-out BSON and "
+                                 "cannot be changed in current session.")
+    else:
+        bson.init(use_bson)
+
+
+def _mongo_compat(version):
+    from .engine import queries
+
+    if version.startswith("3"):
+        v3 = getattr(queries, "_is_comparable_ver3")
+        setattr(queries, "_is_comparable", v3)
+
+    if version.startswith("4"):
+        v4 = getattr(queries, "_is_comparable_ver4")
+        setattr(queries, "_is_comparable", v4)
+
+    if version == "4.2":
+        setattr(queries, "_regex_options_check",
+                getattr(queries, "_regex_options_v42"))
+    else:
+        setattr(queries, "_regex_options_check",
+                getattr(queries, "_regex_options_"))

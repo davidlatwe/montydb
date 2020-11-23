@@ -11,25 +11,12 @@ from .weighted import (
     Weighted,
     gravity,
     _cmp_decimal,
-    _decimal128_INF,
-    _decimal128_NaN_ls,
 )
 from ..types import (
+    RE_PATTERN_TYPE,
     integer_types,
     string_types,
-    SON,
-    Regex,
-    MinKey,
-    MaxKey,
-    Decimal128,
-    Timestamp,
-    ObjectId,
-    Binary,
-    Code,
-    Int64,
-
-    RE_PATTERN_TYPE,
-
+    bson_ as bson,
     is_duckument_type,
     is_integer_type,
     is_pattern_type,
@@ -37,8 +24,6 @@ from ..types import (
     compare_documents,
     re_str_flags_to_int,
 )
-
-# from . import MONTY_MONGO_COMPAT_36
 
 
 def validate_sort_specifier(sort):
@@ -333,7 +318,7 @@ class QueryFilter(object):
         #   1) return no document and without any error, or
         #   2) raise an "OperationFailure: unknown operator" error.
         #
-        if isinstance(sub_spec, Regex):
+        if isinstance(sub_spec, bson.Regex):
             sub_spec = {"$regex": sub_spec}
 
         if _is_expression_obj(sub_spec):
@@ -346,11 +331,11 @@ class QueryFilter(object):
 
             for op, value in sub_spec.items():
                 # Regex can't do $ne directly
-                if op == "$ne" and isinstance(value, (RE_PATTERN_TYPE, Regex)):
+                if op == "$ne" and isinstance(value, (RE_PATTERN_TYPE, bson.Regex)):
                     raise OperationFailure("Can't have RegEx as arg to $ne.")
                 # is predictable ?
                 if op in ("$gt", "$gte", "$lt", "$lte"):
-                    if isinstance(value, (RE_PATTERN_TYPE, Regex)):
+                    if isinstance(value, (RE_PATTERN_TYPE, bson.Regex)):
                         raise OperationFailure(
                             "Can't have RegEx as arg to predicate over "
                             "field {!r}.".format(path))
@@ -387,7 +372,7 @@ class QueryFilter(object):
 
     def _parse_not(self, sub_spec):
         # $not logic only available in field-level
-        if isinstance(sub_spec, (RE_PATTERN_TYPE, Regex)):
+        if isinstance(sub_spec, (RE_PATTERN_TYPE, bson.Regex)):
             return self.subparser("$not", {"$regex": sub_spec})
 
         elif is_duckument_type(sub_spec):
@@ -430,6 +415,19 @@ class _FALG(object):
     __slots__ = ("retrieve",)
 
 
+def _regex_options_(regex_flag, opt_flag):
+    pass
+
+
+def _regex_options_v42(regex_flag, opt_flag):
+    if regex_flag and opt_flag:
+        raise OperationFailure("options set in both $regex and "
+                               "$options")
+
+
+_regex_options_check = _regex_options_v42
+
+
 def _modify_regex_optins(sub_spec):
     """Merging $regex and $options values in query document
 
@@ -440,18 +438,24 @@ def _modify_regex_optins(sub_spec):
     """
     new_sub_spec = None
     _re = None
+    regex_flags = ""
+    opt_flags = ""
     flags = ""
 
     for key, val in sub_spec.items():
         if key == "$options":
-            flags = val
-        if key == "$regex" and isinstance(val, (RE_PATTERN_TYPE, Regex)):
-            flags = _FALG(val.flags)
+            opt_flags = val
+            flags = opt_flags
+        if key == "$regex" and isinstance(val, (RE_PATTERN_TYPE, bson.Regex)):
+            regex_flags = _FALG(val.flags)
+            flags = regex_flags
             # We will deepcopy `sub_spec` later for merging "$regex" and
             # "$options" to query parser, but we can't deepcopy regex
             # object, so move it to somewhere else and retrieve it later.
             _re = sub_spec["$regex"]
             sub_spec["$regex"] = None
+
+    _regex_options_check(regex_flags, opt_flags)
 
     new_sub_spec = deepcopy(sub_spec)
     new_sub_spec["$regex"] = {
@@ -486,8 +490,16 @@ Field-level Query Operators
 """
 
 
-def _is_comparable(val, qry):
+def _is_comparable_ver4(val, qry):
+    return (gravity(val, weight_only=True) == gravity(qry, weight_only=True)
+            or isinstance(qry, (bson.MinKey, bson.MaxKey)))
+
+
+def _is_comparable_ver3(val, qry):
     return gravity(val, weight_only=True) == gravity(qry, weight_only=True)
+
+
+_is_comparable = _is_comparable_ver4
 
 
 def _eq_match(fieldwalker, query):
@@ -503,11 +515,11 @@ def _eq_match(fieldwalker, query):
         if query is None:
             return fieldwalker.value.null_or_missing()
 
-        if isinstance(query, Decimal128):
+        if isinstance(query, bson.Decimal128):
             query = _cmp_decimal(query)
 
         for val in fieldwalker.value:
-            if isinstance(val, Decimal128):
+            if isinstance(val, bson.Decimal128):
                 val = _cmp_decimal(val)
 
             if val == query and _is_comparable(val, query):
@@ -535,11 +547,11 @@ def parse_gt(query):
     def _gt(fieldwalker):
         for value in fieldwalker.value:
             if _is_comparable(value, query):
-                if query in _decimal128_NaN_ls:
+                if query in bson.decimal128_NaN_ls:
                     return False
                 if Weighted(value) > Weighted(query):
                     return True
-            elif isinstance(query, (MinKey, MaxKey)):
+            elif isinstance(query, (bson.MinKey, bson.MaxKey)):
                 return True
 
     return _gt
@@ -550,13 +562,14 @@ def parse_gte(query):
     def _gte(fieldwalker):
         for value in fieldwalker.value:
             if _is_comparable(value, query):
-                if query in _decimal128_NaN_ls:
-                    return True if value in _decimal128_NaN_ls else False
-                if query == _decimal128_INF and not value == _decimal128_INF:
+                if query in bson.decimal128_NaN_ls:
+                    return True if value in bson.decimal128_NaN_ls else False
+                if (query == bson.decimal128_INF
+                        and not value == bson.decimal128_INF):
                     return False
                 if Weighted(value) >= Weighted(query):
                     return True
-            elif isinstance(query, (MinKey, MaxKey)):
+            elif isinstance(query, (bson.MinKey, bson.MaxKey)):
                 return True
 
     return _gte
@@ -567,33 +580,33 @@ def parse_lt(query):
     def _lt(fieldwalker):
         for value in fieldwalker.value:
             if _is_comparable(value, query):
-                if value in _decimal128_NaN_ls:
+                if value in bson.decimal128_NaN_ls:
                     return False
                 if Weighted(value) < Weighted(query):
                     return True
-            elif isinstance(query, (MinKey, MaxKey)):
+            elif isinstance(query, (bson.MinKey, bson.MaxKey)):
                 return True
 
     return _lt
 
 
-_dec_NaN_INF_ls = tuple(list(_decimal128_NaN_ls) + [_decimal128_INF])
-
-
 def parse_lte(query):
+    _dec_NaN_INF_ls = list(bson.decimal128_NaN_ls) + [bson.decimal128_INF]
+
     @keep(query)
     def _lte(fieldwalker):
         for value in fieldwalker.value:
             if _is_comparable(value, query):
-                if query in _decimal128_NaN_ls:
-                    return True if value in _decimal128_NaN_ls else False
-                if query == _decimal128_INF and value in _decimal128_NaN_ls:
+                if query in bson.decimal128_NaN_ls:
+                    return True if value in bson.decimal128_NaN_ls else False
+                if (query == bson.decimal128_INF
+                        and value in bson.decimal128_NaN_ls):
                     return False
                 if query not in _dec_NaN_INF_ls and value in _dec_NaN_INF_ls:
                     return False
                 if Weighted(value) <= Weighted(query):
                     return True
-            elif isinstance(query, (MinKey, MaxKey)):
+            elif isinstance(query, (bson.MinKey, bson.MaxKey)):
                 return True
 
     return _lte
@@ -607,7 +620,7 @@ def _in_match(fieldwalker, query):
     for q in query:
         if is_pattern_type(q):
             q_regex.append(q)
-        elif isinstance(q, Regex):
+        elif isinstance(q, bson.Regex):
             try:
                 q_regex.append(q.try_compile())
             except re.error as e:
@@ -780,35 +793,35 @@ def obj_to_bson_type_id(obj):
     BSON_TYPE_ID = {
         float: 1,
         # string: 2,
-        SON: 3,
+        bson.SON: 3,
         dict: 3,
         list: 4,
         tuple: 4,
-        Binary: 5,
+        bson.Binary: 5,
         # bytes: 5,
         # undefined (Deprecated)
-        ObjectId: 7,
+        bson.ObjectId: 7,
         bool: 8,
         datetime: 9,
         type(None): 10,
-        Regex: 11,
+        bson.Regex: 11,
         RE_PATTERN_TYPE: 11,
         # dbPointer (Deprecated)
         # javascript: 13,
         # symbol (Deprecated)
         # javascriptWithScope: 15,
         int: 16,
-        Timestamp: 17,
-        Int64: 18,
-        Decimal128: 19,
-        MinKey: -1,
-        MaxKey: 127
+        bson.Timestamp: 17,
+        bson.Int64: 18,
+        bson.Decimal128: 19,
+        bson.MinKey: -1,
+        bson.MaxKey: 127
     }
 
     try:
         type_id = BSON_TYPE_ID[type(obj)]
     except KeyError:
-        if isinstance(obj, Code):  # also an instance of string_types
+        if isinstance(obj, bson.Code):  # also an instance of string_types
             type_id = 13 if obj.scope is None else 15
         elif isinstance(obj, string_types):
             type_id = 2
@@ -871,7 +884,7 @@ Field-level Query Operators
 
 
 def parse_regex(query):
-    if isinstance(query, Regex):
+    if isinstance(query, bson.Regex):
         q = query.try_compile()
     else:
         if not isinstance(query["pattern"], string_types):
@@ -906,23 +919,23 @@ def parse_mod(query):
     divisor = query[0]
     remainder = query[1]
 
-    num_types = (integer_types, float, Decimal128)
+    num_types = (integer_types, float, bson.Decimal128)
 
     if not isinstance(divisor, num_types):
         raise OperationFailure("malformed mod, divisor not a number")
     if not isinstance(remainder, num_types):
         remainder = 0
 
-    if isinstance(divisor, Decimal128):
+    if isinstance(divisor, bson.Decimal128):
         divisor = divisor.to_decimal()
-    if isinstance(remainder, Decimal128):
+    if isinstance(remainder, bson.Decimal128):
         remainder = remainder.to_decimal()
 
     def mod_scan(field_value, query):
         for value in field_value:
             if isinstance(value, bool) or not isinstance(value, num_types):
                 continue
-            if isinstance(value, Decimal128):
+            if isinstance(value, bson.Decimal128):
                 value = value.to_decimal()
             if int(value % divisor) == int(remainder):
                 return True

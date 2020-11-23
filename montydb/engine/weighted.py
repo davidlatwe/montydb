@@ -5,28 +5,11 @@ from collections import Mapping
 from ..types import (
     integer_types,
     string_types,
-    SON,
-    Regex,
-    MinKey,
-    MaxKey,
-    Decimal128,
-    Timestamp,
-    ObjectId,
-    Binary,
-    Code,
-    Int64,
+    bson_ as bson,
 
     RE_PATTERN_TYPE,
     re_int_flag_to_str,
 )
-
-
-_decimal128_NaN = Decimal128('NaN')
-_decimal128_INF = Decimal128('Infinity')
-_decimal128_NaN_ls = (_decimal128_NaN,
-                      Decimal128('-NaN'),
-                      Decimal128('sNaN'),
-                      Decimal128('-sNaN'))
 
 
 class _cmp_decimal(object):
@@ -34,20 +17,21 @@ class _cmp_decimal(object):
     __slots__ = ("_dec",)
 
     def __init__(self, dec128):
-        if isinstance(dec128, Decimal128):
+        if isinstance(dec128, bson.Decimal128):
             self._dec = dec128
         else:
             raise TypeError("Only accept an instance of 'Decimal128'.")
 
     def _is_numeric(self, other):
-        number_type = (integer_types, float, Int64, Decimal128, _cmp_decimal)
+        number_type = (integer_types, float,
+                       bson.Int64, bson.Decimal128, _cmp_decimal)
         return isinstance(other, number_type)
 
     def _to_decimal128(self, other):
         if isinstance(other, _cmp_decimal):
             other = other._dec
-        if not isinstance(other, Decimal128):
-            other = Decimal128(str(other))
+        if not isinstance(other, bson.Decimal128):
+            other = bson.Decimal128(str(other))
         return other
 
     def __repr__(self):
@@ -66,9 +50,11 @@ class _cmp_decimal(object):
     def _lt_gt(self, other, lt):
         if self._is_numeric(other):
             other = self._to_decimal128(other)
-            if other == _decimal128_INF or self._dec == _decimal128_NaN:
+            if (other == bson.decimal128_INF
+                    or self._dec == bson.decimal128_NaN):
                 return lt
-            if other == _decimal128_NaN or self._dec == _decimal128_INF:
+            if (other == bson.decimal128_NaN
+                    or self._dec == bson.decimal128_INF):
                 return not lt
             cmp_ = (self._dec, other) if lt else (other, self._dec)
             return cmp_[0].to_decimal() < cmp_[1].to_decimal()
@@ -84,7 +70,7 @@ class _cmp_decimal(object):
     def _le_ge(self, other, le):
         if self._is_numeric(other):
             attr = self.__gt__ if le else self.__lt__
-            return self._dec == _decimal128_INF or not attr(other)
+            return self._dec == bson.decimal128_INF or not attr(other)
         else:
             return NotImplemented
 
@@ -111,31 +97,31 @@ def gravity(value, weight_only=None):
     # a short cut for getting weight number,
     # to get rid of lots `if` stetments.
     TYPE_WEIGHT = {
-        MinKey: -1,
+        bson.MinKey: -1,
         # less than None: 0, this scenario handles in
         #                 ordering phase, not during weighting
         type(None): 1,
         int: 2,
         float: 2,
-        Int64: 2,
-        Decimal128: 2,
+        bson.Int64: 2,
+        bson.Decimal128: 2,
         _cmp_decimal: 2,
         # string: 3,
-        SON: 4,
+        bson.SON: 4,
         dict: 4,
         list: 5,
         tuple: 5,
-        Binary: 6,
+        bson.Binary: 6,
         # bytes: 6,
-        ObjectId: 7,
+        bson.ObjectId: 7,
         bool: 8,
         datetime: 9,
-        Timestamp: 10,
-        Regex: 11,
+        bson.Timestamp: 10,
+        bson.Regex: 11,
         RE_PATTERN_TYPE: 11,
         # Code without scope: 12
         # Code with scope: 13
-        MaxKey: 127
+        bson.MaxKey: 127
     }
 
     # get value type weight
@@ -143,7 +129,7 @@ def gravity(value, weight_only=None):
         wgt = TYPE_WEIGHT[type(value)]
 
     except KeyError:
-        if isinstance(value, Code):  # also an instance of string_types
+        if isinstance(value, bson.Code):  # also an instance of string_types
             wgt = 12 if value.scope is None else 13
         elif isinstance(value, string_types):
             wgt = 3
@@ -170,11 +156,11 @@ def _weighted(weight, value):
         return (gravity(member) for member in list_doc)
 
     def numeric_type(wgt, val):
-        if isinstance(value, (Decimal128, _cmp_decimal)):
+        if isinstance(value, (bson.Decimal128, _cmp_decimal)):
             if isinstance(val, _cmp_decimal):
                 val = val._dec
-            if val in _decimal128_NaN_ls:
-                val = Decimal128('NaN')  # MongoDB does not sort them
+            if val in bson.decimal128_NaN_ls:
+                val = bson.Decimal128('NaN')  # MongoDB does not sort them
             return (wgt, _cmp_decimal(val))
         else:
             return (wgt, val)
