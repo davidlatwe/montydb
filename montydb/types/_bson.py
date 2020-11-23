@@ -24,8 +24,6 @@ class BSON_(types.ModuleType):
     )
     from bson.json_util import (
         CANONICAL_JSON_OPTIONS,
-        loads as _loads,
-        dumps as _dumps,
     )
     from bson.codec_options import (
         CodecOptions,
@@ -68,13 +66,15 @@ class BSON_(types.ModuleType):
 
     @classmethod
     def json_loads(cls, serialized, json_options=None):
+        from bson.json_util import loads as _loads
         json_options = json_options or cls.CANONICAL_JSON_OPTIONS
-        return cls._loads(serialized, json_options=json_options)
+        return _loads(serialized, json_options=json_options)
 
     @classmethod
     def json_dumps(cls, doc, json_options=None):
+        from bson.json_util import dumps as _dumps
         json_options = json_options or cls.CANONICAL_JSON_OPTIONS
-        return cls._dumps(doc, json_options=json_options)
+        return _dumps(doc, json_options=json_options)
 
     @classmethod
     def id_encode(cls, id, codec_options=DEFAULT_CODEC_OPTIONS):
@@ -107,8 +107,6 @@ class NoBSON(types.ModuleType):
     from collections import OrderedDict
     from json import (
         JSONEncoder,
-        loads as _loads,
-        dumps as _dumps,
     )
 
     class BSONError(Exception):
@@ -263,20 +261,23 @@ class NoBSON(types.ModuleType):
 
     @classmethod
     def document_decode(cls, serialized, codec_options=None, *args, **kwargs):
+        from json import loads as _loads
         opts = codec_options or cls.DEFAULT_CODEC_OPTIONS
         dcls = opts.document_class
-        return cls._loads(
+        return _loads(
             serialized,
             object_pairs_hook=lambda pairs: cls.object_hook(dcls(pairs), opts)
         )
 
     @classmethod
     def json_loads(cls, serialized, *args, **kwarg):
-        return cls._loads(serialized, object_hook=cls.object_hook)
+        from json import loads as _loads
+        return _loads(serialized, object_hook=cls.object_hook)
 
     @classmethod
     def json_dumps(cls, doc, *args, **kwarg):
-        return cls._dumps(doc, default=cls.BSONEncoder().default)
+        from json import dumps as _dumps
+        return _dumps(doc, default=cls.BSONEncoder().default)
 
     @classmethod
     def id_encode(cls, id, *args, **kwargs):
