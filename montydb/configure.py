@@ -199,7 +199,8 @@ def set_storage(repository=None,
 
     storage = storage or DEFAULT_STORAGE
 
-    if mongo_version and mongo_version not in MONGO_COMPAT_VERSIONS:
+    valid_versions = list(MONGO_COMPAT_VERSIONS) + ["4.4"]
+    if mongo_version and mongo_version not in valid_versions:
         raise ConfigurationError(
             "Unknown mongodb version: %s, currently supported versions are: %s"
             % (mongo_version, ", ".join(MONGO_COMPAT_VERSIONS))
