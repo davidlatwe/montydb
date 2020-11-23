@@ -336,17 +336,18 @@ class SQLiteCollection(AbstractCollection):
     def write_one(self, doc, check_keys=True):
         """
         """
+        _id = doc["_id"]
         try:
             self._conn.write_one(
                 self._col_path,
-                (bson.id_encode(doc["_id"]),
+                (bson.id_encode(_id),
                  self._encode_doc(doc, check_keys),),
                 self.wconcern
             )
         except sqlite3.IntegrityError:
             raise StorageDuplicateKeyError()
 
-        return doc["_id"]
+        return _id
 
     @_ensure_table
     def write_many(self, docs, check_keys=True, ordered=True):
@@ -357,13 +358,14 @@ class SQLiteCollection(AbstractCollection):
         keys = self._conn.read_all_keys(self._col_path)
         has_duplicated_key = False
         for doc in docs:
-            id = bson.id_encode(doc["_id"])
-            if id in keys or id in _docs:
+            _id = doc["_id"]
+            b_id = bson.id_encode(_id)
+            if b_id in keys or b_id in _docs:
                 has_duplicated_key = True
                 break
 
-            _docs[id] = self._encode_doc(doc, check_keys)
-            ids.append(id)
+            _docs[b_id] = self._encode_doc(doc, check_keys)
+            ids.append(_id)
 
         self._conn.write_many(
             self._col_path,

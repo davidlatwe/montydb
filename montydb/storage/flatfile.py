@@ -221,14 +221,15 @@ class FlatFileCollection(AbstractCollection):
     @_ensure_table
     def write_one(self, doc, check_keys=True):
         _doc = OrderedDict()
-        id = bson.id_encode(doc["_id"])
-        if self._flatfile._id_existed(id):
+        _id = doc["_id"]
+        b_id = bson.id_encode(_id)
+        if self._flatfile._id_existed(b_id):
             raise StorageDuplicateKeyError()
 
-        _doc[id] = self._encode_doc(doc, check_keys)
+        _doc[b_id] = self._encode_doc(doc, check_keys)
         self._flatfile.write(_doc)
 
-        return id
+        return _id
 
     @_ensure_table
     def write_many(self, docs, check_keys=True, ordered=True):
@@ -236,13 +237,14 @@ class FlatFileCollection(AbstractCollection):
         ids = list()
         has_duplicated_key = False
         for doc in docs:
-            id = bson.id_encode(doc["_id"])
-            if id in _docs or self._flatfile._id_existed(id):
+            _id = doc["_id"]
+            b_id = bson.id_encode(_id)
+            if b_id in _docs or self._flatfile._id_existed(b_id):
                 has_duplicated_key = True
                 break
 
-            _docs[id] = self._encode_doc(doc, check_keys)
-            ids.append(id)
+            _docs[b_id] = self._encode_doc(doc, check_keys)
+            ids.append(_id)
 
         self._flatfile.write(_docs)
 

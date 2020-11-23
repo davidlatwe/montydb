@@ -110,18 +110,20 @@ class MemoryCollection(AbstractCollection):
             raise StorageDuplicateKeyError()
 
     def write_one(self, doc, check_keys=True):
-        id = bson.id_encode(doc["_id"])
-        self._id_unique(id)
-        self._col[id] = self._encode_doc(doc, check_keys)
-        return id
+        _id = doc["_id"]
+        b_id = bson.id_encode(_id)
+        self._id_unique(b_id)
+        self._col[b_id] = self._encode_doc(doc, check_keys)
+        return _id
 
     def write_many(self, docs, check_keys=True, ordered=True):
         ids = list()
         for doc in docs:
-            id = bson.id_encode(doc["_id"])
-            self._id_unique(id)
-            self._col[id] = self._encode_doc(doc, check_keys)
-            ids.append(id)
+            _id = doc["_id"]
+            b_id = bson.id_encode(_id)
+            self._id_unique(b_id)
+            self._col[b_id] = self._encode_doc(doc, check_keys)
+            ids.append(_id)
         return ids
 
     def update_one(self, doc):
