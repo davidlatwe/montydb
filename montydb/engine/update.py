@@ -13,6 +13,7 @@ from ..types import (
     is_numeric_type,
     is_duckument_type,
     is_integer_type,
+    keep,
 )
 
 
@@ -171,6 +172,7 @@ class Updator(object):
         self.fields_to_update.append(field)
 
     def parse_set_on_insert(self, field, value, array_filters):
+        @keep(value)
         def _set_on_insert(fieldwalker):
             if self.__insert:
                 parse_set(field, value, array_filters)(fieldwalker)
@@ -186,6 +188,7 @@ def parse_inc(field, value, array_filters):
                "{{{0}: {1}}}".format(field, val_repr_))
         raise WriteError(msg, code=14)
 
+    @keep(value)
     def _inc(fieldwalker):
 
         def evaluator(node, inc_val):
@@ -217,7 +220,7 @@ def parse_inc(field, value, array_filters):
 
 
 def parse_min(field, value, array_filters):
-
+    @keep(value)
     def _min(fieldwalker):
 
         def evaluator(node, min_val):
@@ -235,7 +238,7 @@ def parse_min(field, value, array_filters):
 
 
 def parse_max(field, value, array_filters):
-
+    @keep(value)
     def _max(fieldwalker):
 
         def evaluator(node, max_val):
@@ -260,6 +263,7 @@ def parse_mul(field, value, array_filters):
                "{{{0}: {1}}}".format(field, val_repr_))
         raise WriteError(msg, code=14)
 
+    @keep(value)
     def _mul(fieldwalker):
 
         def evaluator(node, mul_val):
@@ -312,6 +316,7 @@ def parse_rename(field, new_field, array_filters):
                "same path: {0}: {1!r}".format(field, new_field))
         raise WriteError(msg, code=2)
 
+    @keep(new_field)
     def _rename(fieldwalker):
 
         probe = FieldWalker(fieldwalker.doc)
@@ -352,7 +357,7 @@ def parse_rename(field, new_field, array_filters):
 
 
 def parse_set(field, value, array_filters):
-
+    @keep(value)
     def _set(fieldwalker):
 
         _update(fieldwalker, field, value, None, array_filters)
@@ -361,7 +366,7 @@ def parse_set(field, value, array_filters):
 
 
 def parse_unset(field, _, array_filters):
-
+    @keep(field)
     def _unset(fieldwalker):
 
         _drop(fieldwalker, field, array_filters)
@@ -396,6 +401,7 @@ def parse_currentDate(field, value, array_filters):
     else:
         value = date_type["date"]
 
+    @keep(value)
     def _currentDate(fieldwalker):
         parse_set(field, value, array_filters)(fieldwalker)
 
@@ -411,6 +417,7 @@ def parse_add_to_set(field, value_or_each, array_filters):
         value = value_or_each
         run_each = False
 
+    @keep(value)
     def _add_to_set(fieldwalker):
 
         def evaluator(node, new_elem):
@@ -452,6 +459,7 @@ def parse_pop(field, value, array_filters):
         if value not in (1.0, -1.0):
             raise WriteError(msg_raw.format(field, value), code=9)
 
+    @keep(value)
     def _pop(fieldwalker):
 
         def evaluator(node, pop_ind):
@@ -488,6 +496,7 @@ def parse_pull(field, value_or_conditions, array_filters):
     else:
         queryfilter = QueryFilter({field: value_or_conditions})
 
+    @keep(queryfilter)
     def _pull(fieldwalker):
 
         def evaluator(node, _):
@@ -521,6 +530,7 @@ def parse_push(field, value_or_each, array_filters):
         value = value_or_each
         run_each = False
 
+    @keep(value)
     def _push(fieldwalker):
 
         def evaluator(node, new_elem):
@@ -554,6 +564,7 @@ def parse_pull_all(field, value, array_filters):
                "".format(value_type))
         raise WriteError(msg, code=2)
 
+    @keep(value)
     def _pull_all(fieldwalker):
 
         def evaluator(node, pull_list):
