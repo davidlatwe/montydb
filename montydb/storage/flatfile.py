@@ -289,7 +289,7 @@ class FlatFileCursor(AbstractCursor):
 
     def query(self, max_scan):
         cache = self._flatfile.read()
-        docs = (self._decode_doc(doc) for doc in cache.values())
+        docs = self._decode_doc(b"[%s]" % b",".join(cache.values()))
         if not max_scan:
             return docs
         else:

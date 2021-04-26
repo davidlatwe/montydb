@@ -155,7 +155,7 @@ class MemoryCursor(AbstractCursor):
         return OrderedDict()
 
     def query(self, max_scan):
-        docs = (self._decode_doc(doc) for doc in self._col.values())
+        docs = self._decode_doc(b"[%s]" % b",".join(self._col.values()))
         if not max_scan:
             return docs
         else:

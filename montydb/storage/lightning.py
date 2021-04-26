@@ -248,8 +248,9 @@ class LMDBCursor(AbstractCursor):
         self._env = self._conn.open()
 
     def query(self, max_scan):
-        docs = (self._decode_doc(doc)
-                for doc in self._conn.iter_docs(self._env))
+        docs = self._decode_doc(
+            b"[%s]" % b",".join(self._conn.iter_docs(self._env))
+        )
 
         if not max_scan:
             return docs
