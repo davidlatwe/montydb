@@ -249,6 +249,53 @@ def test_update_id2(monty_update, mongo_update):
     assert next(monty_c) == {"a": {"b": {"_id": 3}}}
 
 
+def test_update_id3(monty_update, mongo_update):
+    docs = []
+    spec = {"$set": {"_id": "some-id", "foo": "baby"}}
+    find = {"_id": "some-id"}
+
+    monty_c = monty_update(docs, spec, find, upsert=True)
+    mongo_c = mongo_update(docs, spec, find, upsert=True)
+
+    assert next(mongo_c) == next(monty_c)
+
+
+def test_update_id4(monty_update, mongo_update):
+    docs = []
+    spec = {"$set": {"_id": "some-id", "foo": "baby"}}
+    find = {"_id": "other-id"}
+
+    with pytest.raises(mongo_write_err) as mongo_err:
+        mongo_update(docs, spec, find, upsert=True)
+
+    with pytest.raises(monty_write_err) as monty_err:
+        monty_update(docs, spec, find, upsert=True)
+
+
+def test_update_id5(monty_update, mongo_update):
+    docs = [{"_id": "other-id", "foo": "bar"}]
+    spec = {"$set": {"_id": "some-id", "foo": "baby"}}
+    find = {"foo": "bar"}
+
+    with pytest.raises(mongo_write_err) as mongo_err:
+        mongo_update(docs, spec, find, upsert=True)
+
+    with pytest.raises(monty_write_err) as monty_err:
+        monty_update(docs, spec, find, upsert=True)
+
+
+def test_update_id6(monty_update, mongo_update):
+    docs = [{"_id": "some-id", "foo": "bar"}]
+    spec = {"$set": {"_id": "some-id", "foo": "baby"}}
+    find = {"foo": "bar"}
+
+    with pytest.raises(mongo_write_err) as mongo_err:
+        mongo_update(docs, spec, find, upsert=True)
+
+    with pytest.raises(monty_write_err) as monty_err:
+        monty_update(docs, spec, find, upsert=True)
+
+
 def test_update_positional(monty_update, mongo_update):
     docs = [
         {"a": [{"b": 3, "c": 1}, {"b": 4, "c": 0}]}
