@@ -231,8 +231,8 @@ def test_update_id(monty_update, mongo_update):
     with pytest.raises(monty_write_err) as monty_err:
         monty_update(docs, spec, find)
 
-    # ignore comparing error code
-    # assert mongo_err.value.code == monty_err.value.code
+    assert mongo_err.value.code == 66
+    assert mongo_err.value.code == monty_err.value.code
 
 
 def test_update_id2(monty_update, mongo_update):
@@ -271,6 +271,9 @@ def test_update_id4(monty_update, mongo_update):
     with pytest.raises(monty_write_err) as monty_err:
         monty_update(docs, spec, find, upsert=True)
 
+    assert mongo_err.value.code == 66
+    assert mongo_err.value.code == monty_err.value.code
+
 
 def test_update_id5(monty_update, mongo_update):
     docs = [{"_id": "other-id", "foo": "bar"}]
@@ -283,6 +286,9 @@ def test_update_id5(monty_update, mongo_update):
     with pytest.raises(monty_write_err) as monty_err:
         monty_update(docs, spec, find, upsert=True)
 
+    assert mongo_err.value.code == 66
+    assert mongo_err.value.code == monty_err.value.code
+
 
 def test_update_id6(monty_update, mongo_update):
     docs = [{"_id": "some-id", "foo": "bar"}]
@@ -294,6 +300,9 @@ def test_update_id6(monty_update, mongo_update):
 
     with pytest.raises(monty_write_err) as monty_err:
         monty_update(docs, spec, find, upsert=True)
+
+    assert mongo_err.value.code == 66
+    assert mongo_err.value.code == monty_err.value.code
 
 
 def test_update_positional(monty_update, mongo_update):
