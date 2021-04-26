@@ -28,6 +28,7 @@ from .storage import StorageDuplicateKeyError
 from .errors import (
     DuplicateKeyError,
     BulkWriteError,
+    WriteError,
 )
 
 from .results import (BulkWriteResult,
@@ -290,6 +291,12 @@ class MontyCollection(BaseObject):
             if upsert:
                 self._internal_upsert(filter, updator, raw_result)
         else:
+            filter_id = filter.get("_id")
+            if filter_id and filter_id != fw.doc["_id"]:
+                msg = ("Performing an update on the path '_id' would "
+                       "modify the immutable field '_id'")
+                raise WriteError(msg, code=66)
+
             raw_result["n"] = 1
             if updator(fw):
                 self._storage.update_one(self, fw.doc)
