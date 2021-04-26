@@ -430,7 +430,7 @@ class SQLiteCursor(AbstractCursor):
 
     def query(self, max_scan):
         docs = self._conn.read_all(self._col_path, max_scan)
-        return self._decode_doc(b"[%s]" % b",".join(docs))
+        return self._decode_doc(b"[%s]" % b",".join(d[0] for d in docs))
 
 
 SQLiteCollection.contractor_cls = SQLiteCursor
