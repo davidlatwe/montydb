@@ -109,13 +109,9 @@ class Projector(object):
                 fieldwalker.go(path).get()
 
             if self.include_flag:
-                located_match = None
-                if self.matched is not None:
-                    located_match = self.matched.located
-
                 projected = inclusion(fieldwalker,
                                       positioned,
-                                      located_match,
+                                      self.matched,
                                       init_doc)
             else:
                 projected = exclusion(fieldwalker, init_doc)
@@ -333,8 +329,9 @@ def _positional_mismatch_v44(matched, elem_count, matched_path, node_path):
 _positional_mismatch = _positional_mismatch_v44
 
 
-def inclusion(fieldwalker, positioned, located_match, init_doc):
+def inclusion(fieldwalker, positioned, matched, init_doc):
     _doc_type = fieldwalker.doc_type
+    located_match = matched.located if matched else False
 
     def _inclusion(node, init_doc=None):
         doc = node.value
@@ -368,7 +365,10 @@ def inclusion(fieldwalker, positioned, located_match, init_doc):
                         if isinstance(child.value, _doc_type):
                             new_doc.append(child.value)
                     else:
-                        new_doc.append(child.value)
+                        if _include_positional_non_located_match(matched, node):
+                            new_doc.append(child.value)
+                        else:
+                            new_doc.append(_doc_type())
 
                 return new_doc or _no_val
 
@@ -404,6 +404,18 @@ def inclusion(fieldwalker, positioned, located_match, init_doc):
             return doc
 
     return _inclusion(fieldwalker.tree.root, init_doc)
+
+
+def _include_positional_non_located_match_(matched, node):
+    return True
+
+
+def _include_positional_non_located_match_v44(matched, node):
+    return matched.full_path.startswith(node.full_path)
+
+
+_include_positional_non_located_match = \
+    _include_positional_non_located_match_v44
 
 
 def exclusion(fieldwalker, init_doc):
