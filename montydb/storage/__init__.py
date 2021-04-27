@@ -21,6 +21,7 @@ class AbstractStorage(object):
 
     def __init__(self, repository, storage_config):
         self.is_opened = True
+        self.contractor_cls = None
         self._repository = repository
         self._config = storage_config
 
@@ -116,10 +117,6 @@ class AbstractStorage(object):
     def repository(self):
         return self._repository
 
-    @property
-    def contractor_cls(self):
-        raise NotImplementedError("")
-
     @classmethod
     @abstractmethod
     def config(cls, **storage_kwargs):
@@ -149,10 +146,7 @@ class AbstractDatabase(object):
     def __init__(self, storage, subject):
         self._name = subject._name
         self._storage = storage
-
-    @property
-    def contractor_cls(self):
-        raise NotImplementedError("")
+        self.contractor_cls = None
 
     @abstractmethod
     def collection_exists(self, col_name):
@@ -176,6 +170,7 @@ class AbstractCollection(object):
     def __init__(self, database, subject):
         self._name = subject._name
         self._database = database
+        self.contractor_cls = None
         self.wconcern = subject.write_concern
         self.coptions = subject.codec_options
 
@@ -186,10 +181,6 @@ class AbstractCollection(object):
             check_keys=check_keys,
             codec_options=self.coptions
         )
-
-    @property
-    def contractor_cls(self):
-        raise NotImplementedError("")
 
     @abstractmethod
     def write_one(self):
