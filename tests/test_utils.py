@@ -168,6 +168,7 @@ def test_utils_montydump(storage, tmp_monty_repo):
 
 
 def test_MongoQueryRecorder(mongo_client):
+    mongo_client.drop_database("recordTarget")  # ensure clean db
     db = mongo_client["recordTarget"]
 
     _docs_ = [
