@@ -16,12 +16,11 @@ class StorageDuplicateKeyError(StorageError):
 class AbstractStorage(object):
     """
     """
-
+    contractor_cls = None
     config_fname = "monty.storage.cfg"
 
     def __init__(self, repository, storage_config):
         self.is_opened = True
-        self.contractor_cls = None
         self._repository = repository
         self._config = storage_config
 
@@ -142,11 +141,11 @@ class AbstractStorage(object):
 
 
 class AbstractDatabase(object):
+    contractor_cls = None
 
     def __init__(self, storage, subject):
         self._name = subject._name
         self._storage = storage
-        self.contractor_cls = None
 
     @abstractmethod
     def collection_exists(self, col_name):
@@ -166,11 +165,11 @@ class AbstractDatabase(object):
 
 
 class AbstractCollection(object):
+    contractor_cls = None
 
     def __init__(self, database, subject):
         self._name = subject._name
         self._database = database
-        self.contractor_cls = None
         self.wconcern = subject.write_concern
         self.coptions = subject.codec_options
 
