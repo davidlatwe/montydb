@@ -78,7 +78,7 @@ def test_projection_positional_4(monty_proj, mongo_proj):
     assert next(mongo_c) == next(monty_c)
 
 
-def test_projection_positional_5(monty_proj, mongo_proj):
+def test_projection_positional_5(monty_proj, mongo_proj, mongo_version):
     docs = [
         {"a": {"b": [1, 2, 3], "c": [4, 5, 6]}},
         {"a": {"b": [1, 2, 3], "c": [4]}},
@@ -91,8 +91,16 @@ def test_projection_positional_5(monty_proj, mongo_proj):
 
     assert count_documents(mongo_c, spec) == 2
     assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
-    for i in range(2):
-        assert next(mongo_c) == next(monty_c)
+
+    if mongo_version[:2] >= [4, 4]:
+        with pytest.raises(mongo_op_fail) as mongo_err:
+            next(mongo_c)
+
+        with pytest.raises(monty_op_fail) as monty_err:
+            next(monty_c)
+    else:
+        for i in range(1):
+            assert next(mongo_c) == next(monty_c)
 
 
 def test_projection_positional_6(monty_proj, mongo_proj):

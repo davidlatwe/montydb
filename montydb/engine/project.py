@@ -304,8 +304,12 @@ class Projector(object):
                             % field,
                             code=2)
 
-                    if (int(matched_index) >= elem_count and
-                            self.matched.full_path.startswith(node.full_path)):
+                    if _positional_mismatch(
+                            int(matched_index),
+                            elem_count,
+                            self.matched.full_path,
+                            node.full_path
+                    ):
                         raise OperationFailure(
                             "Executor error during find command "
                             ":: caused by :: errmsg: "
@@ -316,6 +320,17 @@ class Projector(object):
                     break
 
         return _positional
+
+
+def _positional_mismatch_(matched, elem_count, matched_path, node_path):
+    return matched >= elem_count and matched_path.startswith(node_path)
+
+
+def _positional_mismatch_v44(matched, elem_count, matched_path, node_path):
+    return matched >= elem_count
+
+
+_positional_mismatch = _positional_mismatch_v44
 
 
 def inclusion(fieldwalker, positioned, located_match, init_doc):
