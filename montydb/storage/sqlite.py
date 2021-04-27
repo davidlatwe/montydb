@@ -428,9 +428,16 @@ class SQLiteCursor(AbstractCursor):
     def _col_path(self):
         return self._collection._col_path
 
+    if bson.bson_used:
+        def _batch_decode(self, docs):
+            return (self._decode_doc(doc) for doc in docs)
+    else:
+        def _batch_decode(self, docs):
+            return self._decode_doc(b"[%s]" % b",".join(docs))
+
     def query(self, max_scan):
         docs = self._conn.read_all(self._col_path, max_scan)
-        return self._decode_doc(b"[%s]" % b",".join(d[0] for d in docs))
+        return self._batch_decode(d[0] for d in docs)
 
 
 SQLiteCollection.contractor_cls = SQLiteCursor

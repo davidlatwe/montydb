@@ -247,10 +247,15 @@ class LMDBCursor(AbstractCursor):
         self._conn = self._collection._conn
         self._env = self._conn.open()
 
+    if bson.bson_used:
+        def _batch_decode(self, docs):
+            return (self._decode_doc(doc) for doc in docs)
+    else:
+        def _batch_decode(self, docs):
+            return self._decode_doc(b"[%s]" % b",".join(docs))
+
     def query(self, max_scan):
-        docs = self._decode_doc(
-            b"[%s]" % b",".join(self._conn.iter_docs(self._env))
-        )
+        docs = self._batch_decode(self._conn.iter_docs(self._env))
 
         if not max_scan:
             return docs

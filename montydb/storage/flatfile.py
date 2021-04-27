@@ -287,9 +287,16 @@ class FlatFileCursor(AbstractCursor):
     def _flatfile(self):
         return self._collection._flatfile
 
+    if bson.bson_used:
+        def _batch_decode(self, docs):
+            return (self._decode_doc(doc) for doc in docs)
+    else:
+        def _batch_decode(self, docs):
+            return self._decode_doc(b"[%s]" % b",".join(docs))
+
     def query(self, max_scan):
         cache = self._flatfile.read()
-        docs = self._decode_doc(b"[%s]" % b",".join(cache.values()))
+        docs = self._batch_decode(cache.values())
         if not max_scan:
             return docs
         else:

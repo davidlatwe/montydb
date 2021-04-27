@@ -154,8 +154,15 @@ class MemoryCursor(AbstractCursor):
             return self._collection._col
         return OrderedDict()
 
+    if bson.bson_used:
+        def _batch_decode(self, docs):
+            return (self._decode_doc(doc) for doc in docs)
+    else:
+        def _batch_decode(self, docs):
+            return self._decode_doc(b"[%s]" % b",".join(docs))
+
     def query(self, max_scan):
-        docs = self._decode_doc(b"[%s]" % b",".join(self._col.values()))
+        docs = self._batch_decode(self._col.values())
         if not max_scan:
             return docs
         else:
