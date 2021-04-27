@@ -28,6 +28,7 @@ from .storage import StorageDuplicateKeyError
 from .errors import (
     DuplicateKeyError,
     BulkWriteError,
+    WriteError,
 )
 
 from .results import (BulkWriteResult,
@@ -266,6 +267,14 @@ class MontyCollection(BaseObject):
         updator(fieldwalker, do_insert=True)
         self._storage.write_one(self, fieldwalker.doc)
 
+    def _no_id_update(self, updator, filter=None):
+        id_operator = updator.operations.get("_id")
+        doc_id = (filter or {}).get("_id")
+        if id_operator and id_operator._keep() != doc_id:
+            msg = ("Performing an update on the path '_id' would "
+                   "modify the immutable field '_id'")
+            raise WriteError(msg, code=66)
+
     def update_one(self,
                    filter,
                    update,
@@ -284,12 +293,15 @@ class MontyCollection(BaseObject):
 
         raw_result = {"n": 0, "nModified": 0}
         updator = Updator(update, array_filters)
+        self._no_id_update(updator, filter)
         try:
             fw = next(self._internal_scan_query(filter))
         except StopIteration:
             if upsert:
                 self._internal_upsert(filter, updator, raw_result)
         else:
+            self._no_id_update(updator)
+
             raw_result["n"] = 1
             if updator(fw):
                 self._storage.update_one(self, fw.doc)
@@ -316,12 +328,15 @@ class MontyCollection(BaseObject):
         raw_result = {"n": 0, "nModified": 0}
         updator = Updator(update, array_filters)
         scanner = self._internal_scan_query(filter)
+        self._no_id_update(updator, filter)
         try:
             next(scanner)
         except StopIteration:
             if upsert:
                 self._internal_upsert(filter, updator, raw_result)
         else:
+            self._no_id_update(updator)
+
             @on_err_close(scanner)
             def update_docs():
                 n, m = 0, 0
