@@ -3,9 +3,9 @@ import re
 from copy import deepcopy
 from datetime import datetime
 try:
-    from collections.abc import MutableMapping
+    from collections.abc import Mapping
 except ImportError:
-    from collections import MutableMapping
+    from collections import Mapping
 
 from ..errors import OperationFailure
 
