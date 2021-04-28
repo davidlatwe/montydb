@@ -18,7 +18,7 @@ MEMORY_REPOSITORY = ":memory:"
 
 URI_SCHEME_PREFIX = "montydb://"
 
-MONGO_COMPAT_VERSIONS = ("3.6", "4.0", "4.2")
+MONGO_COMPAT_VERSIONS = ("3.6", "4.0", "4.2", "4.4")
 
 
 _pinned_repository = {"_": None}
@@ -199,7 +199,7 @@ def set_storage(repository=None,
 
     storage = storage or DEFAULT_STORAGE
 
-    valid_versions = list(MONGO_COMPAT_VERSIONS) + ["4.4"]
+    valid_versions = list(MONGO_COMPAT_VERSIONS)
     if mongo_version and mongo_version not in valid_versions:
         raise ConfigurationError(
             "Unknown mongodb version: %s, currently supported versions are: %s"
