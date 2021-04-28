@@ -245,7 +245,7 @@ def test_projection_positional_11(monty_proj, mongo_proj):
         run(spec, proj)
 
 
-def test_projection_positional_12(monty_proj, mongo_proj):
+def test_projection_positional_12(monty_proj, mongo_proj, mongo_version):
     docs = [
         {"a": [{"b": [{"c": 1}, {"x": 1}]}, {"b": [{"c": 1}, {"x": 1}]}]},
 
@@ -262,6 +262,16 @@ def test_projection_positional_12(monty_proj, mongo_proj):
         assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
         for i in range(2):
             assert next(mongo_c) == next(monty_c)
+
+    def fail(proj):
+        monty_c = monty_proj(docs, spec, proj)
+        mongo_c = mongo_proj(docs, spec, proj)
+
+        with pytest.raises(mongo_op_fail) as mongo_err:
+            next(mongo_c)
+
+        with pytest.raises(monty_op_fail) as monty_err:
+            next(monty_c)
 
     for ie in range(2):
         proj = {"a.b.5": ie}
@@ -280,13 +290,13 @@ def test_projection_positional_12(monty_proj, mongo_proj):
         run(proj)
 
         proj = {"a.b.c.": ie}  # Redundant dot
-        run(proj)
+        run(proj) if mongo_version[:2] < [4, 4] else fail(proj)
 
         proj = {"a.b.c": ie}
         run(proj)
 
 
-def test_projection_positional_13(monty_proj, mongo_proj):
+def test_projection_positional_13(monty_proj, mongo_proj, mongo_version):
     docs = [
         {"a": [{"b": [1, 5]}, {"b": 2}, {"b": [3, 10, 4]}],
          "c": [{"b": [1]}, {"b": 2}, {"b": [3, 5]}]},
@@ -301,11 +311,21 @@ def test_projection_positional_13(monty_proj, mongo_proj):
         assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
         assert next(mongo_c) == next(monty_c)
 
+    def fail(proj):
+        monty_c = monty_proj(docs, spec, proj)
+        mongo_c = mongo_proj(docs, spec, proj)
+
+        with pytest.raises(mongo_op_fail) as mongo_err:
+            next(mongo_c)
+
+        with pytest.raises(monty_op_fail) as monty_err:
+            next(monty_c)
+
     proj = {"a.b.$": 1}
     run(proj)
 
     proj = {"a.$.b": 1}
-    run(proj)
+    run(proj) if mongo_version[:2] < [4, 4] else fail(proj)
 
 
 def test_projection_positional_14(monty_proj, mongo_proj):

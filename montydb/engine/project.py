@@ -188,8 +188,10 @@ class Projector(object):
                 self.proj_with_id = False
 
             elif _check_positional_key and key.startswith("$."):
-                raise OperationFailure(
-                    "FieldPath field names may not start with '$'.")
+                raise OperationFailure("FieldPath field names may not start "
+                                       "with '$'.")
+            elif _check_positional_key and key.endswith("."):
+                raise OperationFailure("FieldPath must not end with a '.'.")
 
             else:
                 # Normal field options, include or exclude.
