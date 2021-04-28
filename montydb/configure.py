@@ -277,7 +277,7 @@ def _bson_init(use_bson):
 
 
 def _mongo_compat(version):
-    from .engine import queries
+    from .engine import queries, project
 
     if version.startswith("3"):
         v3 = getattr(queries, "_is_comparable_ver3")
@@ -293,3 +293,18 @@ def _mongo_compat(version):
     else:
         setattr(queries, "_regex_options_check",
                 getattr(queries, "_regex_options_"))
+
+    if version == "4.4":
+        setattr(project, "_positional_mismatch",
+                getattr(project, "_positional_mismatch_v44"))
+        setattr(project, "_check_positional_key",
+                getattr(project, "_check_positional_key_v44"))
+        setattr(project, "_include_positional_non_located_match",
+                getattr(project, "_include_positional_non_located_match_v44"))
+    else:
+        setattr(project, "_positional_mismatch",
+                getattr(project, "_positional_mismatch_"))
+        setattr(project, "_check_positional_key",
+                getattr(project, "_check_positional_key_"))
+        setattr(project, "_include_positional_non_located_match",
+                getattr(project, "_include_positional_non_located_match_"))
