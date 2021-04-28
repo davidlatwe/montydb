@@ -61,6 +61,11 @@ def _perr_doc(val):
     return "{ " + ", ".join(v_lis) + " }"
 
 
+_check_positional_key_ = False
+_check_positional_key_v44 = True
+_check_positional_key = _check_positional_key_v44
+
+
 class Projector(object):
     """
     """
@@ -182,6 +187,10 @@ class Projector(object):
             elif key == "_id" and not _is_include(val):
                 self.proj_with_id = False
 
+            elif _check_positional_key and key.startswith("$."):
+                raise OperationFailure(
+                    "FieldPath field names may not start with '$'.")
+
             else:
                 # Normal field options, include or exclude.
                 flag = _is_include(val)
@@ -215,6 +224,15 @@ class Projector(object):
                     raise OperationFailure(
                         "Positional projection '{}' contains the positional "
                         "operator more than once.".format(key))
+
+                if _check_positional_key and ".$." in key:
+                    raise OperationFailure(
+                        "As of 4.4, it's illegal to specify positional "
+                        "operator in the middle of a path.Positional "
+                        "projection may only be used at the end, for example: "
+                        "a.b.$. If the query previously used a form like "
+                        "a.b.$.d, remove the parts following the '$' and the "
+                        "results will be equivalent.", code=31394)
 
                 path = key.split(".$", 1)[0]
                 conditions = qfilter.conditions
