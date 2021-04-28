@@ -210,7 +210,7 @@ class MongoQueryRecorder(object):
 
     def __init__(self, mongodb, namespace=None, user=None):
         self._mongodb = mongodb
-        self._namespace = namespace or {"$regex": mongodb.name + "\..*"}
+        self._namespace = namespace or {"$regex": mongodb.name + r"\..*"}
         self._user = user
 
         self._epoch = datetime(1970, 1, 1)

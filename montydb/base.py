@@ -18,11 +18,12 @@
 # Assembling crucial classes and functions form pymongo module,
 # some of them may modified by needs.
 
+try:
+    from collections.abc import MutableMapping
+except ImportError:
+    from collections import MutableMapping
 
-from collections import (
-    OrderedDict,
-    MutableMapping,
-)
+from collections import OrderedDict
 from .types import (
     abc,
     iteritems,
