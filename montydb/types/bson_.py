@@ -34,13 +34,23 @@ json_dumps = None
 parse_codec_options = None
 
 
-def init(use_bson=False):
+def init(use_bson=None):
     from . import _bson
     from .. import errors
 
     self = sys.modules[__name__]
     if self.bson_used is not None:
         return
+
+    # Init
+
+    if use_bson is None:
+        try:
+            import bson
+        except ImportError:
+            use_bson = False
+        else:
+            use_bson = True
 
     if use_bson:
         bson_ = _bson.BSON_()
