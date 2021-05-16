@@ -28,22 +28,22 @@ jobs:
         mongodb-port: 30036
 
     - name: Set up MongoDB 4.0
-        uses: supercharge/mongodb-github-action@1.4.0
-        with:
-          mongodb-version: 4.0
-          mongodb-port: 30040
+      uses: supercharge/mongodb-github-action@1.4.0
+      with:
+        mongodb-version: 4.0
+        mongodb-port: 30040
 
     - name: Set up MongoDB 4.2
-        uses: supercharge/mongodb-github-action@1.4.0
-        with:
-          mongodb-version: 4.2
-          mongodb-port: 30042
+      uses: supercharge/mongodb-github-action@1.4.0
+      with:
+        mongodb-version: 4.2
+        mongodb-port: 30042
 
 #    - name: Set up MongoDB 4.4
-#        uses: supercharge/mongodb-github-action@1.4.0
-#        with:
-#          mongodb-version: 4.4
-#          mongodb-port: 30044
+#      uses: supercharge/mongodb-github-action@1.4.0
+#      with:
+#        mongodb-version: 4.4
+#        mongodb-port: 30044
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
