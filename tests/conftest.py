@@ -33,11 +33,10 @@ def pytest_addoption(parser):
                      - Use `localhost:27017` if not given.
                      """)
 
-    parser.addoption("--no-bson",
+    parser.addoption("--use-bson",
                      action="store_true",
                      help="""
-                     Disable to use bson in tests.
-                     - Testing both cases if this flag is not set.
+                     Enable bson in tests.
                      """)
 
 
@@ -106,10 +105,9 @@ def montydb_storages(request):
 
 
 def opt_bson(request):
-    if request.config.getoption("--no-bson"):
-        return [False]
-    else:
-        return [True, False]
+    return [
+        bool(request.config.getoption("--use-bson"))
+    ]
 
 
 def pytest_generate_tests(metafunc):
@@ -125,6 +123,7 @@ def pytest_generate_tests(metafunc):
                              indirect=True)
 
     if "use_bson" in metafunc.fixturenames:
+        # not testing both case, just for the test id.
         metafunc.parametrize("use_bson",
                              argvalues=opt_bson(metafunc),
                              ids=lambda v: "bson-1" if v else "bson-0",
