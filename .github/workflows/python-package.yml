@@ -16,34 +16,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [2.7, 3.7, 3.8, 3.9]
+        python-version: [ 2.7, 3.7, 3.8, 3.9 ]
+        mongodb-version: [ 3.6, 4.0, 4.2 ]
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up MongoDB 3.6
+    - name: Set up MongoDB ${{ matrix.mongodb-version }}
       uses: supercharge/mongodb-github-action@1.4.0
       with:
-        mongodb-version: 3.6
-        mongodb-port: 30036
-
-    - name: Set up MongoDB 4.0
-      uses: supercharge/mongodb-github-action@1.4.0
-      with:
-        mongodb-version: 4.0
-        mongodb-port: 30040
-
-    - name: Set up MongoDB 4.2
-      uses: supercharge/mongodb-github-action@1.4.0
-      with:
-        mongodb-version: 4.2
-        mongodb-port: 30042
-
-#    - name: Set up MongoDB 4.4
-#      uses: supercharge/mongodb-github-action@1.4.0
-#      with:
-#        mongodb-version: 4.4
-#        mongodb-port: 30044
+        mongodb-version: ${{ matrix.mongodb-version }}
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -66,6 +48,3 @@ jobs:
     - name: Test with pytest
       run: >
         pytest
-        --mongodb localhost:30036
-        --mongodb localhost:30040
-        --mongodb localhost:30042
