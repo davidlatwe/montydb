@@ -44,8 +44,8 @@ jobs:
 
     - name: Test with pytest
       run: >
-        pytest
+        python -m pytest
 
     - name: Test with pytest + bson
       run: >
-        pytest --use-bson
+        python -m pytest --use-bson
