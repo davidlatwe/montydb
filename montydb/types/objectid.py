@@ -39,8 +39,8 @@ if PY3:
 else:
     def bytes_from_hex(h):
         return h.decode('hex')
-    string_type = basestring
-    text_type = unicode
+    string_type = basestring  # noqa
+    text_type = unicode  # noqa
 # from bson.errors import InvalidId
 # from bson.py3compat import PY3, bytes_from_hex, string_type, text_type
 # from bson.tz_util import utc
