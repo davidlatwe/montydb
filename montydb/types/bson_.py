@@ -39,10 +39,6 @@ def init(use_bson=None):
     from .. import errors
 
     self = sys.modules[__name__]
-    if self.bson_used is not None:
-        return
-
-    # Init
 
     if use_bson is None:
         try:

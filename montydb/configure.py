@@ -265,15 +265,7 @@ def provide_storage(repository):
 
 def _bson_init(use_bson):
     from .types import bson_ as bson
-
-    if bson.bson_used and not use_bson:
-        raise ConfigurationError("montydb has been config to use BSON and "
-                                 "cannot be changed in current session.")
-    elif not bson.bson_used and use_bson:
-        raise ConfigurationError("montydb has been config to opt-out BSON and "
-                                 "cannot be changed in current session.")
-    else:
-        bson.init(use_bson)
+    bson.init(use_bson)
 
 
 def _mongo_compat(version):
