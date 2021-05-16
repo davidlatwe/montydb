@@ -167,10 +167,6 @@ def monty_client(request, tmp_monty_repo, mongo_version, use_bson):
 
     if request.param == "memory":
         tmp_monty_repo = ":memory:"
-    else:
-        tmp_monty_repo = os.path.join(tmp_monty_repo, request.param)
-
-    tmp_monty_repo += str(use_bson)
 
     montydb.set_storage(tmp_monty_repo,
                         request.param,
