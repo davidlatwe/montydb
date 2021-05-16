@@ -16,17 +16,34 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.7, 3.8, 3.9]
-        mongodb-version: [3.6, 4.0, 4.2, 4.4]
-        use-bson: [true, false]
+        python-version: [2.7, 3.7, 3.8, 3.9]
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up MongoDB ${{ matrix.mongodb-version }}
+    - name: Set up MongoDB 3.6
       uses: supercharge/mongodb-github-action@1.4.0
       with:
-        mongodb-version: ${{ matrix.mongodb-version }}
+        mongodb-version: 3.6
+        mongodb-port: 30036
+
+    - name: Set up MongoDB 4.0
+        uses: supercharge/mongodb-github-action@1.4.0
+        with:
+          mongodb-version: 4.0
+          mongodb-port: 30040
+
+    - name: Set up MongoDB 4.2
+        uses: supercharge/mongodb-github-action@1.4.0
+        with:
+          mongodb-version: 4.2
+          mongodb-port: 30042
+
+#    - name: Set up MongoDB 4.4
+#        uses: supercharge/mongodb-github-action@1.4.0
+#        with:
+#          mongodb-version: 4.4
+#          mongodb-port: 30044
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -37,7 +54,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        python -m pip install pymongo lmdb
 
     - name: Lint with flake8
       run: |
@@ -47,5 +64,8 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Test with pytest
-      run: |
+      run: >
         pytest
+        --mongodb localhost:30036
+        --mongodb localhost:30040
+        --mongodb localhost:30042
