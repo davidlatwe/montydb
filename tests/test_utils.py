@@ -109,6 +109,9 @@ def test_utils_montyexport(tmp_monty_repo):
     database = "dump_db_JSON"
     collection = "dump_col_JSON"
 
+    # TODO: should not rely on other test
+    test_utils_montyimport(tmp_monty_repo)
+
     if not os.path.isdir(tmp_monty_repo):
         os.makedirs(tmp_monty_repo)
 
@@ -161,6 +164,9 @@ def test_utils_montydump(monty_client, tmp_monty_repo):
     if monty_client.server_info()["storageEngine"] == "lightning":
         pytest.skip("LMDB's document natural order is lexicographic, not easy "
                     "to match with MongoDB's natural order but safe to skip.")
+
+    # TODO: should not rely on other test
+    test_utils_montyrestore(tmp_monty_repo)
 
     if not os.path.isdir(tmp_monty_repo):
         os.makedirs(tmp_monty_repo)
