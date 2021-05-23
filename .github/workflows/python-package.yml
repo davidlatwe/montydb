@@ -42,16 +42,34 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-    - name: Test with pytest
-      run: |
+    - name: Test with pytest (memory)
+      run: >
         pytest --storage memory
-        pytest --storage sqlite
+
+    - name: Test with pytest (memory + bson)
+      run: >
+        pytest --storage memory --use-bson
+
+    - name: Test with pytest (flatfile)
+      run: >
         pytest --storage flatfile
+
+    - name: Test with pytest (flatfile + bson)
+      run: >
+        pytest --storage flatfile --use-bson
+
+    - name: Test with pytest (sqlite)
+      run: >
+        pytest --storage sqlite
+
+    - name: Test with pytest (sqlite + bson)
+      run: >
+        pytest --storage sqlite --use-bson
+
+    - name: Test with pytest (lightning)
+      run: >
         pytest --storage lightning
 
-    - name: Test with pytest + bson
-      run: |
-        pytest --storage memory --use-bson
-        pytest --storage sqlite --use-bson
-        pytest --storage flatfile --use-bson
+    - name: Test with pytest (lightning + bson)
+      run: >
         pytest --storage lightning --use-bson
