@@ -15,6 +15,7 @@ jobs:
       matrix:
         python-version: [ 2.7, 3.7, 3.8, 3.9 ]
         mongodb-version: [ "3.6", "4.0", "4.2" ]
+        monty-storage: [ "memory", "flatfile", "sqlite", "lightning" ]
 
     steps:
     - uses: actions/checkout@v2
@@ -42,29 +43,15 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-    - name: Test with pytest (memory)
+    - name: Test with pytest (${{ matrix.monty-storage }})
+      continue-on-error: true
       run: >
-        pytest --storage memory
+        pytest --storage ${{ matrix.monty-storage }}
 
-    - name: Test with pytest (memory + bson)
+    - name: Test with pytest (${{ matrix.monty-storage }} + bson)
+      continue-on-error: true
       run: >
-        pytest --storage memory --use-bson
-
-    - name: Test with pytest (flatfile)
-      run: >
-        pytest --storage flatfile
-
-    - name: Test with pytest (flatfile + bson)
-      run: >
-        pytest --storage flatfile --use-bson
-
-    - name: Test with pytest (sqlite)
-      run: >
-        pytest --storage sqlite
-
-    - name: Test with pytest (sqlite + bson)
-      run: >
-        pytest --storage sqlite --use-bson
+        pytest --storage ${{ matrix.monty-storage }} --use-bson
 
 # NOTE: opt-out lmdb testing, due to a non-local-reproducible seg fault
 #       in github action.
