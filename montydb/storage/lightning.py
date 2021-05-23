@@ -37,15 +37,17 @@ class LMDBKVEngine(object):
     def set_path(self, path):
         self._path = path
 
-    def open(self):
-        environment = lmdb.open(self._path, **self.opt)
+    def open(self, readonly=False):
+        opt = self.opt.copy()
+        opt["readonly"] = readonly
+        environment = lmdb.open(self._path, **opt)
         return environment
 
     def iter_docs(self):
         if not os.path.isfile(self._path):
             return
 
-        with self.open() as env:
+        with self.open(readonly=True) as env:
             db = env.open_db(self.dbname)
             with env.begin(db, write=False) as txn:
                 cursor = txn.cursor()
