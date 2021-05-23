@@ -20,7 +20,7 @@ jobs:
         include:
           # opt-out lmdb due to the seg fault in github action is
           #  not reproducible on my Windows and Mac.
-          - monty_storage: lightning
+          - monty-storage: lightning
             mongodb-version: "4.0"
             python-version: 3.7
             experimental: true
