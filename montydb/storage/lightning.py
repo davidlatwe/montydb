@@ -41,11 +41,11 @@ class LMDBKVEngine(object):
         environment = lmdb.open(self._path, **self.opt)
         return environment
 
-    def iter_docs(self, environment):
+    def iter_docs(self):
         if not os.path.isfile(self._path):
             return
 
-        with environment as env:
+        with self.open() as env:
             db = env.open_db(self.dbname)
             with env.begin(db, write=False) as txn:
                 cursor = txn.cursor()
@@ -245,11 +245,9 @@ class LMDBCursor(AbstractCursor):
     def __init__(self, collection, subject):
         super(LMDBCursor, self).__init__(collection, subject)
         self._conn = self._collection._conn
-        self._env = self._conn.open()
 
     def query(self, max_scan):
-        docs = (self._decode_doc(doc)
-                for doc in self._conn.iter_docs(self._env))
+        docs = (self._decode_doc(doc) for doc in self._conn.iter_docs())
 
         if not max_scan:
             return docs
