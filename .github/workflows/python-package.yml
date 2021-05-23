@@ -66,10 +66,13 @@ jobs:
       run: >
         pytest --storage sqlite --use-bson
 
-    - name: Test with pytest (lightning)
-      run: >
-        pytest --storage lightning
-
-    - name: Test with pytest (lightning + bson)
-      run: >
-        pytest --storage lightning --use-bson
+# NOTE: opt-out lmdb testing, due to a non-local-reproducible seg fault
+#       in github action.
+#
+#    - name: Test with pytest (lightning)
+#      run: >
+#        pytest --storage lightning
+#
+#    - name: Test with pytest (lightning + bson)
+#      run: >
+#        pytest --storage lightning --use-bson
