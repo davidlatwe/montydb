@@ -16,11 +16,13 @@ jobs:
         python-version: [ 2.7, 3.7, 3.8, 3.9 ]
         mongodb-version: [ "3.6", "4.0", "4.2" ]
         monty-storage: [ memory, flatfile, sqlite ]
-        experimental: [false]
+        experimental: [ false ]
         include:
           # opt-out lmdb due to the seg fault in github action is
           #  not reproducible on my Windows and Mac.
           - monty_storage: lightning
+            mongodb-version: "4.0"
+            python-version: 3.7
             experimental: true
 
     steps:
