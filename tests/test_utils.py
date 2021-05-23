@@ -83,14 +83,11 @@ def set_bson(use_bson):
 
 
 @skip_if_no_bson
-def test_utils_montyimport(monty_client, tmp_monty_repo):
+def test_utils_montyimport(monty_client, tmp_monty_utils_repo):
     database = "dump_db_JSON"
     collection = "dump_col_JSON"
 
-    if not os.path.isdir(tmp_monty_repo):
-        os.makedirs(tmp_monty_repo)
-
-    with open_repo(tmp_monty_repo):
+    with open_repo(tmp_monty_utils_repo):
         with open(JSON_DUMP, "w") as dump:
             dump.write(SERIALIZED)
 
@@ -104,17 +101,14 @@ def test_utils_montyimport(monty_client, tmp_monty_repo):
 
 
 @skip_if_no_bson
-def test_utils_montyexport(monty_client, tmp_monty_repo):
+def test_utils_montyexport(monty_client, tmp_monty_utils_repo):
     database = "dump_db_JSON"
     collection = "dump_col_JSON"
 
     # TODO: should not rely on other test
-    test_utils_montyimport(monty_client, tmp_monty_repo)
+    test_utils_montyimport(monty_client, tmp_monty_utils_repo)
 
-    if not os.path.isdir(tmp_monty_repo):
-        os.makedirs(tmp_monty_repo)
-
-    with open_repo(tmp_monty_repo):
+    with open_repo(tmp_monty_utils_repo):
         montyexport(database, collection, JSON_DUMP)
 
         loaded_examples = list()
@@ -134,14 +128,11 @@ def test_utils_montyexport(monty_client, tmp_monty_repo):
 
 
 @skip_if_no_bson
-def test_utils_montyrestore(monty_client, tmp_monty_repo):
+def test_utils_montyrestore(monty_client, tmp_monty_utils_repo):
     database = "dump_db_BSON"
     collection = "dump_col_BSON"
 
-    if not os.path.isdir(tmp_monty_repo):
-        os.makedirs(tmp_monty_repo)
-
-    with open_repo(tmp_monty_repo):
+    with open_repo(tmp_monty_utils_repo):
         with open(BSON_DUMP, "wb") as dump:
             dump.write(base64.b64decode(BINARY))
 
@@ -155,7 +146,7 @@ def test_utils_montyrestore(monty_client, tmp_monty_repo):
 
 
 @skip_if_no_bson
-def test_utils_montydump(monty_client, tmp_monty_repo):
+def test_utils_montydump(monty_client, tmp_monty_utils_repo):
     database = "dump_db_BSON"
     collection = "dump_col_BSON"
 
@@ -164,12 +155,9 @@ def test_utils_montydump(monty_client, tmp_monty_repo):
                     "to match with MongoDB's natural order but safe to skip.")
 
     # TODO: should not rely on other test
-    test_utils_montyrestore(monty_client, tmp_monty_repo)
+    test_utils_montyrestore(monty_client, tmp_monty_utils_repo)
 
-    if not os.path.isdir(tmp_monty_repo):
-        os.makedirs(tmp_monty_repo)
-
-    with open_repo(tmp_monty_repo):
+    with open_repo(tmp_monty_utils_repo):
         montydump(database, collection, BSON_DUMP)
 
         with open(BSON_DUMP, "rb") as dump:

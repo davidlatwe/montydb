@@ -138,6 +138,15 @@ def tmp_monty_repo():
     return tmp_dir
 
 
+@pytest.fixture
+def tmp_monty_utils_repo(tmp_monty_repo):
+    tmp_dir = os.path.join(tmp_monty_repo, "monty.utils")
+    os.makedirs(tmp_dir)
+    yield tmp_dir
+    if os.path.isdir(tmp_dir):
+        shutil.rmtree(tmp_dir)
+
+
 @pytest.fixture(scope="session")
 def mongo_client(request):
     client = pymongo.MongoClient(request.param)
