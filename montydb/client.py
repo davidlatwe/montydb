@@ -143,7 +143,7 @@ class MontyClient(BaseObject):
             "versionArray": list(version.version_info),
             "mongoVersion": version.mongo_version,
             "mongoVersionArray": list(version.mongo_version_info),
-            "storageEngine": repr(self._storage),
+            "storageEngine": self._storage.nice_name(),
             "python": sys.version,
             "platform": platform.platform(),
             "machine": platform.machine(),

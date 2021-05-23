@@ -151,11 +151,11 @@ def test_utils_montyrestore(tmp_monty_repo):
 
 
 @skip_if_no_bson
-def test_utils_montydump(storage, tmp_monty_repo):
+def test_utils_montydump(monty_client, tmp_monty_repo):
     database = "dump_db_BSON"
     collection = "dump_col_BSON"
 
-    if storage == "lightning":
+    if monty_client.server_info()["storageEngine"] == "lightning":
         pytest.skip("LMDB's document natural order is lexicographic, not easy "
                     "to match with MongoDB's natural order but safe to skip.")
 
