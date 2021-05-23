@@ -3,7 +3,7 @@ import os
 import base64
 import pytest
 
-from montydb import open_repo, MontyClient
+from montydb import open_repo
 from montydb.types import init_bson
 from montydb.utils import (
     montyimport,
@@ -83,7 +83,7 @@ def set_bson(use_bson):
 
 
 @skip_if_no_bson
-def test_utils_montyimport(tmp_monty_repo):
+def test_utils_montyimport(monty_client, tmp_monty_repo):
     database = "dump_db_JSON"
     collection = "dump_col_JSON"
 
@@ -96,8 +96,7 @@ def test_utils_montyimport(tmp_monty_repo):
 
         montyimport(database, collection, JSON_DUMP)
 
-        client = MontyClient()
-        col = client[database][collection]
+        col = monty_client[database][collection]
         for i, doc in enumerate(col.find(sort=[("_id", 1)])):
             assert doc == BSON.encode(DOCUMENTS[i]).decode()
 
@@ -105,12 +104,12 @@ def test_utils_montyimport(tmp_monty_repo):
 
 
 @skip_if_no_bson
-def test_utils_montyexport(tmp_monty_repo):
+def test_utils_montyexport(monty_client, tmp_monty_repo):
     database = "dump_db_JSON"
     collection = "dump_col_JSON"
 
     # TODO: should not rely on other test
-    test_utils_montyimport(tmp_monty_repo)
+    test_utils_montyimport(monty_client, tmp_monty_repo)
 
     if not os.path.isdir(tmp_monty_repo):
         os.makedirs(tmp_monty_repo)
@@ -135,7 +134,7 @@ def test_utils_montyexport(tmp_monty_repo):
 
 
 @skip_if_no_bson
-def test_utils_montyrestore(tmp_monty_repo):
+def test_utils_montyrestore(monty_client, tmp_monty_repo):
     database = "dump_db_BSON"
     collection = "dump_col_BSON"
 
@@ -148,8 +147,7 @@ def test_utils_montyrestore(tmp_monty_repo):
 
         montyrestore(database, collection, BSON_DUMP)
 
-        client = MontyClient()
-        col = client[database][collection]
+        col = monty_client[database][collection]
         for i, doc in enumerate(col.find(sort=[("_id", 1)])):
             assert doc == BSON.encode(DOCUMENTS[i]).decode()
 
@@ -166,7 +164,7 @@ def test_utils_montydump(monty_client, tmp_monty_repo):
                     "to match with MongoDB's natural order but safe to skip.")
 
     # TODO: should not rely on other test
-    test_utils_montyrestore(tmp_monty_repo)
+    test_utils_montyrestore(monty_client, tmp_monty_repo)
 
     if not os.path.isdir(tmp_monty_repo):
         os.makedirs(tmp_monty_repo)
