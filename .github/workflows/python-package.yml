@@ -44,22 +44,9 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Test with pytest (${{ matrix.monty-storage }})
-      continue-on-error: true
       run: >
         pytest --storage ${{ matrix.monty-storage }}
 
     - name: Test with pytest (${{ matrix.monty-storage }} + bson)
-      continue-on-error: true
       run: >
         pytest --storage ${{ matrix.monty-storage }} --use-bson
-
-# NOTE: opt-out lmdb testing, due to a non-local-reproducible seg fault
-#       in github action.
-#
-#    - name: Test with pytest (lightning)
-#      run: >
-#        pytest --storage lightning
-#
-#    - name: Test with pytest (lightning + bson)
-#      run: >
-#        pytest --storage lightning --use-bson
