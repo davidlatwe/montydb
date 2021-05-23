@@ -43,9 +43,15 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Test with pytest
-      run: >
-        pytest
+      run: |
+        pytest --storage memory
+        pytest --storage sqlite
+        pytest --storage flatfile
+        pytest --storage lightning
 
     - name: Test with pytest + bson
-      run: >
-        pytest --use-bson
+      run: |
+        pytest --storage memory --use-bson
+        pytest --storage sqlite --use-bson
+        pytest --storage flatfile --use-bson
+        pytest --storage lightning --use-bson
