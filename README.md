@@ -13,8 +13,8 @@
 ---
 
 ### MontyDB is:
-* A tiny version of MongoDB, against to **MongoDB 4.0.11**
-* Written in pure Python, testing on **Python 2.7, 3.6, 3.7, 3.8, PyPy***
+* A tiny version of MongoDB, against to **MongoDB 3.6, 4.0, 4.2**
+* Written in pure Python, testing on **Python 2.7, 3.6, 3.7, 3.8, 3.9***
 * Literally serverless.
 * Similar to [mongomock](https://github.com/mongomock/mongomock), but a bit more than that.
 
@@ -26,8 +26,6 @@
   ##### Optinal Requirements
   - *`lmdb` (for LMDB storage `lightning`)*
   - *`pymongo` (for `bson`)*
-
-      `bson` is opt-out by default even it's installed, set env var `MONTY_ENABLE_BSON=1` to enable it.
 
 ### Example Code
 ```python
