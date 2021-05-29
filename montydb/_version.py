@@ -1,5 +1,5 @@
 
-version_info = (2, 3, 3)
+version_info = (2, 3, 4)
 __version__ = "%i.%i.%i" % version_info
 
 
