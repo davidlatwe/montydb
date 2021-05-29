@@ -37,15 +37,18 @@ class LMDBKVEngine(object):
     def set_path(self, path):
         self._path = path
 
-    def open(self):
-        environment = lmdb.open(self._path, **self.opt)
-        return environment
+    def open(self, readonly=None):
+        opt = self.opt.copy()
+        if readonly is not None:
+            opt["readonly"] = readonly
 
-    def iter_docs(self, environment):
+        return lmdb.open(self._path, **opt)
+
+    def iter_docs(self):
         if not os.path.isfile(self._path):
             return
 
-        with environment as env:
+        with self.open(readonly=True) as env:
             db = env.open_db(self.dbname)
             with env.begin(db, write=False) as txn:
                 cursor = txn.cursor()
@@ -245,11 +248,9 @@ class LMDBCursor(AbstractCursor):
     def __init__(self, collection, subject):
         super(LMDBCursor, self).__init__(collection, subject)
         self._conn = self._collection._conn
-        self._env = self._conn.open()
 
     def query(self, max_scan):
-        docs = (self._decode_doc(doc)
-                for doc in self._conn.iter_docs(self._env))
+        docs = (self._decode_doc(doc) for doc in self._conn.iter_docs())
 
         if not max_scan:
             return docs

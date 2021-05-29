@@ -9,20 +9,35 @@ import montydb
 
 
 def pytest_addoption(parser):
+
     parser.addoption("--storage",
-                     action="store",
-                     default="memory",
+                     action="append",
                      help="""
-                     Select storage engine:
+                     MontyDB storage engine to test with.
+                     - Valid storage engine name input:
                         * memory (default)
                         * sqlite
                         * flatfile
                         * lightning (lmdb)
+                     - This flag can be presented multiple times for testing
+                     results with different MontyDB storages.
+                     - Testing all storages if not set.
                      """)
-    parser.addoption("--use_bson",
+
+    parser.addoption("--mongodb",
+                     action="append",
+                     help="""
+                     MongoDB instance url to test with.
+                     - This flag can be presented multiple times for testing
+                     results with different MongoDB versions.
+                     - Use `localhost:27017` if not given.
+                     """)
+
+    parser.addoption("--use-bson",
                      action="store_true",
-                     default=False,
-                     help="Use bson in tests")
+                     help="""
+                     Enable bson in tests.
+                     """)
 
 
 # (NOTE) `bson` should be accessible in test, even use_bson is False
@@ -65,13 +80,54 @@ def gettempdir():
 
 
 @pytest.fixture(scope="session")
-def storage(request):
-    return request.config.getoption("--storage")
-
-
-@pytest.fixture(scope="session")
 def use_bson(request):
-    return request.config.getoption("--use_bson")
+    return request.param
+
+
+def mongodb_urls(request):
+    urls = request.config.getoption("--mongodb")
+    if not urls:
+        urls = ["mongodb://localhost:27017"]
+    return urls
+
+
+def mongodb_id(url):
+    client = pymongo.MongoClient(url)
+    version_info = client.server_info()["versionArray"]
+    return "mongodb-%d.%d" % tuple(version_info[:2])
+
+
+def montydb_storages(request):
+    storages = request.config.getoption("--storage")
+    if not storages:
+        storages = ["memory", "flatfile", "sqlite", "lightning"]
+    return storages
+
+
+def opt_bson(request):
+    return [
+        bool(request.config.getoption("--use-bson"))
+    ]
+
+
+def pytest_generate_tests(metafunc):
+    if "mongo_client" in metafunc.fixturenames:
+        metafunc.parametrize("mongo_client",
+                             argvalues=mongodb_urls(metafunc),
+                             ids=mongodb_id,
+                             indirect=True)
+
+    if "monty_client" in metafunc.fixturenames:
+        metafunc.parametrize("monty_client",
+                             argvalues=montydb_storages(metafunc),
+                             indirect=True)
+
+    if "use_bson" in metafunc.fixturenames:
+        # not testing both case, just for the test id.
+        metafunc.parametrize("use_bson",
+                             argvalues=opt_bson(metafunc),
+                             ids=lambda v: "bson-1" if v else "bson-0",
+                             indirect=True)
 
 
 @pytest.fixture(scope="session")
@@ -82,9 +138,18 @@ def tmp_monty_repo():
     return tmp_dir
 
 
+@pytest.fixture
+def tmp_monty_utils_repo(tmp_monty_repo):
+    tmp_dir = os.path.join(tmp_monty_repo, "monty.utils")
+    os.makedirs(tmp_dir)
+    yield tmp_dir
+    if os.path.isdir(tmp_dir):
+        shutil.rmtree(tmp_dir)
+
+
 @pytest.fixture(scope="session")
-def mongo_client():
-    client = pymongo.MongoClient("mongodb://localhost:27017")
+def mongo_client(request):
+    client = pymongo.MongoClient(request.param)
     existed_dbs = client.list_database_names() + ["admin", "config"]
     yield client
     # db cleanup
@@ -100,7 +165,7 @@ def mongo_version(mongo_client):
 
 
 @pytest.fixture(scope="session")
-def monty_client(storage, tmp_monty_repo, mongo_version, use_bson):
+def monty_client(request, tmp_monty_repo, mongo_version, use_bson):
     set_bson(use_bson)
 
     if os.path.isdir(tmp_monty_repo):
@@ -108,11 +173,11 @@ def monty_client(storage, tmp_monty_repo, mongo_version, use_bson):
 
     mongo_ver = "%d.%d" % (mongo_version[0], mongo_version[1])
 
-    if storage == "memory":
+    if request.param == "memory":
         tmp_monty_repo = ":memory:"
 
     montydb.set_storage(tmp_monty_repo,
-                        storage,
+                        request.param,
                         mongo_version=mongo_ver,
                         use_bson=use_bson)
 

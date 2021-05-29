@@ -29,14 +29,14 @@ else:
     from itertools import izip_longest as zip_longest
     from ConfigParser import ConfigParser
 
-    string_types = basestring,
-    integer_types = (int, long)
-    text_type = unicode
+    string_types = basestring,  # noqa
+    integer_types = (int, long)  # noqa
+    text_type = unicode  # noqa
 
     def iteritems(d, **kw):
         return d.iteritems(**kw)
 
-    unicode_ = unicode
+    unicode_ = unicode  # noqa
 
     def encode_(s):
         return s.encode("utf-8")

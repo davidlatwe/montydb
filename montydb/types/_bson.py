@@ -294,9 +294,9 @@ class NoBSON(types.ModuleType):
         _integer_types = int,
         _text_type = str
     else:
-        _string_types = basestring,
-        _integer_types = (int, long)
-        _text_type = unicode
+        _string_types = basestring,  # noqa
+        _integer_types = (int, long)  # noqa
+        _text_type = unicode  # noqa
 
     @classmethod
     def _re_int_flag_to_str(cls, int_flags):
