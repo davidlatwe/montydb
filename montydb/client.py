@@ -1,9 +1,9 @@
 import platform
 import sys
 
-from . import errors, version
+from . import errors, _version
 from .base import BaseObject, ClientOptions
-from .configure import provide_storage, provide_repository
+from .configure import provide_storage, provide_repository, session_config
 from .database import MontyDatabase
 from .types import string_types
 
@@ -128,22 +128,23 @@ class MontyClient(BaseObject):
         """
         # verify database name
         if platform.system() == "Windows":
-            is_invaild = set(r'/\. "$*<>:|?').intersection(set(name))
+            is_invalid = set(r'/\. "$*<>:|?').intersection(set(name))
         else:
-            is_invaild = set(r'/\. "$').intersection(set(name))
+            is_invalid = set(r'/\. "$').intersection(set(name))
 
-        if is_invaild or not name:
+        if is_invalid or not name:
             raise errors.OperationFailure("Invaild database name.")
         else:
             return MontyDatabase(self, name)
 
     def server_info(self):
+        mongo_version = session_config()["mongo_version"]
         return {
-            "version": version.version,
-            "versionArray": list(version.version_info),
-            "mongoVersion": version.mongo_version,
-            "mongoVersionArray": list(version.mongo_version_info),
-            "storageEngine": repr(self._storage),
+            "version": _version.__version__,
+            "versionArray": list(_version.version_info),
+            "mongoVersion": mongo_version,
+            "mongoVersionArray": list(mongo_version.split(".")),
+            "storageEngine": self._storage.nice_name(),
             "python": sys.version,
             "platform": platform.platform(),
             "machine": platform.machine(),

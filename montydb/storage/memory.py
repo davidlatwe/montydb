@@ -30,6 +30,10 @@ class MemoryStorage(AbstractStorage):
         self._repo = _repo
 
     @classmethod
+    def nice_name(cls):
+        return "memory"
+
+    @classmethod
     def config(cls, **storage_kwargs):
         return storage_kwargs
 

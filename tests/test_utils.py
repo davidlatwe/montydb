@@ -3,7 +3,7 @@ import os
 import base64
 import pytest
 
-from montydb import open_repo, MontyClient
+from montydb import open_repo
 from montydb.types import init_bson
 from montydb.utils import (
     montyimport,
@@ -83,21 +83,17 @@ def set_bson(use_bson):
 
 
 @skip_if_no_bson
-def test_utils_montyimport(tmp_monty_repo):
+def test_utils_montyimport(monty_client, tmp_monty_utils_repo):
     database = "dump_db_JSON"
     collection = "dump_col_JSON"
 
-    if not os.path.isdir(tmp_monty_repo):
-        os.makedirs(tmp_monty_repo)
-
-    with open_repo(tmp_monty_repo):
+    with open_repo(tmp_monty_utils_repo):
         with open(JSON_DUMP, "w") as dump:
             dump.write(SERIALIZED)
 
         montyimport(database, collection, JSON_DUMP)
 
-        client = MontyClient()
-        col = client[database][collection]
+        col = monty_client[database][collection]
         for i, doc in enumerate(col.find(sort=[("_id", 1)])):
             assert doc == BSON.encode(DOCUMENTS[i]).decode()
 
@@ -105,11 +101,14 @@ def test_utils_montyimport(tmp_monty_repo):
 
 
 @skip_if_no_bson
-def test_utils_montyexport(tmp_monty_repo):
+def test_utils_montyexport(monty_client, tmp_monty_utils_repo):
     database = "dump_db_JSON"
     collection = "dump_col_JSON"
 
-    with open_repo(tmp_monty_repo):
+    # TODO: should not rely on other test
+    test_utils_montyimport(monty_client, tmp_monty_utils_repo)
+
+    with open_repo(tmp_monty_utils_repo):
         montyexport(database, collection, JSON_DUMP)
 
         loaded_examples = list()
@@ -129,21 +128,17 @@ def test_utils_montyexport(tmp_monty_repo):
 
 
 @skip_if_no_bson
-def test_utils_montyrestore(tmp_monty_repo):
+def test_utils_montyrestore(monty_client, tmp_monty_utils_repo):
     database = "dump_db_BSON"
     collection = "dump_col_BSON"
 
-    if not os.path.isdir(tmp_monty_repo):
-        os.makedirs(tmp_monty_repo)
-
-    with open_repo(tmp_monty_repo):
+    with open_repo(tmp_monty_utils_repo):
         with open(BSON_DUMP, "wb") as dump:
             dump.write(base64.b64decode(BINARY))
 
         montyrestore(database, collection, BSON_DUMP)
 
-        client = MontyClient()
-        col = client[database][collection]
+        col = monty_client[database][collection]
         for i, doc in enumerate(col.find(sort=[("_id", 1)])):
             assert doc == BSON.encode(DOCUMENTS[i]).decode()
 
@@ -151,15 +146,18 @@ def test_utils_montyrestore(tmp_monty_repo):
 
 
 @skip_if_no_bson
-def test_utils_montydump(storage, tmp_monty_repo):
+def test_utils_montydump(monty_client, tmp_monty_utils_repo):
     database = "dump_db_BSON"
     collection = "dump_col_BSON"
 
-    if storage == "lightning":
+    if monty_client.server_info()["storageEngine"] == "lightning":
         pytest.skip("LMDB's document natural order is lexicographic, not easy "
                     "to match with MongoDB's natural order but safe to skip.")
 
-    with open_repo(tmp_monty_repo):
+    # TODO: should not rely on other test
+    test_utils_montyrestore(monty_client, tmp_monty_utils_repo)
+
+    with open_repo(tmp_monty_utils_repo):
         montydump(database, collection, BSON_DUMP)
 
         with open(BSON_DUMP, "rb") as dump:

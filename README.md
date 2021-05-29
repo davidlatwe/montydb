@@ -1,137 +1,181 @@
 
 <img src="artwork/logo.png" alt="drawing" width="600"/>
 
-#### Monty, Mongo tinified. MongoDB implemented in Python !
-
-[![Build Status](https://travis-ci.org/davidlatwe/MontyDB.svg?branch=master)](https://travis-ci.org/davidlatwe/MontyDB)
-<a href='https://coveralls.io/github/davidlatwe/montydb?branch=master'><img src='https://coveralls.io/repos/github/davidlatwe/montydb/badge.svg?branch=master&kill_cache=1' alt='Coverage Status' /></a>
+[![Python package](https://github.com/davidlatwe/montydb/actions/workflows/python-package.yml/badge.svg)](https://github.com/davidlatwe/montydb/actions/workflows/python-package.yml)
 [![Version](http://img.shields.io/pypi/v/montydb.svg?style=flat)](https://pypi.python.org/pypi/montydb)
-[![Join the chat at https://gitter.im/montydb-hq/community](https://badges.gitter.im/montydb-hq/community.svg)](https://gitter.im/montydb-hq/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-###### Inspired by [TinyDB](https://github.com/msiemens/tinydb) and it's extension [TinyMongo](https://github.com/schapman1974/tinymongo).
+*Monty, Mongo tinified. MongoDB implemented in Python !*
+*Was inspired by [TinyDB](https://github.com/msiemens/tinydb) and it's extension [TinyMongo](https://github.com/schapman1974/tinymongo)*
 
----
 
-### MontyDB is:
-* A tiny version of MongoDB, against to **MongoDB 4.0.11**
-* Written in pure Python, testing on **Python 2.7, 3.6, 3.7, 3.8, PyPy***
-* Literally serverless.
-* Similar to [mongomock](https://github.com/mongomock/mongomock), but a bit more than that.
+## What ?
+A pure Python implemented database that looks and works like MongoDB. 
 
-> All those implemented functions and operators, should behaved just like you were working with MongoDB. Even raising error for same cause.
-
-### Install
-`pip install montydb`
-
-  ##### Optinal Requirements
-  - *`lmdb` (for LMDB storage `lightning`)*
-  - *`pymongo` (for `bson`)*
-
-      `bson` is opt-out by default even it's installed, set env var `MONTY_ENABLE_BSON=1` to enable it.
-
-### Example Code
 ```python
 >>> from montydb import MontyClient
 >>> col = MontyClient(":memory:").db.test
 >>> col.insert_many([{"stock": "A", "qty": 6}, {"stock": "A", "qty": 2}])
-
 >>> cur = col.find({"stock": "A", "qty": {"$gt": 4}})
 >>> next(cur)
 {'_id': ObjectId('5ad34e537e8dd45d9c61a456'), 'stock': 'A', 'qty': 6}
 ```
+Most of the CRUD operator has been implemented, you may visit [this issue](https://github.com/davidlatwe/montydb/issues/14) to see the full list.
 
-### Development
-* You may visit [Projects' TODO](https://github.com/davidlatwe/montydb/projects/1) to see what's going on.
-* You may visit [This Issue](https://github.com/davidlatwe/montydb/issues/14) to see what's been implemented and what's not.
+And this project is testing against to:
+* MongoDB 3.6, 4.0, 4.2 (4.4 on the way💦)
+* Python 2.7, 3.6, 3.7, 3.8, 3.9
 
 
-### Storage Engine Configurations
+## Install
 
-The configuration process only required on repository creation or modification.
-
-**Currently, one repository can only assign one storage engine.**
-
-  - **Memory**
-  
-  Memory storage does not need nor have any configuration, nothing saved to disk.
-  
-  ```python
-  >>> from montydb import MontyClient
-  >>> client = MontyClient(":memory:")
-  ```
-
-  - **FlatFile**
-  
-  FlatFile is the default on-disk storage engine.
-  
-  ```python
-  >>> from montydb import MontyClient
-  >>> client = MontyClient("/db/repo")
-  ```
-
-  FlatFile config:
-
-  ```yaml
-  [flatfile]
-  cache_modified: 0  # how many document CRUD cached before flush to disk.
-  ```
-
-  - **LMDB (Lightning Memory-Mapped Database)**
-  
-  LMDB is NOT the default on-disk storage, need configuration first before get client.
-
-  > Newly implemented.
-  
-  ```python
-  >>> from montydb import set_storage, MontyClient
-  >>> set_storage("/db/repo", storage="lightning")
-  >>> client = MontyClient("/db/repo")
-  ```
-
-  LMDB config:
-
-  ```yaml
-  [lightning]
-  map_size: 10485760  # Maximum size database may grow to.
-  ```
-
-  - **SQLite**
-  
-  SQLite is NOT the default on-disk storage, need configuration first before get client.
-
-  > Pre-existing sqlite storage file which saved by `montydb<=1.3.0` is not read/writeable after `montydb==2.0.0`.
-  
-  ```python
-  >>> from montydb import set_storage, MontyClient
-  >>> set_storage("/db/repo", storage="sqlite")
-  >>> client = MontyClient("/db/repo")
-  ```
-
-  SQLite config:
-
-  ```yaml
-  [sqlite]
-  journal_mode: WAL
-  ```
-
-  SQLite write concern:
-
-  ```python
-  >>> client = MontyClient("/db/repo",
-  >>>                      synchronous=1,
-  >>>                      automatic_index=False,
-  >>>                      busy_timeout=5000)
-  ```
-
-### MontyDB URI
-
-You could prefix the repository path with montydb URI scheme.
-
-```python
-  >>> client = MontyClient("montydb:///db/repo")
+```
+pip install montydb
 ```
 
-### Utilities
+* optional, to use `bson` in operation (`pymongo` will be installed)
+
+    ```
+    pip install montydb[bson]
+    ```
+
+* optional, to use lightning memory-mapped db as storage engine
+
+    ```
+    pip install montydb[lmdb]
+    ```
+
+
+## Storage
+
+🦄 Available storage engines:
+
+* in-memory
+* flat-flie
+* sqlite
+* lmdb (lightning memory-mapped db)
+
+Depend on which one you use, may have to config the storage engine before start.
+
+> ⚠️
+>
+> The configuration process only required on repository creation or modification. And, one repository (the parent level of databases) can only assign one storage engine.
+
+To configurate a storage, take flat-file storage as example:
+
+```python
+from montydb import set_storage, MontyClient
+
+set_storage(
+    # general settings
+    #
+    repository="/db/repo",  # dir path for database to live on disk, default is {cwd}
+    storage="flatfile",     # storage name, default "flatfile"
+    mongo_version="4.0",    # try matching behavior with this mongodb version
+    use_bson=False,         # default None, and will try importing pymongo if None
+
+    # any other kwargs are storage engine settings
+    #
+    cache_modified=10,       # the only setting that flat-file have
+)
+# ready to go
+```
+
+Once that done, there should be a file named `monty.storage.cfg` saved in your db repository path, it would be `/db/repo` for above examples.
+
+
+## Configuration
+
+Now let's moving on to each storage engine's config settings.
+
+### 🌟 In-Memory
+  
+`memory` storage does not need nor have any configuration, nothing saved to disk.
+
+```python
+from montydb import MontyClient
+client = MontyClient(":memory:")
+# ready to go
+```
+
+### 🔰 Flat-File
+  
+`flatfile` is the default on-disk storage engine.
+
+```python
+from montydb import set_storage, MontyClient
+
+set_storage("/db/repo", cache_modified=5)  # optional step
+client = MontyClient("/db/repo")  # use curent working dir if no path given
+# ready to go
+```
+
+FlatFile config:
+
+```
+[flatfile]
+cache_modified: 0  # how many document CRUD cached before flush to disk.
+```
+
+### 💎 SQLite
+  
+`sqlite` is NOT the default on-disk storage, need configuration first before getting client.
+
+> Pre-existing sqlite storage file which saved by `montydb<=1.3.0` is not read/writeable after `montydb==2.0.0`.
+
+```python
+from montydb import set_storage, MontyClient
+
+set_storage("/db/repo", storage="sqlite")  # required, to set sqlite as engine
+client = MontyClient("/db/repo")
+# ready to go
+```
+
+SQLite config:
+
+```
+[sqlite]
+journal_mode: WAL
+```
+
+SQLite write concern:
+
+```python
+client = MontyClient("/db/repo",
+                     synchronous=1,
+                     automatic_index=False,
+                     busy_timeout=5000)
+```
+
+### 🚀 LMDB (Lightning Memory-Mapped Database)
+
+`lightning` is NOT the default on-disk storage, need configuration first before get client.
+
+> Newly implemented.
+
+```python
+from montydb import set_storage, MontyClient
+
+set_storage("/db/repo", storage="lightning")  # required, to set lightning as engine
+client = MontyClient("/db/repo")
+# ready to go
+```
+
+LMDB config:
+
+```
+[lightning]
+map_size: 10485760  # Maximum size database may grow to.
+```
+
+## URI
+
+Optionally, You could prefix the repository path with montydb URI scheme.
+
+```python
+client = MontyClient("montydb:///db/repo")
+```
+
+## Utilities
 
 > Pymongo `bson` may required.
 
@@ -141,10 +185,11 @@ You could prefix the repository path with montydb URI scheme.
   The JSON file could be generated from `montyexport` or `mongoexport`.
 
   ```python
-  >>> from montydb import open_repo, utils
-  >>> with open_repo("foo/bar"):
-  >>>     utils.montyimport("db", "col", "/path/dump.json")
-  >>>
+  from montydb import open_repo, utils
+  
+  with open_repo("foo/bar"):
+      utils.montyimport("db", "col", "/path/dump.json")
+  
   ```
 
 * ####  `montyexport`
@@ -153,10 +198,11 @@ You could prefix the repository path with montydb URI scheme.
   The JSON file could be loaded by `montyimport` or `mongoimport`.
 
   ```python
-  >>> from montydb import open_repo, utils
-  >>> with open_repo("foo/bar"):
-  >>>     utils.montyexport("db", "col", "/data/dump.json")
-  >>>
+  from montydb import open_repo, utils
+  
+  with open_repo("foo/bar"):
+      utils.montyexport("db", "col", "/data/dump.json")
+  
   ```
 
 * #### `montyrestore`
@@ -165,10 +211,11 @@ You could prefix the repository path with montydb URI scheme.
   The BSON file could be generated from `montydump` or `mongodump`.
 
   ```python
-  >>> from montydb import open_repo, utils
-  >>> with open_repo("foo/bar"):
-  >>>     utils.montyrestore("db", "col", "/path/dump.bson")
-  >>>
+  from montydb import open_repo, utils
+  
+  with open_repo("foo/bar"):
+      utils.montyrestore("db", "col", "/path/dump.bson")
+  
   ```
 
 * ####  `montydump`
@@ -177,10 +224,11 @@ You could prefix the repository path with montydb URI scheme.
   The BSON file could be loaded by `montyrestore` or `mongorestore`.
 
   ```python
-  >>> from montydb import open_repo, utils
-  >>> with open_repo("foo/bar"):
-  >>>     utils.montydump("db", "col", "/data/dump.bson")
-  >>>
+  from montydb import open_repo, utils
+  
+  with open_repo("foo/bar"):
+      utils.montydump("db", "col", "/data/dump.bson")
+  
   ```
 
 * #### `MongoQueryRecorder`
@@ -191,15 +239,18 @@ You could prefix the repository path with montydb URI scheme.
   This works via filtering the database profile data and reproduce the queries of `find` and `distinct` commands.
 
   ```python
-  >>> from pymongo import MongoClient
-  >>> from montydb.utils import MongoQueryRecorder
-  >>> client = MongoClient()
-  >>> recorder = MongoQueryRecorder(client["mydb"])
-  >>> recorder.start()
-  >>> # Make some queries or run the App...
-  >>> recorder.stop()
-  >>> recorder.extract()
+  from pymongo import MongoClient
+  from montydb.utils import MongoQueryRecorder
+  
+  client = MongoClient()
+  recorder = MongoQueryRecorder(client["mydb"])
+  recorder.start()
+  
+  # Make some queries or run the App...
+  recorder.stop()
+  recorder.extract()
   {<collection_1>: [<doc_1>, <doc_2>, ...], ...}
+  
   ```
 
 * ####  `MontyList`
@@ -207,10 +258,12 @@ You could prefix the repository path with montydb URI scheme.
   Experimental, a subclass of `list`, combined the common CRUD methods from Mongo's Collection and Cursor.
 
   ```python
-  >>> from montydb.utils import MontyList
-  >>> mtl = MontyList([1, 2, {"a": 1}, {"a": 5}, {"a": 8}])
-  >>> mtl.find({"a": {"$gt": 3}})
+  from montydb.utils import MontyList
+  
+  mtl = MontyList([1, 2, {"a": 1}, {"a": 5}, {"a": 8}])
+  mtl.find({"a": {"$gt": 3}})
   MontyList([{'a': 5}, {'a': 8}])
+  
   ```
 
 ### Why I did this ?
