@@ -66,8 +66,8 @@ The configuration process only required on repository creation or modification.
   Memory storage does not need nor have any configuration, nothing saved to disk.
   
   ```python
-  >>> from montydb import MontyClient
-  >>> client = MontyClient(":memory:")
+  from montydb import MontyClient
+  client = MontyClient(":memory:")
   ```
 
   - **FlatFile**
@@ -75,8 +75,8 @@ The configuration process only required on repository creation or modification.
   FlatFile is the default on-disk storage engine.
   
   ```python
-  >>> from montydb import MontyClient
-  >>> client = MontyClient("/db/repo")
+  from montydb import MontyClient
+  client = MontyClient("/db/repo")
   ```
 
   FlatFile config:
@@ -93,9 +93,9 @@ The configuration process only required on repository creation or modification.
   > Newly implemented.
   
   ```python
-  >>> from montydb import set_storage, MontyClient
-  >>> set_storage("/db/repo", storage="lightning")
-  >>> client = MontyClient("/db/repo")
+  from montydb import set_storage, MontyClient
+  set_storage("/db/repo", storage="lightning")
+  client = MontyClient("/db/repo")
   ```
 
   LMDB config:
@@ -112,9 +112,9 @@ The configuration process only required on repository creation or modification.
   > Pre-existing sqlite storage file which saved by `montydb<=1.3.0` is not read/writeable after `montydb==2.0.0`.
   
   ```python
-  >>> from montydb import set_storage, MontyClient
-  >>> set_storage("/db/repo", storage="sqlite")
-  >>> client = MontyClient("/db/repo")
+  from montydb import set_storage, MontyClient
+  set_storage("/db/repo", storage="sqlite")
+  client = MontyClient("/db/repo")
   ```
 
   SQLite config:
@@ -127,10 +127,10 @@ The configuration process only required on repository creation or modification.
   SQLite write concern:
 
   ```python
-  >>> client = MontyClient("/db/repo",
-  >>>                      synchronous=1,
-  >>>                      automatic_index=False,
-  >>>                      busy_timeout=5000)
+  client = MontyClient("/db/repo",
+                       synchronous=1,
+                       automatic_index=False,
+                       busy_timeout=5000)
   ```
 
 ### MontyDB URI
@@ -138,7 +138,7 @@ The configuration process only required on repository creation or modification.
 You could prefix the repository path with montydb URI scheme.
 
 ```python
-  >>> client = MontyClient("montydb:///db/repo")
+  client = MontyClient("montydb:///db/repo")
 ```
 
 ### Utilities
@@ -151,10 +151,11 @@ You could prefix the repository path with montydb URI scheme.
   The JSON file could be generated from `montyexport` or `mongoexport`.
 
   ```python
-  >>> from montydb import open_repo, utils
-  >>> with open_repo("foo/bar"):
-  >>>     utils.montyimport("db", "col", "/path/dump.json")
-  >>>
+  from montydb import open_repo, utils
+  
+  with open_repo("foo/bar"):
+      utils.montyimport("db", "col", "/path/dump.json")
+  
   ```
 
 * ####  `montyexport`
@@ -163,10 +164,11 @@ You could prefix the repository path with montydb URI scheme.
   The JSON file could be loaded by `montyimport` or `mongoimport`.
 
   ```python
-  >>> from montydb import open_repo, utils
-  >>> with open_repo("foo/bar"):
-  >>>     utils.montyexport("db", "col", "/data/dump.json")
-  >>>
+  from montydb import open_repo, utils
+  
+  with open_repo("foo/bar"):
+      utils.montyexport("db", "col", "/data/dump.json")
+  
   ```
 
 * #### `montyrestore`
@@ -175,10 +177,11 @@ You could prefix the repository path with montydb URI scheme.
   The BSON file could be generated from `montydump` or `mongodump`.
 
   ```python
-  >>> from montydb import open_repo, utils
-  >>> with open_repo("foo/bar"):
-  >>>     utils.montyrestore("db", "col", "/path/dump.bson")
-  >>>
+  from montydb import open_repo, utils
+  
+  with open_repo("foo/bar"):
+      utils.montyrestore("db", "col", "/path/dump.bson")
+  
   ```
 
 * ####  `montydump`
@@ -187,10 +190,11 @@ You could prefix the repository path with montydb URI scheme.
   The BSON file could be loaded by `montyrestore` or `mongorestore`.
 
   ```python
-  >>> from montydb import open_repo, utils
-  >>> with open_repo("foo/bar"):
-  >>>     utils.montydump("db", "col", "/data/dump.bson")
-  >>>
+  from montydb import open_repo, utils
+  
+  with open_repo("foo/bar"):
+      utils.montydump("db", "col", "/data/dump.bson")
+  
   ```
 
 * #### `MongoQueryRecorder`
@@ -201,15 +205,18 @@ You could prefix the repository path with montydb URI scheme.
   This works via filtering the database profile data and reproduce the queries of `find` and `distinct` commands.
 
   ```python
-  >>> from pymongo import MongoClient
-  >>> from montydb.utils import MongoQueryRecorder
-  >>> client = MongoClient()
-  >>> recorder = MongoQueryRecorder(client["mydb"])
-  >>> recorder.start()
-  >>> # Make some queries or run the App...
-  >>> recorder.stop()
-  >>> recorder.extract()
+  from pymongo import MongoClient
+  from montydb.utils import MongoQueryRecorder
+  
+  client = MongoClient()
+  recorder = MongoQueryRecorder(client["mydb"])
+  recorder.start()
+  
+  # Make some queries or run the App...
+  recorder.stop()
+  recorder.extract()
   {<collection_1>: [<doc_1>, <doc_2>, ...], ...}
+  
   ```
 
 * ####  `MontyList`
@@ -217,10 +224,12 @@ You could prefix the repository path with montydb URI scheme.
   Experimental, a subclass of `list`, combined the common CRUD methods from Mongo's Collection and Cursor.
 
   ```python
-  >>> from montydb.utils import MontyList
-  >>> mtl = MontyList([1, 2, {"a": 1}, {"a": 5}, {"a": 8}])
-  >>> mtl.find({"a": {"$gt": 3}})
+  from montydb.utils import MontyList
+  
+  mtl = MontyList([1, 2, {"a": 1}, {"a": 5}, {"a": 8}])
+  mtl.find({"a": {"$gt": 3}})
   MontyList([{'a': 5}, {'a': 8}])
+  
   ```
 
 ### Why I did this ?
