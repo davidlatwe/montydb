@@ -21,11 +21,23 @@
 > All those implemented functions and operators, should behaved just like you were working with MongoDB. Even raising error for same cause.
 
 ### Install
-`pip install montydb`
+```
+pip install montydb
+```
 
-  ##### Optinal Requirements
-  - *`lmdb` (for LMDB storage `lightning`)*
-  - *`pymongo` (for `bson`)*
+##### Optinal Requirements
+
+- *`lmdb` (for LMDB storage `lightning`)*
+    
+    ```
+    pip install montydb[lmdb]
+    ```
+    
+- *`pymongo` (for `bson`)*
+    
+    ```
+    pip install montydb[bson]
+    ```
 
 ### Example Code
 ```python
