@@ -50,7 +50,7 @@ pip install montydb
 🦄 Available storage engines:
 
 * in-memory
-* flat-flie
+* flat-file
 * sqlite
 * lmdb (lightning memory-mapped db)
 
