@@ -128,11 +128,11 @@ class MontyClient(BaseObject):
         """
         # verify database name
         if platform.system() == "Windows":
-            is_invaild = set('/\. "$*<>:|?').intersection(set(name))
+            is_invalid = set('/\\. "$*<>:|?').intersection(set(name))
         else:
-            is_invaild = set('/\. "$').intersection(set(name))
+            is_invalid = set('/\\. "$').intersection(set(name))
 
-        if is_invaild or not name:
+        if is_invalid or not name:
             raise errors.OperationFailure("Invaild database name.")
         else:
             return MontyDatabase(self, name)
