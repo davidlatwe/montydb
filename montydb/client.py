@@ -138,7 +138,7 @@ class MontyClient(BaseObject):
             return MontyDatabase(self, name)
 
     def server_info(self):
-        mongo_version = session_config["mongo_version"]
+        mongo_version = session_config()["mongo_version"]
         return {
             "version": _version.__version__,
             "versionArray": list(_version.version_info),
