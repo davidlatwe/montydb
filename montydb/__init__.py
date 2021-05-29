@@ -18,11 +18,8 @@ from .configure import (
 
 from . import utils
 
-from .version import (
-    version,
+from ._version import (
     version_info,
-    mongo_version,
-    mongo_version_info,
     __version__,
 )
 
@@ -44,9 +41,6 @@ __all__ = [
 
     "utils",
 
-    "version",
     "version_info",
-    "mongo_version",
-    "mongo_version_info",
     "__version__",
 ]

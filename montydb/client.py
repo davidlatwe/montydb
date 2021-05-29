@@ -1,9 +1,9 @@
 import platform
 import sys
 
-from . import errors, version
+from . import errors, _version
 from .base import BaseObject, ClientOptions
-from .configure import provide_storage, provide_repository
+from .configure import provide_storage, provide_repository, session_config
 from .database import MontyDatabase
 from .types import string_types
 
@@ -138,11 +138,12 @@ class MontyClient(BaseObject):
             return MontyDatabase(self, name)
 
     def server_info(self):
+        mongo_version = session_config["mongo_version"]
         return {
-            "version": version.version,
-            "versionArray": list(version.version_info),
-            "mongoVersion": version.mongo_version,
-            "mongoVersionArray": list(version.mongo_version_info),
+            "version": _version.__version__,
+            "versionArray": list(_version.version_info),
+            "mongoVersion": mongo_version,
+            "mongoVersionArray": list(mongo_version.split(".")),
             "storageEngine": self._storage.nice_name(),
             "python": sys.version,
             "platform": platform.platform(),
