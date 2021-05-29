@@ -27,6 +27,13 @@ _session_default = {
     "mongo_version": "4.2",
     "use_bson": False,
 }
+# TODO:
+#   The mongo version compating may fail if calling `set_storage()` multiple
+#   times with different version.
+#   To get this right, may need a factory to spawn CRUD logic object for
+#   specific version and hook with client object.
+#   Also mind the `MontyClient.server_info`, 'mongoVersion' entry should have
+#   the right compat version.
 
 
 def session_config():
