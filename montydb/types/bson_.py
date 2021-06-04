@@ -46,7 +46,7 @@ def init(use_bson=None):
 
     if use_bson is None:
         try:
-            import bson
+            import bson  # noqa: F401
         except ImportError:
             use_bson = False
         else:

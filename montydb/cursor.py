@@ -1,4 +1,3 @@
-
 import warnings
 import copy
 from collections import deque
@@ -44,7 +43,8 @@ _QUERY_OPTIONS = {
     "no_timeout": 16,
     "await_data": 32,
     "exhaust": 64,
-    "partial": 128}
+    "partial": 128,
+}
 
 
 class CursorType(object):
@@ -55,34 +55,35 @@ class CursorType(object):
 
 
 class MontyCursor(object):
-    def __init__(self,
-                 collection,
-                 filter=None,
-                 projection=None,
-                 skip=0,
-                 limit=0,
-                 no_cursor_timeout=False,
-                 cursor_type=CursorType.NON_TAILABLE,
-                 sort=None,
-                 allow_partial_results=False,
-                 oplog_replay=False,
-                 modifiers=None,  # DEPRECATED
-                 batch_size=0,
-                 manipulate=True,  # DEPRECATED
-                 collation=None,
-                 hint=None,
-                 max_scan=None,
-                 max_time_ms=None,
-                 max=None,
-                 min=None,
-                 return_key=False,
-                 show_record_id=False,
-                 snapshot=False,
-                 comment=None,
-                 *args,
-                 **kwargs):
-        """
-        """
+    def __init__(
+        self,
+        collection,
+        filter=None,
+        projection=None,
+        skip=0,
+        limit=0,
+        no_cursor_timeout=False,
+        cursor_type=CursorType.NON_TAILABLE,
+        sort=None,
+        allow_partial_results=False,
+        oplog_replay=False,
+        modifiers=None,  # DEPRECATED
+        batch_size=0,
+        manipulate=True,  # DEPRECATED
+        collation=None,
+        hint=None,
+        max_scan=None,
+        max_time_ms=None,
+        max=None,
+        min=None,
+        return_key=False,
+        show_record_id=False,
+        snapshot=False,
+        comment=None,
+        *args,
+        **kwargs
+    ):
+        """ """
         self._id = None
         self._exhaust = False
         self._killed = False
@@ -99,8 +100,12 @@ class MontyCursor(object):
         if not isinstance(limit, int):
             raise TypeError("limit must be an instance of int")
 
-        if cursor_type not in (CursorType.NON_TAILABLE, CursorType.TAILABLE,
-                               CursorType.TAILABLE_AWAIT, CursorType.EXHAUST):
+        if cursor_type not in (
+            CursorType.NON_TAILABLE,
+            CursorType.TAILABLE,
+            CursorType.TAILABLE_AWAIT,
+            CursorType.EXHAUST,
+        ):
             raise ValueError("not a valid value for cursor_type")
 
         if projection is not None:
@@ -134,14 +139,11 @@ class MontyCursor(object):
 
     def __getattr__(self, name):
         if name in NotImplementeds:
-            raise NotImplementedError("'MontyCursor.%s' is NOT "
-                                      "implemented !" % name)
-        raise AttributeError("'MontyCursor' object has no attribute '%s'"
-                             % name)
+            raise NotImplementedError("'MontyCursor.%s' is NOT " "implemented !" % name)
+        raise AttributeError("'MontyCursor' object has no attribute '%s'" % name)
 
     def __getitem__(self, index):
-        """Get a single document or a slice of documents from this cursor.
-        """
+        """Get a single document or a slice of documents from this cursor."""
         self.__check_okay_to_chain()
         self._empty = False
         if isinstance(index, slice):
@@ -151,15 +153,18 @@ class MontyCursor(object):
             skip = 0
             if index.start is not None:
                 if index.start < 0:
-                    raise IndexError("Cursor instances do not support "
-                                     "negative indices")
+                    raise IndexError(
+                        "Cursor instances do not support " "negative indices"
+                    )
                 skip = index.start
 
             if index.stop is not None:
                 limit = index.stop - skip
                 if limit < 0:
-                    raise IndexError("stop index must be greater than start "
-                                     "index for slice %r" % index)
+                    raise IndexError(
+                        "stop index must be greater than start "
+                        "index for slice %r" % index
+                    )
                 if limit == 0:
                     self._empty = True
             else:
@@ -172,8 +177,7 @@ class MontyCursor(object):
 
         if isinstance(index, integer_types):
             if index < 0:
-                raise IndexError("Cursor instances do not support negative "
-                                 "indices")
+                raise IndexError("Cursor instances do not support negative " "indices")
             clone = self.clone()
             clone.skip(index + self._skip)
             clone.limit(-1)  # use a hard limit
@@ -182,8 +186,7 @@ class MontyCursor(object):
                 return doc
 
             raise IndexError("no such item for Cursor instance")
-        raise TypeError("index %r cannot be applied to Cursor "
-                        "instances" % index)
+        raise TypeError("index %r cannot be applied to Cursor " "instances" % index)
 
     def __iter__(self):
         return self
@@ -201,7 +204,7 @@ class MontyCursor(object):
         return self._clone(deepcopy=True)
 
     def _deepcopy(self, x, memo=None):
-        if not hasattr(x, 'items'):
+        if not hasattr(x, "items"):
             y, is_list, iterator = [], True, enumerate(x)
         else:
             y, is_list, iterator = {}, False, iteritems(x)
@@ -214,8 +217,7 @@ class MontyCursor(object):
         memo[val_id] = y
 
         for key, value in iterator:
-            if (isinstance(value, (dict, list))
-                    and not isinstance(value, bson.SON)):
+            if isinstance(value, (dict, list)) and not isinstance(value, bson.SON):
                 value = self._deepcopy(value, memo)
             elif not isinstance(value, RE_PATTERN_TYPE):
                 value = copy.deepcopy(value, memo)
@@ -232,27 +234,31 @@ class MontyCursor(object):
         if not base:
             base = self._clone_base()
 
-        values_to_clone = ("spec",
-                           "projection",
-                           "skip",
-                           "limit",
-                           # "max_time_ms",
-                           # "max_await_time_ms",
-                           # "comment",
-                           "max",
-                           "min",
-                           "ordering",
-                           # "explain",
-                           # "hint",
-                           "batch_size",
-                           "max_scan",
-                           # "manipulate",
-                           "query_flags",
-                           # "modifiers",
-                           # "collation"
-                           )
-        data = dict((k, v) for k, v in iteritems(self.__dict__)
-                    if k.startswith('_') and k[1:] in values_to_clone)
+        values_to_clone = (
+            "spec",
+            "projection",
+            "skip",
+            "limit",
+            # "max_time_ms",
+            # "max_await_time_ms",
+            # "comment",
+            "max",
+            "min",
+            "ordering",
+            # "explain",
+            # "hint",
+            "batch_size",
+            "max_scan",
+            # "manipulate",
+            "query_flags",
+            # "modifiers",
+            # "collation"
+        )
+        data = dict(
+            (k, v)
+            for k, v in iteritems(self.__dict__)
+            if k.startswith("_") and k[1:] in values_to_clone
+        )
         if deepcopy:
             data = self._deepcopy(data)
         base.__dict__.update(data)
@@ -269,24 +275,26 @@ class MontyCursor(object):
         pass
 
     def __query(self):
-        """
-        """
+        """ """
         # Validate params before jump into storage
 
         if self._skip < 0:
             raise OperationFailure(
                 "Skip value must be non-negative, but received: {}"
-                "".format(self._skip))
+                "".format(self._skip)
+            )
 
         max_scan = 0
         if self._max_scan:
-            if (isinstance(self._max_scan, bool) or
-                    not isinstance(self._max_scan, (int, float))):
+            if isinstance(self._max_scan, bool) or not isinstance(
+                self._max_scan, (int, float)
+            ):
                 raise OperationFailure("'maxScan' field must be numeric.")
             if int(self._max_scan) < 0:
                 raise OperationFailure(
                     "MaxScan value must be non-negative, but received: {}"
-                    "".format(self._max_scan))
+                    "".format(self._max_scan)
+                )
             max_scan = int(self._max_scan)
 
         queryfilter = QueryFilter(self._spec)
@@ -315,7 +323,7 @@ class MontyCursor(object):
             fieldwalkers = fieldwalkers[self._skip:]
         elif self._limit:
             end = self._skip + abs(self._limit)
-            fieldwalkers = fieldwalkers[self._skip:end]
+            fieldwalkers = fieldwalkers[self._skip: end]
 
         self._doc_count_with_skip_limit = len(fieldwalkers)
 
@@ -337,8 +345,7 @@ class MontyCursor(object):
             self.__die()
 
     def _refresh(self):
-        """Refreshes the cursor with more data from Monty.
-        """
+        """Refreshes the cursor with more data from Monty."""
         if len(self._data) or self._killed:
             return len(self._data)
 
@@ -389,8 +396,11 @@ class MontyCursor(object):
         return self._clone(True)
 
     def count(self, with_limit_and_skip=False):
-        warnings.warn("count is deprecated. Use Collection.count_documents "
-                      "instead.", DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            "count is deprecated. Use Collection.count_documents " "instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
         validate_boolean("with_limit_and_skip", with_limit_and_skip)
         if self._id is None:
@@ -435,8 +445,7 @@ class MontyCursor(object):
         return self
 
     def sort(self, key_or_list, direction=None):
-        """
-        """
+        """ """
         self.__check_okay_to_chain()
         keys = _index_list(key_or_list, direction)
         self._ordering = _index_document(keys)

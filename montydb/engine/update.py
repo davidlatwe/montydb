@@ -1,4 +1,3 @@
-
 from collections import OrderedDict
 from datetime import datetime
 
@@ -17,11 +16,7 @@ from ..types import (
 )
 
 
-def _update(fieldwalker,
-            field,
-            value,
-            evaluator,
-            array_filters):
+def _update(fieldwalker, field, value, evaluator, array_filters):
 
     fieldwalker.go(field)
     try:
@@ -42,11 +37,9 @@ def _drop(fieldwalker, field, array_filters):
 
 
 class Updator(object):
-
     def __init__(self, spec, array_filters=None):
 
         self.update_ops = {
-
             # field update ops
             "$inc": parse_inc,
             "$min": parse_min,
@@ -57,7 +50,6 @@ class Updator(object):
             "$setOnInsert": self.parse_set_on_insert,
             "$unset": parse_unset,
             "$currentDate": parse_currentDate,
-
             # array update ops
             # $                 implemented in FieldWalker
             # $[]               implemented in FieldWalker
@@ -67,7 +59,6 @@ class Updator(object):
             "$pull": parse_pull,
             "$push": parse_push,
             "$pullAll": parse_pull_all,
-
             # $each             implemented in Eacher
             # $position         implemented in Eacher
             # $slice            implemented in Eacher
@@ -109,14 +100,18 @@ class Updator(object):
                 id_s = identifier.split(".", 1)
 
                 if not top and id_s[0] in filters:
-                    msg = ("Found multiple array filters with the same "
-                           "top-level field name {}".format(id_s[0]))
+                    msg = (
+                        "Found multiple array filters with the same "
+                        "top-level field name {}".format(id_s[0])
+                    )
                     raise WriteError(msg, code=9)
 
                 if top and id_s[0] != top:
-                    msg = ("Error parsing array filter: Expected a single "
-                           "top-level field name, found {0!r} and {1!r}"
-                           "".format(top, id_s[0]))
+                    msg = (
+                        "Error parsing array filter: Expected a single "
+                        "top-level field name, found {0!r} and {1!r}"
+                        "".format(top, id_s[0])
+                    )
                     raise WriteError(msg, code=9)
 
                 top = id_s[0]
@@ -138,9 +133,11 @@ class Updator(object):
                 raise WriteError("Unknown modifier: {}".format(op))
 
             if not is_duckument_type(cmd_doc):
-                msg = ("Modifiers operate on fields but we found type {0} "
-                       "instead. For example: {{$mod: {{<field>: ...}}}} "
-                       "not {1}".format(type(cmd_doc).__name__, spec))
+                msg = (
+                    "Modifiers operate on fields but we found type {0} "
+                    "instead. For example: {{$mod: {{<field>: ...}}}} "
+                    "not {1}".format(type(cmd_doc).__name__, spec)
+                )
                 raise WriteError(msg, code=9)
 
             for field, value in cmd_doc.items():
@@ -149,15 +146,18 @@ class Updator(object):
                         idnt_tops.remove(top)
 
                 update_stack[field] = self.update_ops[op](
-                    field, value, self.array_filters)
+                    field, value, self.array_filters
+                )
 
                 self.check_conflict(field)
                 if op == "$rename":
                     self.check_conflict(value)
 
         if idnt_tops:
-            msg = ("The array filter for identifier {0!r} was not "
-                   "used in the update {1}".format(idnt_tops[0], spec))
+            msg = (
+                "The array filter for identifier {0!r} was not "
+                "used in the update {1}".format(idnt_tops[0], spec)
+            )
             raise WriteError(msg, code=9)
 
         return update_stack
@@ -165,8 +165,10 @@ class Updator(object):
     def check_conflict(self, field):
         for staged in self.fields_to_update:
             if field.startswith(staged) or staged.startswith(field):
-                msg = ("Updating the path {0!r} would create a "
-                       "conflict at {1!r}".format(field, staged[:len(field)]))
+                msg = (
+                    "Updating the path {0!r} would create a "
+                    "conflict at {1!r}".format(field, staged[: len(field)])
+                )
                 raise WriteError(msg, code=40)
 
         self.fields_to_update.append(field)
@@ -184,21 +186,23 @@ def parse_inc(field, value, array_filters):
     if not is_numeric_type(value):
         val_repr_ = "{!r}" if isinstance(value, string_types) else "{}"
         val_repr_ = val_repr_.format(value)
-        msg = ("Cannot increment with non-numeric argument: "
-               "{{{0}: {1}}}".format(field, val_repr_))
+        msg = "Cannot increment with non-numeric argument: " "{{{0}: {1}}}".format(
+            field, val_repr_
+        )
         raise WriteError(msg, code=14)
 
     @keep(value)
     def _inc(fieldwalker):
-
         def evaluator(node, inc_val):
             old_val = node.value
             if node.exists and not is_numeric_type(old_val):
                 _id = fieldwalker.doc["_id"]
                 value_type = type(old_val).__name__
-                msg = ("Cannot apply $inc to a value of non-numeric type. "
-                       "{{_id: {0}}} has the field {1!r} of non-numeric type "
-                       "{2}".format(_id, str(node), value_type))
+                msg = (
+                    "Cannot apply $inc to a value of non-numeric type. "
+                    "{{_id: {0}}} has the field {1!r} of non-numeric type "
+                    "{2}".format(_id, str(node), value_type)
+                )
                 raise WriteError(msg, code=14)
 
             is_decimal128 = False
@@ -222,7 +226,6 @@ def parse_inc(field, value, array_filters):
 def parse_min(field, value, array_filters):
     @keep(value)
     def _min(fieldwalker):
-
         def evaluator(node, min_val):
             old_val = node.value
             if node.exists:
@@ -240,7 +243,6 @@ def parse_min(field, value, array_filters):
 def parse_max(field, value, array_filters):
     @keep(value)
     def _max(fieldwalker):
-
         def evaluator(node, max_val):
             old_val = node.value
             if node.exists:
@@ -259,21 +261,23 @@ def parse_mul(field, value, array_filters):
     if not is_numeric_type(value):
         val_repr_ = "{!r}" if isinstance(value, string_types) else "{}"
         val_repr_ = val_repr_.format(value)
-        msg = ("Cannot multiply with non-numeric argument: "
-               "{{{0}: {1}}}".format(field, val_repr_))
+        msg = "Cannot multiply with non-numeric argument: " "{{{0}: {1}}}".format(
+            field, val_repr_
+        )
         raise WriteError(msg, code=14)
 
     @keep(value)
     def _mul(fieldwalker):
-
         def evaluator(node, mul_val):
             old_val = node.value
             if node.exists and not is_numeric_type(old_val):
                 _id = fieldwalker.doc["_id"]
                 value_type = type(old_val).__name__
-                msg = ("Cannot apply $mul to a value of non-numeric type. "
-                       "{{_id: {0}}} has the field {1!r} of non-numeric type "
-                       "{2}".format(_id, str(node), value_type))
+                msg = (
+                    "Cannot apply $mul to a value of non-numeric type. "
+                    "{{_id: {0}}} has the field {1!r} of non-numeric type "
+                    "{2}".format(_id, str(node), value_type)
+                )
                 raise WriteError(msg, code=14)
 
             is_decimal128 = False
@@ -302,18 +306,23 @@ def _get_array_member(fieldvalues):
 
 def parse_rename(field, new_field, array_filters):
     if not isinstance(new_field, string_types):
-        msg = ("The 'to' field for $rename must be a string: {0}: {1}"
-               "".format(field, new_field))
+        msg = "The 'to' field for $rename must be a string: {0}: {1}" "".format(
+            field, new_field
+        )
         raise WriteError(msg, code=2)
 
     if field == new_field:
-        msg = ("The source and target field for $rename must differ: "
-               "{0}: {1!r}".format(field, new_field))
+        msg = (
+            "The source and target field for $rename must differ: "
+            "{0}: {1!r}".format(field, new_field)
+        )
         raise WriteError(msg, code=2)
 
     if field.startswith(new_field) or new_field.startswith(field):
-        msg = ("The source and target field for $rename must not be on the "
-               "same path: {0}: {1!r}".format(field, new_field))
+        msg = (
+            "The source and target field for $rename must not be on the "
+            "same path: {0}: {1!r}".format(field, new_field)
+        )
         raise WriteError(msg, code=2)
 
     @keep(new_field)
@@ -333,9 +342,11 @@ def parse_rename(field, new_field, array_filters):
         if array_member is not None:
             _id = probe.doc["_id"]
             array_field = str(array_member.parent)
-            msg = ("The source field cannot be an array element, "
-                   "{0!r} in doc with _id: {1} has an array field "
-                   "called {2!r}".format(field, _id, array_field))
+            msg = (
+                "The source field cannot be an array element, "
+                "{0!r} in doc with _id: {1} has an array field "
+                "called {2!r}".format(field, _id, array_field)
+            )
             raise WriteError(msg, code=2)
 
         probe.go(new_field).get()
@@ -345,9 +356,11 @@ def parse_rename(field, new_field, array_filters):
         if array_member is not None:
             _id = probe.doc["_id"]
             array_field = str(array_member.parent)
-            msg = ("The destination field cannot be an array element, "
-                   "{0!r} in doc with _id: {1} has an array field "
-                   "called {2!r}".format(new_field, _id, array_field))
+            msg = (
+                "The destination field cannot be an array element, "
+                "{0!r} in doc with _id: {1} has an array field "
+                "called {2!r}".format(new_field, _id, array_field)
+            )
             raise WriteError(msg, code=2)
 
         _drop(fieldwalker, field, array_filters)
@@ -382,9 +395,11 @@ def parse_currentDate(field, value, array_filters):
 
     if not isinstance(value, bool):
         if not is_duckument_type(value):
-            msg = ("{} is not valid type for $currentDate. Please use a "
-                   "boolean ('true') or a $type expression ({{$type: "
-                   "'timestamp/date'}}).".format(type(value).__name__))
+            msg = (
+                "{} is not valid type for $currentDate. Please use a "
+                "boolean ('true') or a $type expression ({{$type: "
+                "'timestamp/date'}}).".format(type(value).__name__)
+            )
             raise WriteError(msg, code=2)
 
         for k, v in value.items():
@@ -392,9 +407,11 @@ def parse_currentDate(field, value, array_filters):
                 msg = "Unrecognized $currentDate option: {}".format(k)
                 raise WriteError(msg, code=2)
             if v not in date_type:
-                msg = ("The '$type' string field is required to be 'date' "
-                       "or 'timestamp': {$currentDate: {field : {$type: "
-                       "'date'}}}")
+                msg = (
+                    "The '$type' string field is required to be 'date' "
+                    "or 'timestamp': {$currentDate: {field : {$type: "
+                    "'date'}}}"
+                )
                 raise WriteError(msg, code=2)
 
             value = date_type[v]
@@ -409,8 +426,7 @@ def parse_currentDate(field, value, array_filters):
 
 
 def parse_add_to_set(field, value_or_each, array_filters):
-    if (is_duckument_type(value_or_each) and
-            next(iter(value_or_each)) == "$each"):
+    if is_duckument_type(value_or_each) and next(iter(value_or_each)) == "$each":
         value = EachAdder(value_or_each)
         run_each = True
     else:
@@ -419,14 +435,15 @@ def parse_add_to_set(field, value_or_each, array_filters):
 
     @keep(value)
     def _add_to_set(fieldwalker):
-
         def evaluator(node, new_elem):
             old_val = node.value
             if node.exists and not isinstance(old_val, list):
                 value_type = type(old_val).__name__
-                msg = ("Cannot apply $addToSet to non-array field. Field "
-                       "named {0!r} has non-array type {1}"
-                       "".format(str(node), value_type))
+                msg = (
+                    "Cannot apply $addToSet to non-array field. Field "
+                    "named {0!r} has non-array type {1}"
+                    "".format(str(node), value_type)
+                )
                 raise WriteError(msg, code=2)
 
             if run_each:
@@ -446,7 +463,7 @@ def parse_add_to_set(field, value_or_each, array_filters):
 
 def parse_pop(field, value, array_filters):
     if not is_numeric_type(value):
-        msg = ("Expected a number in: {0}: {1!r}".format(field, value))
+        msg = "Expected a number in: {0}: {1!r}".format(field, value)
         raise WriteError(msg, code=9)
     else:
         try:
@@ -461,13 +478,14 @@ def parse_pop(field, value, array_filters):
 
     @keep(value)
     def _pop(fieldwalker):
-
         def evaluator(node, pop_ind):
             old_val = node.value
             if node.exists and not isinstance(old_val, list):
                 value_type = type(old_val).__name__
-                msg = ("Path {0!r} contains an element of non-array type "
-                       "{1!r}".format(str(node), value_type))
+                msg = (
+                    "Path {0!r} contains an element of non-array type "
+                    "{1!r}".format(str(node), value_type)
+                )
                 raise WriteError(msg, code=14)
 
             if not node.exists:
@@ -498,7 +516,6 @@ def parse_pull(field, value_or_conditions, array_filters):
 
     @keep(queryfilter)
     def _pull(fieldwalker):
-
         def evaluator(node, _):
             old_val = node.value
             if node.exists and not isinstance(old_val, list):
@@ -532,15 +549,16 @@ def parse_push(field, value_or_each, array_filters):
 
     @keep(value)
     def _push(fieldwalker):
-
         def evaluator(node, new_elem):
             old_val = node.value
             if node.exists and not isinstance(old_val, list):
                 value_type = type(old_val).__name__
                 _id = fieldwalker.doc["_id"]
-                msg = ("The field {0!r} must be an array but is of type "
-                       "{1} in document {{_id: {2}}}"
-                       "".format(str(node), value_type, _id))
+                msg = (
+                    "The field {0!r} must be an array but is of type "
+                    "{1} in document {{_id: {2}}}"
+                    "".format(str(node), value_type, _id)
+                )
                 raise WriteError(msg, code=2)
 
             if run_each:
@@ -560,13 +578,13 @@ def parse_push(field, value_or_each, array_filters):
 def parse_pull_all(field, value, array_filters):
     if not isinstance(value, list):
         value_type = type(value).__name__
-        msg = ("$pullAll requires an array argument but was given a {}"
-               "".format(value_type))
+        msg = "$pullAll requires an array argument but was given a {}" "".format(
+            value_type
+        )
         raise WriteError(msg, code=2)
 
     @keep(value)
     def _pull_all(fieldwalker):
-
         def evaluator(node, pull_list):
             old_val = node.value
             if node.exists and not isinstance(old_val, list):
@@ -596,7 +614,6 @@ def parse_pull_all(field, value, array_filters):
 
 
 class EachAdder(object):
-
     def __init__(self, spec):
         spec = spec.copy()
 
@@ -608,9 +625,10 @@ class EachAdder(object):
             try:
                 type_check = self.validators[mod]
             except KeyError:
-                raise WriteError("Found unexpected fields after $each in "
-                                 "$addToSet: %s" % spec,
-                                 code=2)
+                raise WriteError(
+                    "Found unexpected fields after $each in " "$addToSet: %s" % spec,
+                    code=2,
+                )
 
             self.mods[mod] = type_check(self, value)
 
@@ -626,9 +644,11 @@ class EachAdder(object):
             each[:]
         except TypeError:
             type_name = type(each).__name__
-            raise WriteError("The argument to $each in $addToSet must be an "
-                             "array but it was of type %s" % type_name,
-                             code=14)
+            raise WriteError(
+                "The argument to $each in $addToSet must be an "
+                "array but it was of type %s" % type_name,
+                code=14,
+            )
         return each
 
     validators = {
@@ -637,7 +657,6 @@ class EachAdder(object):
 
 
 class EachPusher(object):
-
     def __init__(self, spec):
         spec = spec.copy()
 
@@ -652,8 +671,7 @@ class EachPusher(object):
             try:
                 type_check = self.validators[mod]
             except KeyError:
-                raise WriteError("Unrecognized clause in $push: %s" % mod,
-                                 code=2)
+                raise WriteError("Unrecognized clause in $push: %s" % mod, code=2)
 
             self.mods[mod] = type_check(self, value)
 
@@ -698,8 +716,7 @@ class EachPusher(object):
 
             else:
                 is_reverse = bool(1 - sort)
-                ordered = sorted((Weighted(e) for e in new_array),
-                                 reverse=is_reverse)
+                ordered = sorted((Weighted(e) for e in new_array), reverse=is_reverse)
                 new_array = [w.value for w in ordered]
 
         return new_array
@@ -709,33 +726,39 @@ class EachPusher(object):
             each[:]
         except TypeError:
             type_name = type(each).__name__
-            raise WriteError("The argument to $each in $push must be an "
-                             "array but it was of type: %s" % type_name,
-                             code=2)
+            raise WriteError(
+                "The argument to $each in $push must be an "
+                "array but it was of type: %s" % type_name,
+                code=2,
+            )
         return each
 
     def _validate_position(self, position):
         if not is_integer_type(position):
             type_name = type(position).__name__
-            raise WriteError("The value for $position must be an integer "
-                             "value, not of type: %s" % type_name,
-                             code=2)
+            raise WriteError(
+                "The value for $position must be an integer "
+                "value, not of type: %s" % type_name,
+                code=2,
+            )
         return position
 
     def _validate_slice(self, slice):
         if not is_integer_type(slice):
             type_name = type(slice).__name__
-            raise WriteError("The value for $slice must be an integer "
-                             "value but was given type: %s" % type_name,
-                             code=2)
+            raise WriteError(
+                "The value for $slice must be an integer "
+                "value but was given type: %s" % type_name,
+                code=2,
+            )
         return slice
 
     def _validate_sort(self, sort, int_only=False):
         if is_integer_type(sort) or int_only:
             if sort not in (1, -1):
-                raise WriteError("The $sort element value must be either "
-                                 "1 or -1",
-                                 code=2)
+                raise WriteError(
+                    "The $sort element value must be either " "1 or -1", code=2
+                )
             return sort
 
         if is_duckument_type(sort):
@@ -743,9 +766,11 @@ class EachPusher(object):
                 self._validate_sort(value, int_only=True)
             return sort
 
-        raise WriteError("The $sort is invalid: use 1/-1 to sort the whole "
-                         "element, or {field:1/-1} to sort embedded fields",
-                         code=2)
+        raise WriteError(
+            "The $sort is invalid: use 1/-1 to sort the whole "
+            "element, or {field:1/-1} to sort embedded fields",
+            code=2,
+        )
 
     validators = {
         "$each": _validate_each,

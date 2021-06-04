@@ -1,4 +1,3 @@
-
 import sys
 import types
 
@@ -37,10 +36,12 @@ class BSON_(types.ModuleType):
 
     decimal128_NaN = Decimal128("NaN")
     decimal128_INF = Decimal128("Infinity")
-    decimal128_NaN_ls = (decimal128_NaN,
-                         Decimal128("-NaN"),
-                         Decimal128("sNaN"),
-                         Decimal128("-sNaN"))
+    decimal128_NaN_ls = (
+        decimal128_NaN,
+        Decimal128("-NaN"),
+        Decimal128("sNaN"),
+        Decimal128("-sNaN"),
+    )
 
     def __init__(self):
         self.bson_used = True
@@ -49,16 +50,14 @@ class BSON_(types.ModuleType):
     @classmethod
     def parse_codec_options(cls, options):
         from bson.codec_options import _parse_codec_options
+
         return _parse_codec_options(options)
 
     @classmethod
-    def document_encode(cls,
-                        doc,
-                        check_keys=False,
-                        codec_options=DEFAULT_CODEC_OPTIONS):
-        return cls.BSON.encode(doc,
-                               check_keys=check_keys,
-                               codec_options=codec_options)
+    def document_encode(
+        cls, doc, check_keys=False, codec_options=DEFAULT_CODEC_OPTIONS
+    ):
+        return cls.BSON.encode(doc, check_keys=check_keys, codec_options=codec_options)
 
     @classmethod
     def document_decode(cls, doc, codec_options=DEFAULT_CODEC_OPTIONS):
@@ -67,12 +66,14 @@ class BSON_(types.ModuleType):
     @classmethod
     def json_loads(cls, serialized, json_options=None):
         from bson.json_util import loads as _loads
+
         json_options = json_options or cls.CANONICAL_JSON_OPTIONS
         return _loads(serialized, json_options=json_options)
 
     @classmethod
     def json_dumps(cls, doc, json_options=None):
         from bson.json_util import dumps as _dumps
+
         json_options = json_options or cls.CANONICAL_JSON_OPTIONS
         return _dumps(doc, json_options=json_options)
 
@@ -83,7 +84,6 @@ class BSON_(types.ModuleType):
 
 
 def _mock(name):
-
     class Mock(object):
         def __init__(self, *args, **kwargs):
             self.name = name
@@ -92,9 +92,11 @@ def _mock(name):
 
         def __eq__(self, other):
             if isinstance(other, Mock):
-                return (self.name == other.name
-                        and self.args == other.args
-                        and self.kwargs == other.kwargs)
+                return (
+                    self.name == other.name
+                    and self.args == other.args
+                    and self.kwargs == other.kwargs
+                )
             return False
 
     return Mock
@@ -110,16 +112,13 @@ class NoBSON(types.ModuleType):
     )
 
     class BSONError(Exception):
-        """Base class for all BSON exceptions.
-        """
+        """Base class for all BSON exceptions."""
 
     class InvalidId(BSONError):
-        """Raised when trying to create an ObjectId from invalid data.
-        """
+        """Raised when trying to create an ObjectId from invalid data."""
 
     class InvalidDocument(BSONError):
-        """Raised when trying to create a BSON object from an invalid document.
-        """
+        """Raised when trying to create a BSON object from an invalid document."""
 
     SON = _mock("SON")
     BSON = _mock("BSON")
@@ -135,10 +134,12 @@ class NoBSON(types.ModuleType):
 
     decimal128_NaN = Decimal128("NaN")
     decimal128_INF = Decimal128("Infinity")
-    decimal128_NaN_ls = (decimal128_NaN,
-                         Decimal128("-NaN"),
-                         Decimal128("sNaN"),
-                         Decimal128("-sNaN"))
+    decimal128_NaN_ls = (
+        decimal128_NaN,
+        Decimal128("-NaN"),
+        Decimal128("sNaN"),
+        Decimal128("-sNaN"),
+    )
 
     from .objectid import ObjectId
     from .tz_util import utc
@@ -172,8 +173,9 @@ class NoBSON(types.ModuleType):
         """Convert datetime to milliseconds since epoch UTC."""
         if dtm.utcoffset() is not None:
             dtm = dtm - dtm.utcoffset()
-        return int(cls.calendar.timegm(dtm.timetuple()) * 1000 +
-                   dtm.microsecond // 1000)
+        return int(
+            cls.calendar.timegm(dtm.timetuple()) * 1000 + dtm.microsecond // 1000
+        )
 
     @classmethod
     def _millis_to_datetime(cls, millis, opts):
@@ -182,14 +184,16 @@ class NoBSON(types.ModuleType):
         seconds = (millis - diff) // 1000
         micros = diff * 1000
         if opts.tz_aware:
-            dt = cls.EPOCH_AWARE + cls.datetime.timedelta(seconds=seconds,
-                                                          microseconds=micros)
+            dt = cls.EPOCH_AWARE + cls.datetime.timedelta(
+                seconds=seconds, microseconds=micros
+            )
             if opts.tzinfo:
                 dt = dt.astimezone(opts.tzinfo)
             return dt
         else:
-            return cls.EPOCH_NAIVE + cls.datetime.timedelta(seconds=seconds,
-                                                            microseconds=micros)
+            return cls.EPOCH_NAIVE + cls.datetime.timedelta(
+                seconds=seconds, microseconds=micros
+            )
 
     class BSONEncoder(JSONEncoder):
         key_is_keyword = False
@@ -210,8 +214,7 @@ class NoBSON(types.ModuleType):
                     pattern = obj.pattern
                 else:
                     pattern = obj.pattern.decode("utf-8")
-                return NoBSON.OrderedDict([("$regex", pattern),
-                                           ("$options", flags)])
+                return NoBSON.OrderedDict([("$regex", pattern), ("$options", flags)])
 
             if hasattr(obj, "to_json"):
                 return obj.to_json()
@@ -236,8 +239,8 @@ class NoBSON(types.ModuleType):
                     key = eval(candidate)
                     if not isinstance(key, cls._string_types):
                         raise cls.InvalidDocument(
-                            "documents must have only string keys, key was "
-                            "%r" % key)
+                            "documents must have only string keys, key was " "%r" % key
+                        )
                     if check_keys:
                         cls._key_validate(key)
                 _encoder.key_is_keyword = False
@@ -262,21 +265,24 @@ class NoBSON(types.ModuleType):
     @classmethod
     def document_decode(cls, serialized, codec_options=None, *args, **kwargs):
         from json import loads as _loads
+
         opts = codec_options or cls.DEFAULT_CODEC_OPTIONS
         dcls = opts.document_class
         return _loads(
             serialized,
-            object_pairs_hook=lambda pairs: cls.object_hook(dcls(pairs), opts)
+            object_pairs_hook=lambda pairs: cls.object_hook(dcls(pairs), opts),
         )
 
     @classmethod
     def json_loads(cls, serialized, *args, **kwarg):
         from json import loads as _loads
+
         return _loads(serialized, object_hook=cls.object_hook)
 
     @classmethod
     def json_dumps(cls, doc, *args, **kwarg):
         from json import dumps as _dumps
+
         return _dumps(doc, default=cls.BSONEncoder().default)
 
     @classmethod
@@ -286,22 +292,27 @@ class NoBSON(types.ModuleType):
     custom_json_hooks = {}
 
     _re_type = type(re.compile(""))
-    _re_flags = (("i", re.IGNORECASE), ("l", re.LOCALE), ("m", re.MULTILINE),
-                 ("s", re.DOTALL), ("u", re.UNICODE), ("x", re.VERBOSE))
+    _re_flags = (
+        ("i", re.IGNORECASE),
+        ("l", re.LOCALE),
+        ("m", re.MULTILINE),
+        ("s", re.DOTALL),
+        ("u", re.UNICODE),
+        ("x", re.VERBOSE),
+    )
 
     if sys.version_info[0] == 3:
-        _string_types = str,
-        _integer_types = int,
+        _string_types = (str,)
+        _integer_types = (int,)
         _text_type = str
     else:
-        _string_types = basestring,  # noqa
+        _string_types = (basestring,)  # noqa
         _integer_types = (int, long)  # noqa
         _text_type = unicode  # noqa
 
     @classmethod
     def _re_int_flag_to_str(cls, int_flags):
-        return "".join(str_f for str_f, re_F in cls._re_flags
-                       if int_flags & re_F)
+        return "".join(str_f for str_f, re_F in cls._re_flags if int_flags & re_F)
 
     @classmethod
     def _re_str_flags_to_int(cls, str_flags):

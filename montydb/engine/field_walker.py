@@ -1,8 +1,7 @@
-
-
 class _NoVal(object):
     def __repr__(self):
         return "_NoVal()"
+
     __solts__ = ()
 
 
@@ -38,8 +37,14 @@ class FieldValues(object):
 
     """
 
-    __slots__ = ("nodes", "_is_exists", "_null_or_missing",
-                 "_fieldwalker", "_value_iter", "__iter")
+    __slots__ = (
+        "nodes",
+        "_is_exists",
+        "_null_or_missing",
+        "_fieldwalker",
+        "_value_iter",
+        "__iter",
+    )
 
     def __init__(self, nodes, fieldwalker):
         self.nodes = nodes
@@ -64,8 +69,11 @@ class FieldValues(object):
     def null_or_missing(self):
         """Is None value or missing field ?"""
         if self._null_or_missing is None:
-            null_or_missing = (any(nd.is_missing() for nd in self.nodes) or
-                               self.is_exists() and None in self.iter_flat())
+            null_or_missing = (
+                any(nd.is_missing() for nd in self.nodes)
+                or self.is_exists()
+                and None in self.iter_flat()
+            )
             # Cache
             self._null_or_missing = null_or_missing
 
@@ -92,11 +100,9 @@ class FieldValues(object):
                 if unpack and not node.located:
                     for i, elem in enumerate(value):
                         if elem is not _no_val:
-                            matched = FieldNode(str(i),
-                                                elem,
-                                                exists=True,
-                                                in_array=True,
-                                                parent=node)
+                            matched = FieldNode(
+                                str(i), elem, exists=True, in_array=True, parent=node
+                            )
                             fieldwalker._put_matched(matched)
                             yield elem
                 if pack:
@@ -111,28 +117,23 @@ class FieldValues(object):
         fieldwalker._put_matched(None)
 
     def iter_plain(self):
-        """Iterate each nodes value as is
-        """
+        """Iterate each nodes value as is"""
         return self._iter(array_only=False, unpack=False, pack=True)
 
     def iter_flat(self):
-        """Iterate each nodes value and unpack list value's element
-        """
+        """Iterate each nodes value and unpack list value's element"""
         return self._iter(array_only=False, unpack=True, pack=False)
 
     def iter_full(self):
-        """Iterate each nodes value as is, also unpack list value's element
-        """
+        """Iterate each nodes value as is, also unpack list value's element"""
         return self._iter(array_only=False, unpack=True, pack=True)
 
     def iter_arrays(self):
-        """Only iterate list type values
-        """
+        """Only iterate list type values"""
         return self._iter(array_only=True, unpack=False, pack=True)
 
     def iter_elements(self):
-        """Only iterate list type values' elements
-        """
+        """Only iterate list type values' elements"""
         return self._iter(array_only=True, unpack=True, pack=False)
 
     def change_iter(self, func):
@@ -184,8 +185,9 @@ class FieldNode(str):
     # __slots__ = ("value", "located", "exists", "full_path",
     #              "in_array", "parent", "children")
 
-    def __new__(cls, field, doc, located=False, exists=False,
-                in_array=False, parent=None):
+    def __new__(
+        cls, field, doc, located=False, exists=False, in_array=False, parent=None
+    ):
         obj = str.__new__(cls, field)
         obj.value = doc
         obj.located = located
@@ -240,7 +242,6 @@ class FieldNode(str):
 
 
 class FieldTreeReader(object):
-
     def __init__(self, tree):
         self.map_cls = tree.map_cls
         self.trace = set()
@@ -256,11 +257,13 @@ class FieldTreeReader(object):
         elif isinstance(node.value, list):
             result += self.read_array(node, field)
         else:
-            new_node = node.spawn(_no_val,
-                                  field,
-                                  exists=False,
-                                  located=node.located,
-                                  in_array=node.in_array)
+            new_node = node.spawn(
+                _no_val,
+                field,
+                exists=False,
+                located=node.located,
+                in_array=node.in_array,
+            )
             result.append(new_node)
 
         return result
@@ -298,11 +301,9 @@ class FieldTreeReader(object):
                 exists = False
 
             self.trace.add(field)
-            new_nodes.append(node.spawn(val,
-                                        field,
-                                        located=True,
-                                        exists=exists,
-                                        in_array=True))
+            new_nodes.append(
+                node.spawn(val, field, located=True, exists=exists, in_array=True)
+            )
         return new_nodes
 
 
@@ -335,7 +336,6 @@ def no_dollar_prefix_field(doc, map_cls, root_path):
 
 
 class FieldTreeWriter(object):
-
     def __init__(self, tree):
         self.map_cls = tree.map_cls
         self.filters = None
@@ -349,8 +349,10 @@ class FieldTreeWriter(object):
             raise FieldWriteError("An empty update path is not valid", code=56)
 
         if field.startswith("."):
-            msg = ("The update path {} contains an empty field name, which is "
-                   "not allowed".format(field))
+            msg = (
+                "The update path {} contains an empty field name, which is "
+                "not allowed".format(field)
+            )
             raise FieldWriteError(msg, code=56)
 
         if field.startswith("$") and not field.startswith("$["):
@@ -359,28 +361,32 @@ class FieldTreeWriter(object):
             raise FieldWriteError(msg, code=52)
 
         if not node.exists and is_multi_position_operator(field):
-            msg = ("The path {0!r} must exist in the document in order "
-                   "to apply array updates.".format(node.full_path))
+            msg = (
+                "The path {0!r} must exist in the document in order "
+                "to apply array updates.".format(node.full_path)
+            )
             raise FieldWriteError(msg, code=2)
 
-        if (is_multi_position_operator(field) and
-                not isinstance(node.value, list)):
-            msg = ("Cannot apply array updates to non-array "
-                   "element {0}: {1}".format(str(node), node.value))
+        if is_multi_position_operator(field) and not isinstance(node.value, list):
+            msg = "Cannot apply array updates to non-array " "element {0}: {1}".format(
+                str(node), node.value
+            )
             raise FieldWriteError(msg, code=2)
 
         if isinstance(node.value, self.map_cls):
 
             result.append(self.write_map(node, field))
 
-        elif (isinstance(node.value, list) and
-                (field.isdigit() or is_multi_position_operator(field))):
+        elif isinstance(node.value, list) and (
+            field.isdigit() or is_multi_position_operator(field)
+        ):
 
             result += self.write_array(node, field)
 
         elif not self.on_delete:
-            msg = ("Cannot create field {0!r} in element "
-                   "{1}".format(field, {str(node): node.value}))
+            msg = "Cannot create field {0!r} in element " "{1}".format(
+                field, {str(node): node.value}
+            )
             raise FieldWriteError(msg, code=28)
 
         return result
@@ -415,22 +421,22 @@ class FieldTreeWriter(object):
                         field = str(i)
 
                         self.trace.add(field)
-                        new_nodes.append(node.spawn(elem,
-                                                    field,
-                                                    located=True,
-                                                    exists=True,
-                                                    in_array=True))
+                        new_nodes.append(
+                            node.spawn(
+                                elem, field, located=True, exists=True, in_array=True
+                            )
+                        )
             else:
                 # all
                 for i, elem in enumerate(doc):
                     field = str(i)
 
                     self.trace.add(field)
-                    new_nodes.append(node.spawn(elem,
-                                                field,
-                                                located=True,
-                                                exists=True,
-                                                in_array=True))
+                    new_nodes.append(
+                        node.spawn(
+                            elem, field, located=True, exists=True, in_array=True
+                        )
+                    )
         else:
             try:
                 val = doc[int(field)]
@@ -440,22 +446,21 @@ class FieldTreeWriter(object):
                 exists = False
 
             self.trace.add(field)
-            new_nodes.append(node.spawn(val,
-                                        field,
-                                        located=True,
-                                        exists=exists,
-                                        in_array=True))
+            new_nodes.append(
+                node.spawn(val, field, located=True, exists=exists, in_array=True)
+            )
         return new_nodes
 
 
 def is_conflict(path_a, path_b):
-    return (path_a == path_b or
-            path_a.startswith(path_b + ".") or
-            path_b.startswith(path_a + "."))
+    return (
+        path_a == path_b
+        or path_a.startswith(path_b + ".")
+        or path_b.startswith(path_a + ".")
+    )
 
 
 class FieldTree(object):
-
     def __init__(self, doc, doc_type=None):
         self.map_cls = doc_type or type(doc)
         self.root = FieldNode("", doc, exists=True)
@@ -520,8 +525,9 @@ class FieldTree(object):
             self.previous = self.handler.trace.copy()
 
             # When READ, stop if all nodes not exists
-            if (isinstance(self.handler, FieldTreeReader) and
-                    all(node.exists is False for node in self.picked)):
+            if isinstance(self.handler, FieldTreeReader) and all(
+                node.exists is False for node in self.picked
+            ):
                 break
 
     def read(self, fields):
@@ -530,8 +536,7 @@ class FieldTree(object):
         return self.picked
 
     def stage(self, value, evaluator=None):
-        """Internal method, for staging the changes
-        """
+        """Internal method, for staging the changes"""
         evaluator = evaluator or (lambda _, val: val)
         staging = [node for node in self.picked if node in self.previous]
         updates = list()
@@ -540,8 +545,10 @@ class FieldTree(object):
             update = node.full_path
             for changed in self.changes:
                 if is_conflict(update, changed):
-                    msg = ("Updating the path {0!r} would create a conflict "
-                           "at {1!r}".format(update, changed))
+                    msg = (
+                        "Updating the path {0!r} would create a conflict "
+                        "at {1!r}".format(update, changed)
+                    )
                     raise FieldWriteError(msg, code=40)
 
             new_value = evaluator(node, value)
@@ -560,13 +567,17 @@ class FieldTree(object):
 
             if not fieldwalker.has_matched():
                 # If hasn't queried or not matched in array
-                msg = ("The positional operator did not find the match needed "
-                       "from the query.")
+                msg = (
+                    "The positional operator did not find the match needed "
+                    "from the query."
+                )
                 raise FieldWriteError(msg, code=2)
 
             elif fields.count("$") > 1:
-                msg = ("Too many positional (i.e. '$') elements found in path "
-                       "{!r}".format(".".join(fields)))
+                msg = (
+                    "Too many positional (i.e. '$') elements found in path "
+                    "{!r}".format(".".join(fields))
+                )
                 raise FieldWriteError(msg, code=2)
 
             else:
@@ -584,8 +595,10 @@ class FieldTree(object):
                 identifier = parse_identifier(field)
 
                 if identifier and identifier not in array_filters:
-                    msg = ("No array filter found for identifier {0!r} in "
-                           "path {1!r}".format(identifier, ".".join(fields)))
+                    msg = (
+                        "No array filter found for identifier {0!r} in "
+                        "path {1!r}".format(identifier, ".".join(fields))
+                    )
                     raise FieldWriteError(msg, code=2)
         return fields
 
@@ -611,8 +624,9 @@ class FieldTree(object):
 
             if isinstance(doc, self.map_cls):
                 new_doc = self.map_cls()
-                fields = list(doc.keys()) + [str(child) for child in node
-                                             if child not in doc]
+                fields = list(doc.keys()) + [
+                    str(child) for child in node if child not in doc
+                ]
                 for field in fields:
                     try:
                         child = node[field]
@@ -631,8 +645,9 @@ class FieldTree(object):
 
             elif isinstance(doc, list):
                 new_doc = list()
-                indices = range(max(
-                    [len(doc)] + [int(n) + 1 for n in node if n.isdigit()]))
+                indices = range(
+                    max([len(doc)] + [int(n) + 1 for n in node if n.isdigit()])
+                )
 
                 for index in indices:
                     if ON_DELETE and index >= len(doc):
