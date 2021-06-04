@@ -139,7 +139,7 @@ class MontyCursor(object):
 
     def __getattr__(self, name):
         if name in NotImplementeds:
-            raise NotImplementedError("'MontyCursor.%s' is NOT " "implemented !" % name)
+            raise NotImplementedError("'MontyCursor.%s' is NOT implemented !" % name)
         raise AttributeError("'MontyCursor' object has no attribute '%s'" % name)
 
     def __getitem__(self, index):
@@ -154,7 +154,7 @@ class MontyCursor(object):
             if index.start is not None:
                 if index.start < 0:
                     raise IndexError(
-                        "Cursor instances do not support " "negative indices"
+                        "Cursor instances do not support negative indices"
                     )
                 skip = index.start
 
@@ -177,7 +177,7 @@ class MontyCursor(object):
 
         if isinstance(index, integer_types):
             if index < 0:
-                raise IndexError("Cursor instances do not support negative " "indices")
+                raise IndexError("Cursor instances do not support negative indices")
             clone = self.clone()
             clone.skip(index + self._skip)
             clone.limit(-1)  # use a hard limit
@@ -186,7 +186,7 @@ class MontyCursor(object):
                 return doc
 
             raise IndexError("no such item for Cursor instance")
-        raise TypeError("index %r cannot be applied to Cursor " "instances" % index)
+        raise TypeError("index %r cannot be applied to Cursor instances" % index)
 
     def __iter__(self):
         return self
@@ -397,7 +397,7 @@ class MontyCursor(object):
 
     def count(self, with_limit_and_skip=False):
         warnings.warn(
-            "count is deprecated. Use Collection.count_documents " "instead.",
+            "count is deprecated. Use Collection.count_documents instead.",
             DeprecationWarning,
             stacklevel=2,
         )

@@ -186,7 +186,7 @@ def parse_inc(field, value, array_filters):
     if not is_numeric_type(value):
         val_repr_ = "{!r}" if isinstance(value, string_types) else "{}"
         val_repr_ = val_repr_.format(value)
-        msg = "Cannot increment with non-numeric argument: " "{{{0}: {1}}}".format(
+        msg = "Cannot increment with non-numeric argument: {{{0}: {1}}}".format(
             field, val_repr_
         )
         raise WriteError(msg, code=14)
@@ -261,7 +261,7 @@ def parse_mul(field, value, array_filters):
     if not is_numeric_type(value):
         val_repr_ = "{!r}" if isinstance(value, string_types) else "{}"
         val_repr_ = val_repr_.format(value)
-        msg = "Cannot multiply with non-numeric argument: " "{{{0}: {1}}}".format(
+        msg = "Cannot multiply with non-numeric argument: {{{0}: {1}}}".format(
             field, val_repr_
         )
         raise WriteError(msg, code=14)
@@ -306,7 +306,7 @@ def _get_array_member(fieldvalues):
 
 def parse_rename(field, new_field, array_filters):
     if not isinstance(new_field, string_types):
-        msg = "The 'to' field for $rename must be a string: {0}: {1}" "".format(
+        msg = "The 'to' field for $rename must be a string: {0}: {1}".format(
             field, new_field
         )
         raise WriteError(msg, code=2)
@@ -578,7 +578,7 @@ def parse_push(field, value_or_each, array_filters):
 def parse_pull_all(field, value, array_filters):
     if not isinstance(value, list):
         value_type = type(value).__name__
-        msg = "$pullAll requires an array argument but was given a {}" "".format(
+        msg = "$pullAll requires an array argument but was given a {}".format(
             value_type
         )
         raise WriteError(msg, code=2)
@@ -626,7 +626,7 @@ class EachAdder(object):
                 type_check = self.validators[mod]
             except KeyError:
                 raise WriteError(
-                    "Found unexpected fields after $each in " "$addToSet: %s" % spec,
+                    "Found unexpected fields after $each in $addToSet: %s" % spec,
                     code=2,
                 )
 
@@ -757,7 +757,7 @@ class EachPusher(object):
         if is_integer_type(sort) or int_only:
             if sort not in (1, -1):
                 raise WriteError(
-                    "The $sort element value must be either " "1 or -1", code=2
+                    "The $sort element value must be either 1 or -1", code=2
                 )
             return sort
 

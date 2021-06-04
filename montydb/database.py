@@ -75,7 +75,7 @@ class MontyDatabase(BaseObject):
         if isinstance(name_or_collection, MontyCollection):
             name = name_or_collection.name
         elif not isinstance(name_or_collection, string_types):
-            raise TypeError("name_or_collection must be an instance of " "basestring")
+            raise TypeError("name_or_collection must be an instance of basestring")
         self.client._storage.collection_drop(self, name)
 
     def get_collection(self, name, codec_options=None, write_concern=None, **kwargs):

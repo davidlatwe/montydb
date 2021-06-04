@@ -366,7 +366,7 @@ class QueryFilter(object):
         elif is_duckument_type(sub_spec):
             for op in sub_spec:
                 if op not in self.field_ops:
-                    raise OperationFailure("unknown operator: " "{}".format(op))
+                    raise OperationFailure("unknown operator: {}".format(op))
                 if op == "$regex":
                     raise OperationFailure("$not cannot have a regex")
 
@@ -408,7 +408,7 @@ def _regex_options_(regex_flag, opt_flag):
 
 def _regex_options_v42(regex_flag, opt_flag):
     if regex_flag and opt_flag:
-        raise OperationFailure("options set in both $regex and " "$options")
+        raise OperationFailure("options set in both $regex and $options")
 
 
 _regex_options_check = _regex_options_v42
@@ -607,7 +607,7 @@ def _in_match(fieldwalker, query):
             try:
                 q_regex.append(q.try_compile())
             except re.error as e:
-                raise OperationFailure("Regular expression is invalid:" " {}".format(e))
+                raise OperationFailure("Regular expression is invalid: {}".format(e))
         else:
             q_value.append(q)
 

@@ -165,7 +165,7 @@ def find_storage_cls(storage_name):
         try:
             module = importlib.import_module(storage_name)
         except ImportError:
-            raise ConfigurationError("Storage module '%s' not found." "" % storage_name)
+            raise ConfigurationError("Storage module '%s' not found." % storage_name)
 
     for name, cls in inspect.getmembers(module, inspect.isclass):
         if name != "AbstractStorage" and issubclass(cls, AbstractStorage):

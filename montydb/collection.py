@@ -416,7 +416,7 @@ class MontyCollection(BaseObject):
 
     def count(self, filter=None, **kwargs):
         warnings.warn(
-            "count is deprecated. Use Collection.count_documents " "instead.",
+            "count is deprecated. Use Collection.count_documents instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -430,7 +430,7 @@ class MontyCollection(BaseObject):
         """ """
         if not isinstance(key, string_types):
             raise TypeError(
-                "key must be an " "instance of %s" % (string_types.__name__,)
+                "key must be an instance of %s" % (string_types.__name__,)
             )
 
         result = list()

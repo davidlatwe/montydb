@@ -141,7 +141,7 @@ class Projector(object):
                         slicing = slice(sub_v[0], sub_v[0] + sub_v[1])
                     else:
                         raise OperationFailure(
-                            "$slice only supports numbers and [skip, limit] " "arrays"
+                            "$slice only supports numbers and [skip, limit] arrays"
                         )
 
                     self.array_field[key] = self.parse_slice(key, slicing)
@@ -149,15 +149,15 @@ class Projector(object):
                 elif sub_k == "$elemMatch":
                     if not is_duckument_type(sub_v):
                         raise OperationFailure(
-                            "elemMatch: Invalid argument, " "object required."
+                            "elemMatch: Invalid argument, object required."
                         )
                     if self.array_op_type == self.ARRAY_OP_POSITIONAL:
                         raise OperationFailure(
-                            "Cannot specify positional " "operator and $elemMatch."
+                            "Cannot specify positional operator and $elemMatch."
                         )
                     if "." in key:
                         raise OperationFailure(
-                            "Cannot use $elemMatch projection on a nested " "field.",
+                            "Cannot use $elemMatch projection on a nested field.",
                             code=2,
                         )
 
@@ -167,13 +167,13 @@ class Projector(object):
                 elif sub_k == "$meta":
                     # Currently Not supported.
                     raise NotImplementedError(
-                        "Monty currently not support " "$meta in projection."
+                        "Monty currently not support $meta in projection."
                     )
 
                 else:
                     _v = _perr_doc(val)
                     raise OperationFailure(
-                        "Unsupported projection option: " "{0}: {1}".format(key, _v),
+                        "Unsupported projection option: {0}: {1}".format(key, _v),
                         code=2,
                     )
 
@@ -207,7 +207,7 @@ class Projector(object):
                     )
                 if self.array_op_type == self.ARRAY_OP_POSITIONAL:
                     raise OperationFailure(
-                        "Cannot specify more than one positional proj. " "per query."
+                        "Cannot specify more than one positional proj. per query."
                     )
                 if self.array_op_type == self.ARRAY_OP_ELEM_MATCH:
                     raise OperationFailure(

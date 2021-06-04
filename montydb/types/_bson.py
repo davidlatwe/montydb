@@ -239,7 +239,7 @@ class NoBSON(types.ModuleType):
                     key = eval(candidate)
                     if not isinstance(key, cls._string_types):
                         raise cls.InvalidDocument(
-                            "documents must have only string keys, key was " "%r" % key
+                            "documents must have only string keys, key was %r" % key
                         )
                     if check_keys:
                         cls._key_validate(key)

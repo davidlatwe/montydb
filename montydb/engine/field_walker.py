@@ -368,7 +368,7 @@ class FieldTreeWriter(object):
             raise FieldWriteError(msg, code=2)
 
         if is_multi_position_operator(field) and not isinstance(node.value, list):
-            msg = "Cannot apply array updates to non-array " "element {0}: {1}".format(
+            msg = "Cannot apply array updates to non-array element {0}: {1}".format(
                 str(node), node.value
             )
             raise FieldWriteError(msg, code=2)
@@ -384,7 +384,7 @@ class FieldTreeWriter(object):
             result += self.write_array(node, field)
 
         elif not self.on_delete:
-            msg = "Cannot create field {0!r} in element " "{1}".format(
+            msg = "Cannot create field {0!r} in element {1}".format(
                 field, {str(node): node.value}
             )
             raise FieldWriteError(msg, code=28)
