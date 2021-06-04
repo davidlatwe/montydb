@@ -99,7 +99,7 @@ class MontyCollection(BaseObject):
     def __getattr__(self, name):
         if name in NotImplementeds:
             raise NotImplementedError(
-                "'MontyCollection.%s' is NOT " "implemented !" % name
+                "'MontyCollection.%s' is NOT implemented !" % name
             )
         if name.startswith("_"):
             full_name = ".".join((self._name, name))
