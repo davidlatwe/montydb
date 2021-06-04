@@ -48,7 +48,7 @@ jobs:
     - name: Lint with flake8
       run: |
         # Ideally max-complexity should be set to 10
-        flake8 . --count --ignore=E302,F401,F841,W605 --max-complexity=20 --max-line-length=88 --statistics
+        flake8 . --count --ignore=E302,F401,F841,W503,W504,W605 --max-complexity=26 --max-line-length=88 --statistics
 
     - name: Test with pytest (${{ matrix.monty-storage }})
       continue-on-error: ${{ matrix.experimental }}
