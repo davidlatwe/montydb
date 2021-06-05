@@ -1,4 +1,3 @@
-
 import pytest
 
 from montydb.cursor import MontyCursor
@@ -111,8 +110,7 @@ def test_collection_get_collection_faild(monty_collection):
         monty_collection._sub_col
 
 
-def test_collection_insert_one_has_duplicate_key(monty_collection,
-                                                 mongo_collection):
+def test_collection_insert_one_has_duplicate_key(monty_collection, mongo_collection):
     doc = {"_id": 1, "foo": "bar"}
 
     mongo_collection.insert_one(doc)
@@ -128,10 +126,8 @@ def test_collection_insert_one_has_duplicate_key(monty_collection,
     # assert mongo_err.value.code == monty_err.value.code
 
 
-def test_collection_insert_many_has_duplicate_key(monty_collection,
-                                                  mongo_collection):
-    docs = [{"_id": 1, "foo1": "bar"},
-            {"_id": 1, "foo2": "bar"}]
+def test_collection_insert_many_has_duplicate_key(monty_collection, mongo_collection):
+    docs = [{"_id": 1, "foo1": "bar"}, {"_id": 1, "foo2": "bar"}]
 
     with pytest.raises(mongo_bulkw_err) as mongo_err:
         mongo_collection.insert_many(docs)
@@ -141,8 +137,7 @@ def test_collection_insert_many_has_duplicate_key(monty_collection,
 
     # ignore comparing error code
     # assert mongo_err.value.code == monty_err.value.code
-    assert (mongo_err.value.details["nInserted"] ==
-            monty_err.value.details["nInserted"])
+    assert mongo_err.value.details["nInserted"] == monty_err.value.details["nInserted"]
 
     monty_c = monty_collection.find()
     mongo_c = mongo_collection.find()

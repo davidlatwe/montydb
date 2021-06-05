@@ -1,4 +1,3 @@
-
 from ..errors import OperationFailure
 from .queries import QueryFilter
 from .field_walker import _no_val
@@ -12,9 +11,7 @@ def _is_include(val):
     """
     [] and "" will be `True` as well
     """
-    return bool(isinstance(val, list) or
-                isinstance(val, string_types) or
-                val)
+    return bool(isinstance(val, list) or isinstance(val, string_types) or val)
 
 
 def _is_positional_match(conditions, match_field):
@@ -45,7 +42,7 @@ def _perr_doc(val):
     v_lis = []
     for _k, _v in val.items():
         if isinstance(_v, string_types):
-            v_lis.append("{0}: \"{1}\"".format(_k, _v))
+            v_lis.append('{0}: "{1}"'.format(_k, _v))
         else:
             if is_duckument_type(_v):
                 _v = _perr_doc(_v)
@@ -62,8 +59,7 @@ def _perr_doc(val):
 
 
 class Projector(object):
-    """
-    """
+    """ """
 
     ARRAY_OP_NORMAL = 0
     ARRAY_OP_POSITIONAL = 1
@@ -83,8 +79,7 @@ class Projector(object):
             self.include_flag = True
 
     def __call__(self, fieldwalker):
-        """
-        """
+        """ """
         positioned = self.array_op_type == self.ARRAY_OP_POSITIONAL
 
         if positioned:
@@ -113,18 +108,14 @@ class Projector(object):
                 if self.matched is not None:
                     located_match = self.matched.located
 
-                projected = inclusion(fieldwalker,
-                                      positioned,
-                                      located_match,
-                                      init_doc)
+                projected = inclusion(fieldwalker, positioned, located_match, init_doc)
             else:
                 projected = exclusion(fieldwalker, init_doc)
 
             fieldwalker.doc = projected
 
     def parser(self, spec, qfilter):
-        """
-        """
+        """ """
         self.array_op_type = self.ARRAY_OP_NORMAL
 
         for key, val in spec.items():
@@ -132,8 +123,7 @@ class Projector(object):
             if is_duckument_type(val):
                 if not len(val) == 1:
                     _v = _perr_doc(val)
-                    raise OperationFailure(">1 field in obj: {}".format(_v),
-                                           code=2)
+                    raise OperationFailure(">1 field in obj: {}".format(_v), code=2)
 
                 # Array field options
                 sub_k, sub_v = next(iter(val.items()))
@@ -147,41 +137,45 @@ class Projector(object):
                         if not len(sub_v) == 2:
                             raise OperationFailure("$slice array wrong size")
                         if sub_v[1] <= 0:
-                            raise OperationFailure(
-                                "$slice limit must be positive")
+                            raise OperationFailure("$slice limit must be positive")
                         slicing = slice(sub_v[0], sub_v[0] + sub_v[1])
                     else:
                         raise OperationFailure(
-                            "$slice only supports numbers and [skip, limit] "
-                            "arrays")
+                            "$slice only supports numbers and [skip, limit] arrays"
+                        )
 
                     self.array_field[key] = self.parse_slice(key, slicing)
 
                 elif sub_k == "$elemMatch":
                     if not is_duckument_type(sub_v):
-                        raise OperationFailure("elemMatch: Invalid argument, "
-                                               "object required.")
+                        raise OperationFailure(
+                            "elemMatch: Invalid argument, object required."
+                        )
                     if self.array_op_type == self.ARRAY_OP_POSITIONAL:
-                        raise OperationFailure("Cannot specify positional "
-                                               "operator and $elemMatch.")
+                        raise OperationFailure(
+                            "Cannot specify positional operator and $elemMatch."
+                        )
                     if "." in key:
                         raise OperationFailure(
-                            "Cannot use $elemMatch projection on a nested "
-                            "field.", code=2)
+                            "Cannot use $elemMatch projection on a nested field.",
+                            code=2,
+                        )
 
                     self.array_op_type = self.ARRAY_OP_ELEM_MATCH
                     self.array_field[key] = self.parse_elemMatch(key, sub_v)
 
                 elif sub_k == "$meta":
                     # Currently Not supported.
-                    raise NotImplementedError("Monty currently not support "
-                                              "$meta in projection.")
+                    raise NotImplementedError(
+                        "Monty currently not support $meta in projection."
+                    )
 
                 else:
                     _v = _perr_doc(val)
                     raise OperationFailure(
-                        "Unsupported projection option: "
-                        "{0}: {1}".format(key, _v), code=2)
+                        "Unsupported projection option: {0}: {1}".format(key, _v),
+                        code=2,
+                    )
 
             elif key == "_id" and not _is_include(val):
                 self.proj_with_id = False
@@ -195,7 +189,8 @@ class Projector(object):
                     if not self.include_flag == flag:
                         raise OperationFailure(
                             "Projection cannot have a mix of inclusion and "
-                            "exclusion.")
+                            "exclusion."
+                        )
 
                 if ".$" not in key:
                     self.regular_field.append(key)
@@ -207,18 +202,22 @@ class Projector(object):
                 if not _is_include(val):
                     raise OperationFailure(
                         "Cannot exclude array elements with the positional "
-                        "operator.", code=2)
+                        "operator.",
+                        code=2,
+                    )
                 if self.array_op_type == self.ARRAY_OP_POSITIONAL:
                     raise OperationFailure(
-                        "Cannot specify more than one positional proj. "
-                        "per query.")
+                        "Cannot specify more than one positional proj. per query."
+                    )
                 if self.array_op_type == self.ARRAY_OP_ELEM_MATCH:
                     raise OperationFailure(
-                        "Cannot specify positional operator and $elemMatch.")
+                        "Cannot specify positional operator and $elemMatch."
+                    )
                 if ".$" in key.split(".$", 1)[-1]:
                     raise OperationFailure(
                         "Positional projection '{}' contains the positional "
-                        "operator more than once.".format(key))
+                        "operator more than once.".format(key)
+                    )
 
                 path = key.split(".$", 1)[0]
                 conditions = qfilter.conditions
@@ -226,7 +225,9 @@ class Projector(object):
                 if match_query is None:
                     raise OperationFailure(
                         "Positional projection '{}' does not match the query "
-                        "document.".format(key), code=2)
+                        "document.".format(key),
+                        code=2,
+                    )
 
                 self.position_path = match_query
                 self.array_op_type = self.ARRAY_OP_POSITIONAL
@@ -299,18 +300,22 @@ class Projector(object):
                         raise OperationFailure(
                             "Executor error during find command "
                             ":: caused by :: errmsg: "
-                            "\"positional operator (%s.$) requires "
-                            "corresponding field in query specifier\""
-                            % field,
-                            code=2)
+                            '"positional operator (%s.$) requires '
+                            'corresponding field in query specifier"' % field,
+                            code=2,
+                        )
 
-                    if (int(matched_index) >= elem_count and
-                            self.matched.full_path.startswith(node.full_path)):
+                    if int(
+                        matched_index
+                    ) >= elem_count and self.matched.full_path.startswith(
+                        node.full_path
+                    ):
                         raise OperationFailure(
                             "Executor error during find command "
                             ":: caused by :: errmsg: "
-                            "\"positional operator element mismatch\"",
-                            code=2)
+                            '"positional operator element mismatch"',
+                            code=2,
+                        )
 
                     fieldwalker.step(matched_index).get()
                     break
@@ -425,8 +430,7 @@ def exclusion(fieldwalker, init_doc):
                     embed_field = str(index) + "." + field
                     if embed_field in node.children:
                         child = node[embed_field]
-                        if (child.children and
-                                any(str(gch) for gch in child.children)):
+                        if child.children and any(str(gch) for gch in child.children):
                             value = _exclusion(child)
                             if value is not _no_val:
                                 emb_doc[field] = value

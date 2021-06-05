@@ -4,6 +4,7 @@ import pytest
 from pymongo.errors import OperationFailure as mongo_op_fail
 from montydb.errors import OperationFailure as monty_op_fail
 
+
 def count_documents(cursor, spec=None):
     return cursor.collection.count_documents(spec or {})
 

@@ -165,28 +165,26 @@ def find_storage_cls(storage_name):
         try:
             module = importlib.import_module(storage_name)
         except ImportError:
-            raise ConfigurationError("Storage module '%s' not found."
-                                     "" % storage_name)
+            raise ConfigurationError("Storage module '%s' not found." % storage_name)
 
     for name, cls in inspect.getmembers(module, inspect.isclass):
-        if (name != "AbstractStorage" and
-                issubclass(cls, AbstractStorage)):
+        if name != "AbstractStorage" and issubclass(cls, AbstractStorage):
 
             return cls
 
-    raise ConfigurationError("Storage engine class not found. Should "
-                             "be a subclass of `montydb.storage.abcs."
-                             "AbstractStorage`.")
+    raise ConfigurationError(
+        "Storage engine class not found. Should "
+        "be a subclass of `montydb.storage.abcs."
+        "AbstractStorage`."
+    )
 
 
 _storage_ident_fname = ".monty.storage"
 
 
-def set_storage(repository=None,
-                storage=None,
-                mongo_version=None,
-                use_bson=None,
-                **kwargs):
+def set_storage(
+    repository=None, storage=None, mongo_version=None, use_bson=None, **kwargs
+):
     """Setup storage engine for the database repository
 
     Args:
@@ -215,8 +213,7 @@ def set_storage(repository=None,
     use_bson = bson.bson_used if use_bson is None else use_bson
     mongo_version = mongo_version or _session.get("mongo_version")
 
-    for key, value in {"use_bson": use_bson,
-                       "mongo_version": mongo_version}.items():
+    for key, value in {"use_bson": use_bson, "mongo_version": mongo_version}.items():
         if value is None:
             value = _session_default[key]
         _session[key] = value
@@ -273,11 +270,15 @@ def _bson_init(use_bson):
     from .types import bson_ as bson
 
     if bson.bson_used and not use_bson:
-        raise ConfigurationError("montydb has been config to use BSON and "
-                                 "cannot be changed in current session.")
+        raise ConfigurationError(
+            "montydb has been config to use BSON and "
+            "cannot be changed in current session."
+        )
     elif not bson.bson_used and use_bson:
-        raise ConfigurationError("montydb has been config to opt-out BSON and "
-                                 "cannot be changed in current session.")
+        raise ConfigurationError(
+            "montydb has been config to opt-out BSON and "
+            "cannot be changed in current session."
+        )
     else:
         bson.init(use_bson)
 
@@ -294,8 +295,6 @@ def _mongo_compat(version):
         setattr(queries, "_is_comparable", v4)
 
     if version == "4.2":
-        setattr(queries, "_regex_options_check",
-                getattr(queries, "_regex_options_v42"))
+        setattr(queries, "_regex_options_check", getattr(queries, "_regex_options_v42"))
     else:
-        setattr(queries, "_regex_options_check",
-                getattr(queries, "_regex_options_"))
+        setattr(queries, "_regex_options_check", getattr(queries, "_regex_options_"))

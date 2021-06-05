@@ -1,4 +1,3 @@
-
 import re
 import sys
 import platform
@@ -16,8 +15,11 @@ def _compare_doc_in_strict_order(a, b):
     if len(a) == len(b):
         if all(ak == bk for ak, bk in zip_longest(a.keys(), b.keys())):
             for av, bv in zip_longest(a.values(), b.values()):
-                if (is_duckument_type(av) and is_duckument_type(bv) and
-                        not _compare_doc_in_strict_order(av, bv)) or av != bv:
+                if (
+                    is_duckument_type(av)
+                    and is_duckument_type(bv)
+                    and not _compare_doc_in_strict_order(av, bv)
+                ) or av != bv:
                     return False
             return True
     return False
@@ -25,9 +27,9 @@ def _compare_doc_in_strict_order(a, b):
 
 DictKeyOrderMutable = (
     # CPython >= 3.5
-    (sys.version_info[0] == 3 and sys.version_info[1] >= 5) or
+    sys.version_info >= (3, 5)
     # all PyPy
-    platform.python_implementation() == "PyPy"
+    or platform.python_implementation() == "PyPy"
 )
 
 
@@ -81,8 +83,7 @@ def is_pattern_type(obj):
 
 
 def re_int_flag_to_str(int_flags):
-    """Ripped from bson.json_util
-    """
+    """Ripped from bson.json_util"""
     flags = ""
     if int_flags & re.IGNORECASE:
         flags += "i"
@@ -119,19 +120,24 @@ def re_str_flags_to_int(str_flags):
 
 def __add_attrib(deco):
     """Decorator helper"""
+
     def meta_decorator(value):
         def add_attrib(func):
             func._keep = lambda: value
             return func
+
         return add_attrib
+
     return meta_decorator
 
 
 @__add_attrib
 def keep(query):
     """A decorator that preserve operation query for operator"""
+
     def _(func):
         return query
+
     return _
 
 
@@ -184,6 +190,7 @@ def on_err_close(generator):
     or better test cases came up.
 
     """
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             try:
@@ -192,5 +199,7 @@ def on_err_close(generator):
             except Exception:
                 generator.close()
                 raise
+
         return wrapper
+
     return decorator
