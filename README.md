@@ -275,6 +275,10 @@ I work in VFX industry, some of my production needs (mostly edge-case) requires 
 
 ---
 
+<p align=center><a href="https://jb.gg/OpenSource"><i>This project is supported by JetBrains</i></a></p>
+
 <p align="center">
-  <img src="artwork/icon.png" alt="drawing" width="60"/>
+  <img src="artwork/icon.png" alt="drawing" width="100"/>
+  &nbsp;&nbsp;
+  <img src="artwork/jetbrains.png" alt="drawing" width="100"/>
 </p>
