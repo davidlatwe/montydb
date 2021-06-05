@@ -91,7 +91,7 @@ class MontyDatabase(BaseObject):
             is_invaild = True
 
         if is_invaild or not name:
-            raise errors.OperationFailure("Invaild collection name.")
+            raise errors.OperationFailure("Invalid collection name.")
         else:
             return MontyCollection(
                 self, name, False, codec_options, write_concern, **kwargs

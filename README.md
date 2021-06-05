@@ -106,7 +106,7 @@ client = MontyClient(":memory:")
 from montydb import set_storage, MontyClient
 
 set_storage("/db/repo", cache_modified=5)  # optional step
-client = MontyClient("/db/repo")  # use curent working dir if no path given
+client = MontyClient("/db/repo")  # use current working dir if no path given
 # ready to go
 ```
 
@@ -235,7 +235,7 @@ client = MontyClient("montydb:///db/repo")
 * #### `MongoQueryRecorder`
 
   Record MongoDB query results in a period of time.
-  *Requires to access databse profiler.*
+  *Requires to access database profiler.*
 
   This works via filtering the database profile data and reproduce the queries of `find` and `distinct` commands.
 

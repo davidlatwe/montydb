@@ -232,7 +232,7 @@ class MontyCollection(BaseObject):
         return UpdateResult(raw_result)
 
     def _internal_scan_query(self, query_spec):
-        """An interanl document generator for update"""
+        """An internal document generator for update"""
         queryfilter = QueryFilter(query_spec)
         documents = self._storage.query(MontyCursor(self), 0)
         first_matched = None
