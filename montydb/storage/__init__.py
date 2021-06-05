@@ -107,7 +107,7 @@ class AbstractStorage(object):
         Parsing storage specific write concern
 
         Optional, use Monty WriteConcern by default.
-        Recive MontyClient kwargs, should parse kwargs and return a instance
+        Receive MontyClient kwargs, should parse kwargs and return a instance
         of `montydb.base.WriteConcern` class.
         """
         pass

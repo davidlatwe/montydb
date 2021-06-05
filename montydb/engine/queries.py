@@ -108,9 +108,9 @@ class LogicBox(list):
 
     """
 
-    def __init__(self, theme, implicity=False):
+    def __init__(self, theme, implicitly=False):
         self.theme = theme
-        self.implicity = implicity
+        self.implicitly = implicitly
         self._logic = {
             "$and": self._call_and,
             "$or": self._call_or,
@@ -127,7 +127,7 @@ class LogicBox(list):
         """Display `theme` and `LogicBox` or operators content within"""
         content = []
         name = "[{}]"
-        if not self.implicity:
+        if not self.implicitly:
             content = ["LogicBox({})".format(self.theme)]
             name = "{}"
 
@@ -150,7 +150,7 @@ class LogicBox(list):
         A short-circuit logic sub-structure, passing `FieldWalker` instance.
 
         Args:
-            fieldwalker (FieldWalker): Recived from `QueryFilter` instance.
+            fieldwalker (FieldWalker): Received from `QueryFilter` instance.
 
         """
         try:
@@ -252,7 +252,7 @@ class QueryFilter(object):
         filter or not.
 
         Args:
-            doc (dict): Document recived from database.
+            doc (dict): Document received from database.
 
         """
         self.__fieldwalker = FieldWalker(doc, doc_type)
@@ -265,9 +265,9 @@ class QueryFilter(object):
     def parser(self, spec):
         """Top-level parser"""
 
-        # Implementation of implicity $and operation, fundamental query
+        # Implementation of implicitly $and operation, fundamental query
         # container.
-        logic_box = LogicBox("$and", implicity=True)
+        logic_box = LogicBox("$and", implicitly=True)
 
         for path, sub_spec in spec.items():
             if path.startswith("$"):
@@ -289,7 +289,7 @@ class QueryFilter(object):
         logic_box = LogicBox(path)
 
         # There are two processing direction in field-level, one is filtering
-        # with operators, the other is implicity value $eq operation.
+        # with operators, the other is implicitly value $eq operation.
         # The direction was first defined by the expression value type, if is
         # <dict>, then by *first* key is starts with "$" or not.
         #
