@@ -3,6 +3,7 @@
 
 [![Python package](https://github.com/davidlatwe/montydb/actions/workflows/python-package.yml/badge.svg)](https://github.com/davidlatwe/montydb/actions/workflows/python-package.yml)
 [![Version](http://img.shields.io/pypi/v/montydb.svg?style=flat)](https://pypi.python.org/pypi/montydb)
+[![PyPi downloads](https://img.shields.io/pypi/dm/montydb)](https://pypistats.org/packages/montydb)
 
 *Monty, Mongo tinified. MongoDB implemented in Python !*
 *Was inspired by [TinyDB](https://github.com/msiemens/tinydb) and it's extension [TinyMongo](https://github.com/schapman1974/tinymongo)*
@@ -50,7 +51,7 @@ pip install montydb
 🦄 Available storage engines:
 
 * in-memory
-* flat-flie
+* flat-file
 * sqlite
 * lmdb (lightning memory-mapped db)
 

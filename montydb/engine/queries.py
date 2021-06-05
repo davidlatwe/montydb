@@ -1,4 +1,3 @@
-
 import re
 from copy import deepcopy
 from datetime import datetime
@@ -35,8 +34,7 @@ def validate_sort_specifier(sort):
 
 
 def ordering(fieldwalkers, order, doc_type=None):
-    """
-    """
+    """ """
     total = len(fieldwalkers)
     pre_sect_stack = []
 
@@ -117,14 +115,11 @@ class LogicBox(list):
         self.theme = theme
         self.implicity = implicity
         self._logic = {
-
             "$and": self._call_and,
             "$or": self._call_or,
             "$nor": self._call_nor,
             "$not": self._call_not,
-
             "$elemMatch": self._call_elemMatch,
-
         }
 
     @property
@@ -175,7 +170,7 @@ class LogicBox(list):
             return all(self._gen(fieldwalker))
 
     def _call_elemMatch(self, fieldwalker):
-        """"""
+        """ """
         with fieldwalker.value as field_value:
             for elem in field_value.iter_elements():
                 field_value.change_iter(lambda: iter([elem]))
@@ -210,23 +205,18 @@ class QueryFilter(object):
 
         # Top-level operators, work on top of fields.
         self.pathless_ops = {
-
             # Logical
             "$and": self.parse_logic("$and"),
             "$nor": self.parse_logic("$nor"),
             "$or": self.parse_logic("$or"),
-
             # Evaluation
             "$expr": None,
-
         }
 
         # Field-level operators, need to work inside a field context.
         self.field_ops = {
-
             # Logical
             "$not": self._parse_not,
-
             # Comparison
             "$eq": parse_eq,
             "$gt": parse_gt,
@@ -236,21 +226,17 @@ class QueryFilter(object):
             "$lte": parse_lte,
             "$ne": parse_ne,
             "$nin": parse_nin,
-
             # Element
             "$exists": parse_exists,
             "$type": parse_type,
-
             # Array
             "$all": parse_all,
             "$elemMatch": self._parse_elemMatch,
             "$size": parse_size,
-
             # Evaluation
             "$jsonSchema": parse_jsonSchema,
             "$mod": parse_mod,
             "$regex": parse_regex,
-
         }
 
         # Start parsing query object
@@ -292,7 +278,8 @@ class QueryFilter(object):
                     logic_box.append(self.pathless_ops[path](sub_spec))
                 except KeyError:
                     raise OperationFailure(
-                        "unknown top level operator: {}".format(path))
+                        "unknown top level operator: {}".format(path)
+                    )
             else:
                 logic_box.append(self.subparser(path, sub_spec))
 
@@ -341,7 +328,8 @@ class QueryFilter(object):
                     if isinstance(value, (RE_PATTERN_TYPE, bson.Regex)):
                         raise OperationFailure(
                             "Can't have RegEx as arg to predicate over "
-                            "field {!r}.".format(path))
+                            "field {!r}.".format(path)
+                        )
 
                 try:
                     logic_box.append(self.field_ops[op](value))
@@ -353,11 +341,10 @@ class QueryFilter(object):
         return logic_box
 
     def parse_logic(self, theme):
-        """Logical operator parser (un-themed)
-        """
+        """Logical operator parser (un-themed)"""
+
         def _parse_logic(sub_spec):
-            """Themed logical operator
-            """
+            """Themed logical operator"""
             if not isinstance(sub_spec, list):
                 raise OperationFailure("{} must be an array".format(theme))
 
@@ -366,7 +353,8 @@ class QueryFilter(object):
             for cond in sub_spec:
                 if not is_duckument_type(cond):
                     raise OperationFailure(
-                        "$or/$and/$nor entries need to be full objects")
+                        "$or/$and/$nor entries need to be full objects"
+                    )
 
                 logic_box.append(self.parser(cond))
             return logic_box
@@ -381,8 +369,7 @@ class QueryFilter(object):
         elif is_duckument_type(sub_spec):
             for op in sub_spec:
                 if op not in self.field_ops:
-                    raise OperationFailure("unknown operator: "
-                                           "{}".format(op))
+                    raise OperationFailure("unknown operator: {}".format(op))
                 if op == "$regex":
                     raise OperationFailure("$not cannot have a regex")
 
@@ -406,8 +393,7 @@ class QueryFilter(object):
 
 
 def _is_expression_obj(sub_spec):
-    return (is_duckument_type(sub_spec) and
-            next(iter(sub_spec)).startswith("$"))
+    return is_duckument_type(sub_spec) and next(iter(sub_spec)).startswith("$")
 
 
 # Only for preserving `int` type flags to bypass
@@ -415,6 +401,7 @@ def _is_expression_obj(sub_spec):
 class _FALG(object):
     def __init__(self, int_flags):
         self.retrieve = int_flags
+
     __slots__ = ("retrieve",)
 
 
@@ -424,8 +411,7 @@ def _regex_options_(regex_flag, opt_flag):
 
 def _regex_options_v42(regex_flag, opt_flag):
     if regex_flag and opt_flag:
-        raise OperationFailure("options set in both $regex and "
-                               "$options")
+        raise OperationFailure("options set in both $regex and $options")
 
 
 _regex_options_check = _regex_options_v42
@@ -463,7 +449,7 @@ def _modify_regex_optins(sub_spec):
     new_sub_spec = deepcopy(sub_spec)
     new_sub_spec["$regex"] = {
         "pattern": _re.pattern if _re else sub_spec["$regex"],
-        "flags": flags
+        "flags": flags,
     }
 
     # (monument): This is edge case, and only MongoDB 4.0 don't fail the
@@ -494,8 +480,9 @@ Field-level Query Operators
 
 
 def _is_comparable_ver4(val, qry):
-    return (gravity(val, weight_only=True) == gravity(qry, weight_only=True)
-            or isinstance(qry, (bson.MinKey, bson.MaxKey)))
+    return gravity(val, weight_only=True) == gravity(
+        qry, weight_only=True
+    ) or isinstance(qry, (bson.MinKey, bson.MaxKey))
 
 
 def _is_comparable_ver3(val, qry):
@@ -506,8 +493,7 @@ _is_comparable = _is_comparable_ver4
 
 
 def _eq_match(fieldwalker, query):
-    """
-    """
+    """ """
     if is_duckument_type(query):
         for val in fieldwalker.value:
             if is_duckument_type(val):
@@ -567,8 +553,7 @@ def parse_gte(query):
             if _is_comparable(value, query):
                 if query in bson.decimal128_NaN_ls:
                     return True if value in bson.decimal128_NaN_ls else False
-                if (query == bson.decimal128_INF
-                        and not value == bson.decimal128_INF):
+                if query == bson.decimal128_INF and not value == bson.decimal128_INF:
                     return False
                 if Weighted(value) >= Weighted(query):
                     return True
@@ -602,8 +587,7 @@ def parse_lte(query):
             if _is_comparable(value, query):
                 if query in bson.decimal128_NaN_ls:
                     return True if value in bson.decimal128_NaN_ls else False
-                if (query == bson.decimal128_INF
-                        and value in bson.decimal128_NaN_ls):
+                if query == bson.decimal128_INF and value in bson.decimal128_NaN_ls:
                     return False
                 if query not in _dec_NaN_INF_ls and value in _dec_NaN_INF_ls:
                     return False
@@ -616,8 +600,7 @@ def parse_lte(query):
 
 
 def _in_match(fieldwalker, query):
-    """Helper function for $in and $nin
-    """
+    """Helper function for $in and $nin"""
     q_regex = []
     q_value = []
     for q in query:
@@ -627,8 +610,7 @@ def _in_match(fieldwalker, query):
             try:
                 q_regex.append(q.try_compile())
             except re.error as e:
-                raise OperationFailure("Regular expression is invalid:"
-                                       " {}".format(e))
+                raise OperationFailure("Regular expression is invalid: {}".format(e))
         else:
             q_value.append(q)
 
@@ -763,7 +745,6 @@ def parse_exists(query):
 
 
 BSON_TYPE_ALIAS_ID = {
-
     "double": 1,
     "string": 2,
     "object": 3,
@@ -784,7 +765,7 @@ BSON_TYPE_ALIAS_ID = {
     "long": 18,
     "decimal": 19,
     "minKey": -1,
-    "maxKey": 127
+    "maxKey": 127,
 }
 
 
@@ -818,7 +799,7 @@ def obj_to_bson_type_id(obj):
         bson.Int64: 18,
         bson.Decimal128: 19,
         bson.MinKey: -1,
-        bson.MaxKey: 127
+        bson.MaxKey: 127,
     }
 
     try:
@@ -855,16 +836,15 @@ def parse_type(query):
                 try:
                     int_types.append(BSON_TYPE_ALIAS_ID[q])
                 except KeyError:
-                    raise OperationFailure(
-                        "Unknown type name alias: {}".format(q))
+                    raise OperationFailure("Unknown type name alias: {}".format(q))
             elif isinstance(q, int):
                 if q not in _BSON_TYPE_ID:
-                    raise OperationFailure(
-                        "Invalid numerical type code: {}".format(q))
+                    raise OperationFailure("Invalid numerical type code: {}".format(q))
                 int_types.append(q)
             else:
                 raise OperationFailure(
-                    "type must be represented as a number or a string")
+                    "type must be represented as a number or a string"
+                )
         return int_types
 
     if not isinstance(query, list):
