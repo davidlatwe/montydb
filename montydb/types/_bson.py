@@ -1,5 +1,6 @@
 import sys
 import types
+import base64
 
 
 class BSON_(types.ModuleType):
@@ -204,6 +205,10 @@ class NoBSON(types.ModuleType):
             if isinstance(obj, NoBSON.ObjectId):
                 return {"$oid": str(obj)}
 
+            if isinstance(obj, bytes):
+                return {"$binary": {"base64": base64.b64encode(obj).decode(),
+                                    "subType": "00"}}
+
             if isinstance(obj, NoBSON.datetime.datetime):
                 millis = NoBSON._datetime_to_millis(obj)
                 return {"$date": millis}
@@ -252,6 +257,8 @@ class NoBSON(types.ModuleType):
     def object_hook(cls, obj, opts=DEFAULT_CODEC_OPTIONS):
         if "$oid" in obj:
             return cls.ObjectId(obj["$oid"])
+        if "$binary" in obj:
+            return base64.b64decode(obj["$binary"]["base64"])
         if "$date" in obj:
             return cls._millis_to_datetime(int(obj["$date"]), opts)
         if "$regex" in obj:
