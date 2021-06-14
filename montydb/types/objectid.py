@@ -280,35 +280,45 @@ class ObjectId(object):
         return "ObjectId('%s')" % (str(self),)
 
     def __eq__(self, other):
-        if isinstance(other, ObjectId):
+        if isinstance(other, self._objectId_types):
             return self.__id == other.binary
         return NotImplemented
 
     def __ne__(self, other):
-        if isinstance(other, ObjectId):
+        if isinstance(other, self._objectId_types):
             return self.__id != other.binary
         return NotImplemented
 
     def __lt__(self, other):
-        if isinstance(other, ObjectId):
+        if isinstance(other, self._objectId_types):
             return self.__id < other.binary
         return NotImplemented
 
     def __le__(self, other):
-        if isinstance(other, ObjectId):
+        if isinstance(other, self._objectId_types):
             return self.__id <= other.binary
         return NotImplemented
 
     def __gt__(self, other):
-        if isinstance(other, ObjectId):
+        if isinstance(other, self._objectId_types):
             return self.__id > other.binary
         return NotImplemented
 
     def __ge__(self, other):
-        if isinstance(other, ObjectId):
+        if isinstance(other, self._objectId_types):
             return self.__id >= other.binary
         return NotImplemented
 
     def __hash__(self):
         """Get a hash value for this :class:`ObjectId`."""
         return hash(self.__id)
+
+    _objectId_types = None
+
+
+try:
+    from bson import ObjectId as RealObjectId  # noqa
+except ImportError:
+    ObjectId._objectId_types = (ObjectId,)
+else:
+    ObjectId._objectId_types = (ObjectId, RealObjectId)
