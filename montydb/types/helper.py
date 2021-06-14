@@ -2,7 +2,7 @@ import re
 import sys
 import platform
 from .compat import integer_types, zip_longest
-from . import bson_ as bson
+from . import bson
 
 RE_PATTERN_TYPE = type(re.compile(""))
 

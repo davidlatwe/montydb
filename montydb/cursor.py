@@ -6,10 +6,10 @@ from .errors import InvalidOperation, OperationFailure
 from .engine.queries import QueryFilter, ordering
 from .engine.project import Projector
 from .types import (
+    bson,
     RE_PATTERN_TYPE,
     iteritems,
     integer_types,
-    bson_ as bson,
 )
 from .base import (
     validate_boolean,

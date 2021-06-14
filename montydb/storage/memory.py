@@ -2,7 +2,7 @@
 from itertools import islice
 from collections import OrderedDict
 
-from ..types import bson_ as bson
+from ..types import bson
 from . import (
     AbstractStorage,
     AbstractDatabase,

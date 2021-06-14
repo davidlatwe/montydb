@@ -200,7 +200,7 @@ def set_storage(
         Other keyword args will be parsed as storage config options.
 
     """
-    from .types import bson_ as bson
+    from .types import bson
 
     storage = storage or DEFAULT_STORAGE
 
@@ -267,7 +267,7 @@ def provide_storage(repository):
 
 
 def _bson_init(use_bson):
-    from .types import bson_ as bson
+    from .types import bson
 
     if bson.bson_used is None:
         bson.init(use_bson)

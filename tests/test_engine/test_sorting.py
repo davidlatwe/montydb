@@ -2,7 +2,7 @@
 import pytest
 import re
 
-from montydb.types import bson_ as bson
+from montydb.types import bson
 from datetime import datetime
 
 from montydb.errors import OperationFailure as monty_op_err

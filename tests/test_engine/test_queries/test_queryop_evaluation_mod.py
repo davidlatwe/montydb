@@ -1,5 +1,5 @@
 
-from montydb.types import bson_ as bson
+from montydb.types import bson
 from ...conftest import skip_if_no_bson
 
 

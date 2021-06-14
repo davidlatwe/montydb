@@ -1,7 +1,7 @@
 
 import pytest
 from montydb import errors
-from montydb.types import bson_ as bson
+from montydb.types import bson
 
 
 def test_insert_invalid_doc_1(monty_find, mongo_find):

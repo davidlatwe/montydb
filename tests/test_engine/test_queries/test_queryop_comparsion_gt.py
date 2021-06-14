@@ -1,7 +1,7 @@
 
 import pytest
 from montydb.errors import OperationFailure
-from montydb.types import PY3, bson_ as bson
+from montydb.types import PY3, bson
 from datetime import datetime
 
 from ...conftest import skip_if_no_bson

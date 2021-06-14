@@ -53,8 +53,8 @@ def skip_if_no_bson(func):
 
 
 def set_bson(use_bson):
-    from montydb.types import bson_
-    bson_.init(use_bson)
+    from montydb.types import bson
+    bson.init(use_bson)
 
 
 def _gettempdir():

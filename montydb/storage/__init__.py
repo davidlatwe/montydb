@@ -2,7 +2,7 @@
 import os
 from abc import abstractmethod
 from ..types import ConfigParser
-from ..types import bson_ as bson
+from ..types import bson
 
 
 class StorageError(Exception):

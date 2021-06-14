@@ -17,7 +17,7 @@ from .engine.queries import QueryFilter
 from .engine.update import Updator
 from .types import (
     abc,
-    bson_ as bson,
+    bson,
     string_types,
     is_duckument_type,
     Counter,

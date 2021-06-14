@@ -28,7 +28,7 @@ from random import SystemRandom
 
 # (NOTE) modify for vendorizing
 import sys
-from . import bson_ as bson
+from . import bson
 from .tz_util import utc
 PY3 = sys.version_info[0] == 3
 if PY3:

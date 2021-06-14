@@ -4,7 +4,7 @@ import time
 from collections import defaultdict, OrderedDict
 from datetime import datetime
 
-from ..types import string_types, init_bson, bson_
+from ..types import string_types, init_bson, bson
 from ..client import MontyClient
 from ..errors import DuplicateKeyError
 
@@ -49,7 +49,7 @@ def montyimport(database,
         lines = [line.strip() for line in fp.readlines()]
         serialized = "[{}]".format(", ".join(lines))
 
-    documents = bson_.json_loads(serialized, json_options=json_options)
+    documents = bson.json_loads(serialized, json_options=json_options)
 
     if mode == "insert":
         for doc in documents:
@@ -111,7 +111,7 @@ def montyexport(database,
 
     with open(out, "w") as fp:
         for doc in collection.find(query, projection=projection):
-            serialized = bson_.json_dumps(doc, json_options=json_options)
+            serialized = bson.json_dumps(doc, json_options=json_options)
             fp.write(serialized + "\n")
 
 

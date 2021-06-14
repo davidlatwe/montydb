@@ -29,7 +29,7 @@ from .helper import (
     keep,
     on_err_close,
 )
-from .bson_ import init as init_bson
+from .bson import init as init_bson
 
 
 __all__ = [
