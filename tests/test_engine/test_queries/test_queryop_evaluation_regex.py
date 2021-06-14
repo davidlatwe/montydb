@@ -1,7 +1,7 @@
 
 import re
 import pytest
-from montydb.types import bson_ as bson
+from montydb.types import bson
 
 from pymongo.errors import OperationFailure as MongoOpFail
 from montydb.errors import OperationFailure as MontyOpFail

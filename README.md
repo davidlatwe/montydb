@@ -33,7 +33,9 @@ And this project is testing against to:
 pip install montydb
 ```
 
-* optional, to use `bson` in operation (`pymongo` will be installed)
+* optional, to use *real* `bson` in operation (`pymongo` will be installed)
+
+    *For minimum requirements, `montydb` ships with it's own fork of `ObjectId` in `montydb.types`, so you may ignore this option if `ObjectId` is all you need from `bson`*
 
     ```
     pip install montydb[bson]
@@ -72,7 +74,7 @@ set_storage(
     repository="/db/repo",  # dir path for database to live on disk, default is {cwd}
     storage="flatfile",     # storage name, default "flatfile"
     mongo_version="4.0",    # try matching behavior with this mongodb version
-    use_bson=False,         # default None, and will try importing pymongo if None
+    use_bson=False,         # default None, and will import pymongo's bson if None or True
 
     # any other kwargs are storage engine settings
     #

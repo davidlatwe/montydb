@@ -7,7 +7,7 @@ from .field_walker import FieldWalker, FieldWriteError
 from .weighted import Weighted, _cmp_decimal
 from .queries import QueryFilter, ordering
 from ..types import (
-    bson_ as bson,
+    bson,
     string_types,
     is_numeric_type,
     is_duckument_type,

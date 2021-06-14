@@ -12,10 +12,10 @@ from .weighted import (
     _cmp_decimal,
 )
 from ..types import (
+    bson,
     RE_PATTERN_TYPE,
     integer_types,
     string_types,
-    bson_ as bson,
     is_duckument_type,
     is_integer_type,
     is_pattern_type,

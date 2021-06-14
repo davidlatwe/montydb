@@ -4,7 +4,7 @@ import time
 from collections import defaultdict, OrderedDict
 from datetime import datetime
 
-from ..types import string_types, init_bson, bson_
+from ..types import string_types, init_bson, bson as bson_
 from ..client import MontyClient
 from ..errors import DuplicateKeyError
 

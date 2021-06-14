@@ -4,7 +4,7 @@ import shutil
 from collections import OrderedDict
 from itertools import islice
 
-from ..types import unicode_, bson_ as bson
+from ..types import unicode_, bson
 from . import (
     AbstractStorage,
     AbstractDatabase,

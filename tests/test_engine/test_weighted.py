@@ -3,7 +3,7 @@ import pytest
 import re
 
 from montydb.engine.weighted import Weighted, _cmp_decimal
-from montydb.types import PY3, init_bson, bson_ as bson
+from montydb.types import PY3, init_bson, bson
 from datetime import datetime
 
 from ..conftest import skip_if_no_bson

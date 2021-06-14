@@ -4,7 +4,7 @@ import lmdb
 import shutil
 from itertools import islice
 
-from ..types import unicode_, to_bytes, bson_ as bson
+from ..types import unicode_, to_bytes, bson
 from . import (
     AbstractStorage,
     AbstractDatabase,

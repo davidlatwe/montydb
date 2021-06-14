@@ -1,5 +1,5 @@
 
-from montydb.types import PY3, bson_ as bson
+from montydb.types import PY3, bson
 
 from ...conftest import skip_if_no_bson
 

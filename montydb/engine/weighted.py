@@ -3,9 +3,9 @@ from datetime import datetime
 from collections import Mapping
 
 from ..types import (
+    bson,
     integer_types,
     string_types,
-    bson_ as bson,
 
     RE_PATTERN_TYPE,
     re_int_flag_to_str,

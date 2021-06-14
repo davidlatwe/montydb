@@ -3,7 +3,7 @@ import pytest
 
 from pymongo.errors import WriteError as mongo_write_err
 from montydb.errors import WriteError as monty_write_err
-from montydb.types import bson_ as bson
+from montydb.types import bson
 
 from ...conftest import skip_if_no_bson
 

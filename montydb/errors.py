@@ -2,7 +2,7 @@
 
 def init_bson_err():
     import sys
-    from .types import bson_ as bson
+    from .types import bson
     this = sys.modules[__name__]
 
     class DocumentTooLarge(bson.InvalidDocument):
