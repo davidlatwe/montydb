@@ -35,7 +35,6 @@ parse_codec_options = None
 
 
 def init(use_bson=None):
-    from . import _bson
     from .. import errors
 
     self = sys.modules[__name__]
@@ -53,9 +52,11 @@ def init(use_bson=None):
             use_bson = True
 
     if use_bson:
-        bson_ = _bson.BSON_()
+        from ._bson import BSON_
+        bson_ = BSON_()
     else:
-        bson_ = _bson.NoBSON()
+        from ._nobson import NoBSON
+        bson_ = NoBSON()
 
     self.bson_used = bson_.bson_used
     for name in __all__:
