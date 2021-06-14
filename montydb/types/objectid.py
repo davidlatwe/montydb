@@ -15,7 +15,7 @@
 """Tools for working with MongoDB `ObjectIds
 <http://dochub.mongodb.org/core/objectids>`_.
 """
-
+from __future__ import absolute_import
 import binascii
 import calendar
 import datetime
