@@ -3,6 +3,7 @@ from .base import BaseObject
 from .collection import MontyCollection
 from .types import encode_, string_types
 
+
 INVALID_CHARS = ("$", "\0", "\x00")
 
 
