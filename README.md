@@ -178,7 +178,7 @@ client = MontyClient("/db/repo")
 
 LMDB config:
 
-```
+```ini
 [lightning]
 map_size: 10485760  # Maximum size database may grow to.
 ```
