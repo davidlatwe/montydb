@@ -4,7 +4,6 @@ import base64
 import pytest
 
 from montydb import open_repo
-from montydb.types import init_bson
 from montydb.utils import (
     montyimport,
     montyexport,
