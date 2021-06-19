@@ -9,11 +9,6 @@ from datetime import datetime
 from ..conftest import skip_if_no_bson
 
 
-@pytest.fixture(scope="module", autouse=True)
-def set_bson(use_bson):
-    init_bson(use_bson)
-
-
 def test_weighted_1():
     data = None
     assert Weighted(data) == (1, data)

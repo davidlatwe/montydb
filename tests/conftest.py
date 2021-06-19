@@ -52,11 +52,6 @@ def skip_if_no_bson(func):
     return pytest.mark.usefixtures("skip_if_no_bson_")(func)
 
 
-def set_bson(use_bson):
-    from montydb.types import bson
-    bson.init(use_bson)
-
-
 def _gettempdir():
     return tempfile.gettempdir()
 
@@ -153,8 +148,6 @@ def mongo_version(mongo_client):
 
 @pytest.fixture(scope="session")
 def monty_client(request, tmp_monty_repo, mongo_version, use_bson):
-    set_bson(use_bson)
-
     if os.path.isdir(tmp_monty_repo):
         shutil.rmtree(tmp_monty_repo)
 

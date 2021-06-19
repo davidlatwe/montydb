@@ -77,11 +77,6 @@ JSON_DUMP = "dumped.json"
 BSON_DUMP = "dumped.bson"
 
 
-@pytest.fixture(scope="module", autouse=True)
-def set_bson(use_bson):
-    init_bson(use_bson)
-
-
 @skip_if_no_bson
 def test_utils_montyimport(monty_client, tmp_monty_utils_repo):
     database = "dump_db_JSON"
