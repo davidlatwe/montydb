@@ -158,3 +158,21 @@ def test_client_with_montydb_uri(gettempdir):
     client = montydb.MontyClient(uri)
 
     assert client.address == MEMORY_REPOSITORY
+
+
+def test_no_duplicated_docs_in_next_session(monty_client):
+    db_name = "test_client"
+    col_name = "no_duplicated_docs"
+
+    doc = {"pet": "cat", "name": ["mai-mai", "jo-jo"]}
+    find = {"pet": "cat"}
+    update = {"$push": {"name": "na-na"}}
+
+    col_1 = monty_client[db_name][col_name]
+    col_1.insert_one(doc)
+    assert col_1.count_documents(find) == 1
+
+    new_client = montydb.MontyClient(monty_client.address)
+    col_2 = new_client[db_name][col_name]
+    col_2.update_one(find, update)
+    assert col_2.count_documents(find) == 1
