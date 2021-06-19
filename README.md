@@ -123,7 +123,7 @@ client = MontyClient("/db/repo")  # use current working dir if no path given
 
 FlatFile config:
 
-```toml
+```ini
 [flatfile]
 cache_modified: 0  # how many document CRUD cached before flush to disk.
 ```
@@ -146,7 +146,7 @@ client = MontyClient("/db/repo")
 
 SQLite config:
 
-```toml
+```ini
 [sqlite]
 journal_mode: WAL
 ```
