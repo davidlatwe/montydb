@@ -4,7 +4,7 @@ import time
 from collections import defaultdict, OrderedDict
 from datetime import datetime
 
-from ..types import string_types, init_bson, bson_
+from ..types import string_types, init_bson, bson as bson_
 from ..client import MontyClient
 from ..errors import DuplicateKeyError
 
@@ -71,7 +71,7 @@ def montyimport(database,
 def montyexport(database,
                 collection,
                 out,
-                fileds=None,
+                fields=None,
                 query=None,
                 json_options=None,
                 use_bson=False):
@@ -98,16 +98,16 @@ def montyexport(database,
     """
     init_bson(use_bson)
     collection = _collection(database, collection)
-    fileds = fileds or []
+    fields = fields or []
 
     out = os.path.abspath(out)
     if not os.path.isdir(os.path.dirname(out)):
         os.makedirs(os.path.dirname(out))
 
-    if isinstance(fileds, string_types):
-        fileds = [fileds]
+    if isinstance(fields, string_types):
+        fields = [fields]
 
-    projection = {field: True for field in fileds} or None
+    projection = {field: True for field in fields} or None
 
     with open(out, "w") as fp:
         for doc in collection.find(query, projection=projection):
@@ -183,7 +183,7 @@ def montydump(database, collection, dumpfile):
 class MongoQueryRecorder(object):
     """Record MongoDB query results in a period of time
 
-    :Important: Requires to access databse profiler.
+    :Important: Requires to access database profiler.
 
     This works via filtering the database profile data and reproduce the
     queries of `find` and `distinct` commands.
@@ -252,7 +252,7 @@ class MongoQueryRecorder(object):
     def extract(self):
         """Collect documents via previous queries
 
-        Via filtering the `[databse].system.profile`, parsing previous
+        Via filtering the `[database].system.profile`, parsing previous
         commands to reproduce the query results.
 
         NOTE: Depend on the `namespace`, the result may across multiple

@@ -167,7 +167,7 @@ class FieldValues(object):
 
 
 class FieldNode(str):
-    """Docuemtn field node
+    """Document field node
 
     Arguments:
         field (str): Document field name

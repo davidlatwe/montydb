@@ -4,7 +4,7 @@ import shutil
 from collections import OrderedDict
 from itertools import islice
 
-from ..types import unicode_, bson_ as bson
+from ..types import unicode_, bson
 from . import (
     AbstractStorage,
     AbstractDatabase,
@@ -50,7 +50,8 @@ class FlatFileKVEngine(object):
 
         if os.path.isfile(self.file_path):
             for doc in _read_pretty(self.file_path):
-                self.__cache[doc["_id"]] = bson.document_encode(doc)
+                b_id = bson.id_encode(doc["_id"])
+                self.__cache[b_id] = bson.document_encode(doc)
 
     @classmethod
     def touch(cls, file_path):

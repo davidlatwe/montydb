@@ -32,7 +32,7 @@ class MontyClient(BaseObject):
                 returned from queries on this client. Default class is `dict`.
             tz_aware (bool, optional): if `True`, `datetime.datetime` instances
                 returned as values in document by this client will be timezone
-                awared (otherwise they will be naive).
+                aware (otherwise they will be naive).
             **kwargs: Other optional keyword arguments will pass into storage
                 engine as write concern arguments.
 
@@ -133,7 +133,7 @@ class MontyClient(BaseObject):
             is_invalid = set(r'/\. "$').intersection(set(name))
 
         if is_invalid or not name:
-            raise errors.OperationFailure("Invaild database name.")
+            raise errors.OperationFailure("Invalid database name.")
         else:
             return MontyDatabase(self, name)
 

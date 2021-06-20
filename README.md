@@ -5,43 +5,47 @@
 [![Version](http://img.shields.io/pypi/v/montydb.svg?style=flat)](https://pypi.python.org/pypi/montydb)
 [![PyPi downloads](https://img.shields.io/pypi/dm/montydb)](https://pypistats.org/packages/montydb)
 
-*Monty, Mongo tinified. MongoDB implemented in Python !*
-*Was inspired by [TinyDB](https://github.com/msiemens/tinydb) and it's extension [TinyMongo](https://github.com/schapman1974/tinymongo)*
+> Monty, Mongo tinified. MongoDB implemented in Python!
+
+_Inspired by [TinyDB](https://github.com/msiemens/tinydb) and it's extension [TinyMongo](https://github.com/schapman1974/tinymongo)_
 
 
-## What ?
-A pure Python implemented database that looks and works like MongoDB. 
+## What is it?
+
+A pure Python-implemented database that looks and works like [MongoDB](https://www.mongodb.com/).
 
 ```python
 >>> from montydb import MontyClient
+
 >>> col = MontyClient(":memory:").db.test
->>> col.insert_many([{"stock": "A", "qty": 6}, {"stock": "A", "qty": 2}])
->>> cur = col.find({"stock": "A", "qty": {"$gt": 4}})
+>>> col.insert_many( [{"stock": "A", "qty": 6}, {"stock": "A", "qty": 2}] )
+>>> cur = col.find( {"stock": "A", "qty": {"$gt": 4}} )
 >>> next(cur)
 {'_id': ObjectId('5ad34e537e8dd45d9c61a456'), 'stock': 'A', 'qty': 6}
 ```
-Most of the CRUD operator has been implemented, you may visit [this issue](https://github.com/davidlatwe/montydb/issues/14) to see the full list.
 
-And this project is testing against to:
-* MongoDB 3.6, 4.0, 4.2 (4.4 on the way💦)
-* Python 2.7, 3.6, 3.7, 3.8, 3.9
+Most of the CRUD operators have been implemented. You can visit [issue #14](https://github.com/davidlatwe/montydb/issues/14) to see the full list.
+
+This project is tested against:
+
+- MongoDB: 3.6, 4.0, 4.2 (4.4 on the way💦)
+- Python: 2.7, 3.6, 3.7, 3.8, 3.9
 
 
 ## Install
 
-```
+```sh
 pip install montydb
 ```
 
-* optional, to use `bson` in operation (`pymongo` will be installed)
+- optional, to use *real* `bson` in operation (`pymongo` will be installed)
+    _For minimum requirements, `montydb` ships with it's own fork of `ObjectId` in `montydb.types`, so you may ignore this option if `ObjectId` is all you need from `bson`_
 
-    ```
+    ```sh
     pip install montydb[bson]
     ```
-
-* optional, to use lightning memory-mapped db as storage engine
-
-    ```
+- optional, to use lightning memory-mapped db as storage engine
+    ```sh
     pip install montydb[lmdb]
     ```
 
@@ -55,33 +59,35 @@ pip install montydb
 * sqlite
 * lmdb (lightning memory-mapped db)
 
-Depend on which one you use, may have to config the storage engine before start.
+Depending on which one you use, you may have to configure the storage engine before you start.
 
 > ⚠️
 >
 > The configuration process only required on repository creation or modification. And, one repository (the parent level of databases) can only assign one storage engine.
 
-To configurate a storage, take flat-file storage as example:
+To configure a storage, see flat-file storage for example:
 
 ```python
 from montydb import set_storage, MontyClient
 
+
 set_storage(
     # general settings
-    #
+    
     repository="/db/repo",  # dir path for database to live on disk, default is {cwd}
     storage="flatfile",     # storage name, default "flatfile"
     mongo_version="4.0",    # try matching behavior with this mongodb version
-    use_bson=False,         # default None, and will try importing pymongo if None
+    use_bson=False,         # default None, and will import pymongo's bson if None or True
 
-    # any other kwargs are storage engine settings
-    #
+    # any other kwargs are storage engine settings.
+    
     cache_modified=10,       # the only setting that flat-file have
 )
+
 # ready to go
 ```
 
-Once that done, there should be a file named `monty.storage.cfg` saved in your db repository path, it would be `/db/repo` for above examples.
+Once that done, there should be a file named `monty.storage.cfg` saved in your db repository path. It would be `/db/repo` for the above examples.
 
 
 ## Configuration
@@ -94,7 +100,10 @@ Now let's moving on to each storage engine's config settings.
 
 ```python
 from montydb import MontyClient
+
+
 client = MontyClient(":memory:")
+
 # ready to go
 ```
 
@@ -105,14 +114,16 @@ client = MontyClient(":memory:")
 ```python
 from montydb import set_storage, MontyClient
 
+
 set_storage("/db/repo", cache_modified=5)  # optional step
-client = MontyClient("/db/repo")  # use curent working dir if no path given
+client = MontyClient("/db/repo")  # use current working dir if no path given
+
 # ready to go
 ```
 
 FlatFile config:
 
-```
+```ini
 [flatfile]
 cache_modified: 0  # how many document CRUD cached before flush to disk.
 ```
@@ -126,14 +137,16 @@ cache_modified: 0  # how many document CRUD cached before flush to disk.
 ```python
 from montydb import set_storage, MontyClient
 
+
 set_storage("/db/repo", storage="sqlite")  # required, to set sqlite as engine
 client = MontyClient("/db/repo")
+
 # ready to go
 ```
 
 SQLite config:
 
-```
+```ini
 [sqlite]
 journal_mode: WAL
 ```
@@ -156,14 +169,16 @@ client = MontyClient("/db/repo",
 ```python
 from montydb import set_storage, MontyClient
 
+
 set_storage("/db/repo", storage="lightning")  # required, to set lightning as engine
 client = MontyClient("/db/repo")
+
 # ready to go
 ```
 
 LMDB config:
 
-```
+```ini
 [lightning]
 map_size: 10485760  # Maximum size database may grow to.
 ```
@@ -188,12 +203,13 @@ client = MontyClient("montydb:///db/repo")
   ```python
   from montydb import open_repo, utils
   
+
   with open_repo("foo/bar"):
       utils.montyimport("db", "col", "/path/dump.json")
   
   ```
 
-* ####  `montyexport`
+* #### `montyexport`
 
   Produces a JSON export of data stored in a MontyCollection instance.
   The JSON file could be loaded by `montyimport` or `mongoimport`.
@@ -201,6 +217,7 @@ client = MontyClient("montydb:///db/repo")
   ```python
   from montydb import open_repo, utils
   
+
   with open_repo("foo/bar"):
       utils.montyexport("db", "col", "/data/dump.json")
   
@@ -214,6 +231,7 @@ client = MontyClient("montydb:///db/repo")
   ```python
   from montydb import open_repo, utils
   
+
   with open_repo("foo/bar"):
       utils.montyrestore("db", "col", "/path/dump.bson")
   
@@ -227,6 +245,7 @@ client = MontyClient("montydb:///db/repo")
   ```python
   from montydb import open_repo, utils
   
+
   with open_repo("foo/bar"):
       utils.montydump("db", "col", "/data/dump.bson")
   
@@ -235,7 +254,7 @@ client = MontyClient("montydb:///db/repo")
 * #### `MongoQueryRecorder`
 
   Record MongoDB query results in a period of time.
-  *Requires to access databse profiler.*
+  *Requires to access database profiler.*
 
   This works via filtering the database profile data and reproduce the queries of `find` and `distinct` commands.
 
@@ -267,14 +286,21 @@ client = MontyClient("montydb:///db/repo")
   
   ```
 
-### Why I did this ?
+### Why did I make this?
 
 Mainly for personal skill practicing and fun.
-I work in VFX industry, some of my production needs (mostly edge-case) requires to run in a limited environment (e.g. outsourced render farms), which may have problem to run or connect a MongoDB instance. And I found this project really helps.
+
+I work in the VFX industry and some of my production needs (mostly edge-case) requires to run in a limited environment (e.g. outsourced render farms), which may have problem to run or connect a MongoDB instance. And I found this project really helps.
 
 
 ---
 
+<p align=center>
+    <a href="https://jb.gg/OpenSource"><i>This project is supported by JetBrains</i></a>
+</p>
+
 <p align="center">
-  <img src="artwork/icon.png" alt="drawing" width="60"/>
+    <img src="artwork/icon.png" alt="drawing" width="100"/>
+  &nbsp;&nbsp;
+    <img src="artwork/jetbrains.png" alt="drawing" width="100"/>
 </p>

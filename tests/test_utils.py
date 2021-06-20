@@ -4,7 +4,6 @@ import base64
 import pytest
 
 from montydb import open_repo
-from montydb.types import init_bson
 from montydb.utils import (
     montyimport,
     montyexport,
@@ -75,11 +74,6 @@ AAAAB2EAMDAwMDAwMDAwMDAwAA==
 
 JSON_DUMP = "dumped.json"
 BSON_DUMP = "dumped.bson"
-
-
-@pytest.fixture(scope="module", autouse=True)
-def set_bson(use_bson):
-    init_bson(use_bson)
 
 
 @skip_if_no_bson

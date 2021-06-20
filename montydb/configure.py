@@ -25,7 +25,7 @@ _pinned_repository = {"_": None}
 _session = {}
 _session_default = {
     "mongo_version": "4.2",
-    "use_bson": False,
+    "use_bson": None,
 }
 # TODO:
 #   The mongo version compating may fail if calling `set_storage()` multiple
@@ -194,13 +194,13 @@ def set_storage(
         mongo_version (str, optional): Which mongodb version's behavior should
             montydb try to match with. Default "4.2", other versions are "3.6",
             "4.0".
-        use_bson (bool, optional): Use bson module. Default `False`.
+        use_bson (bool, optional): Use bson module. Default `None`.
 
     keyword args:
         Other keyword args will be parsed as storage config options.
 
     """
-    from .types import bson_ as bson
+    from .types import bson
 
     storage = storage or DEFAULT_STORAGE
 
@@ -267,20 +267,26 @@ def provide_storage(repository):
 
 
 def _bson_init(use_bson):
-    from .types import bson_ as bson
+    from .types import bson
 
-    if bson.bson_used and not use_bson:
+    if bson.bson_used is None:
+        bson.init(use_bson)
+
+    elif bson.bson_used and not use_bson:
         raise ConfigurationError(
             "montydb has been config to use BSON and "
             "cannot be changed in current session."
         )
+
     elif not bson.bson_used and use_bson:
         raise ConfigurationError(
             "montydb has been config to opt-out BSON and "
             "cannot be changed in current session."
         )
+
     else:
-        bson.init(use_bson)
+        # bson.bson_used == use_bson
+        pass
 
 
 def _mongo_compat(version):

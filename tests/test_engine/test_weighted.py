@@ -3,15 +3,10 @@ import pytest
 import re
 
 from montydb.engine.weighted import Weighted, _cmp_decimal
-from montydb.types import PY3, init_bson, bson_ as bson
+from montydb.types import PY3, bson
 from datetime import datetime
 
 from ..conftest import skip_if_no_bson
-
-
-@pytest.fixture(scope="module", autouse=True)
-def set_bson(use_bson):
-    init_bson(use_bson)
 
 
 def test_weighted_1():

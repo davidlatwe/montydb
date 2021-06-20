@@ -3,7 +3,7 @@ from ..engine.field_walker import FieldWalker
 from ..engine.weighted import Weighted
 from ..engine.queries import QueryFilter, ordering
 from ..engine.project import Projector
-from ..types import integer_types, init_bson, bson_ as bson
+from ..types import integer_types, init_bson, bson
 from ..base import (
     _fields_list_to_dict,
     _index_document,

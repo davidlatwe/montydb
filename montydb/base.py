@@ -29,7 +29,7 @@ from .types import (
     iteritems,
     integer_types,
     string_types,
-    bson_ as bson,
+    bson,
 )
 
 ASCENDING = 1

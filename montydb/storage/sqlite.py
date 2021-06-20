@@ -6,7 +6,7 @@ import contextlib
 from collections import OrderedDict
 
 from ..base import WriteConcern
-from ..types import unicode_, bson_ as bson
+from ..types import unicode_, bson
 from . import (
     AbstractStorage,
     AbstractDatabase,
