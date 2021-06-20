@@ -358,7 +358,7 @@ _positional_mismatch = _positional_mismatch_v44
 
 def inclusion(fieldwalker, positioned, matched, init_doc):
     _doc_type = fieldwalker.doc_type
-    located_match = matched.located if matched else False
+    located_match = False if matched is None else matched.located
 
     def _inclusion(node, init_doc=None):
         doc = node.value
