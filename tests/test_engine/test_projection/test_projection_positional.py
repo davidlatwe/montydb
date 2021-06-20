@@ -179,21 +179,31 @@ def test_projection_positional_10(monty_proj, mongo_proj):
     assert next(mongo_c) == next(monty_c)
 
 
-def test_projection_positional_11(monty_proj, mongo_proj):
+def test_projection_positional_11(monty_proj, mongo_proj, mongo_version):
     docs = [
-        {"a": [{"b": [0, 1, 2]}, {"b": [3, 2, 4]}]},
+        {"a": [{"b": [0, 1, 2], "c": {"d": "eek", "e": "arr"}},
+               {"b": [3, 2, 4], "c": {"d": "foo", "e": "bar"}}]},
     ]
 
-    def run(spec, proj):
+    def run(spec, proj, debug=None):
         monty_c = monty_proj(docs, spec, proj)
         mongo_c = mongo_proj(docs, spec, proj)
 
         assert count_documents(mongo_c, spec) == 1
         assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
-        assert next(mongo_c) == next(monty_c)
+        mongo_doc = next(mongo_c)
+        monty_doc = next(monty_c)
+        if debug:
+            print(debug, mongo_doc)
+            print(debug, monty_doc)
+        assert monty_doc == mongo_doc
 
     spec = {"a.b.2": 4}
     proj = {"a.b.$": 1}
+    run(spec, proj)
+
+    spec = {"a.b.2": 4}
+    proj = {"a.c.d.$": 1}
     run(spec, proj)
 
     spec = {"a.b": 2}
@@ -202,15 +212,27 @@ def test_projection_positional_11(monty_proj, mongo_proj):
 
     spec = {"a.b": 2}
     proj = {"a.$.b": 1}
-    run(spec, proj)
+    if mongo_version[:2] >= [4, 4]:
+        with pytest.raises(mongo_op_fail) as mongo_err:
+            run(spec, proj)
+    else:
+        run(spec, proj)
 
     spec = {"a.b": 2}
     proj = {"$.a.b": 1}
-    run(spec, proj)
+    if mongo_version[:2] >= [4, 4]:
+        with pytest.raises(mongo_op_fail) as mongo_err:
+            run(spec, proj)
+    else:
+        run(spec, proj)
 
     spec = {"a.b": 2}
     proj = {"a": 1, "$.a.b": 1}
-    run(spec, proj)
+    if mongo_version[:2] >= [4, 4]:
+        with pytest.raises(mongo_op_fail) as mongo_err:
+            run(spec, proj)
+    else:
+        run(spec, proj)
 
     for ie in range(2):
         spec = {"a.b": 2}
@@ -229,12 +251,12 @@ def test_projection_positional_11(monty_proj, mongo_proj):
     proj = {"a.b.0.1.x.$": 1}
     run(spec, proj)
 
-    for ie in range(2):
+    for ie in range(2):  # exclude/include
         spec = {"a.b": 2}
         proj = {"a.b.0.1.x": ie}
         run(spec, proj)
 
-    for ie in range(2):
+    for ie in range(2):  # exclude/include
         spec = {}
         proj = {"a.0.b.x": ie}
         run(spec, proj)
