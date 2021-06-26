@@ -320,6 +320,62 @@ def test_update_positional(monty_update, mongo_update):
     assert next(monty_c) == {"a": [{"b": 3, "c": 1}, {"b": 5, "c": 0}]}
 
 
+def test_update_positional_2(monty_update, mongo_update):
+    docs = [
+        {"users": [{"id": 1, "name": None}, {"id": 2, "name": None}]}
+    ]
+    find = {"users.id": 2}
+    spec = {"$set": {"users.$.name": "david"}}
+
+    mongo_c = mongo_update(docs, spec, find)
+    monty_c = monty_update(docs, spec, find)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {
+        "users": [{"id": 1, "name": None}, {"id": 2, "name": "david"}],
+    }
+
+
+def test_update_positional_2_across_fields(monty_update, mongo_update):
+    docs = [
+        {"users": [{"id": 1}, {"id": 2}],
+         "invoices": [{"name": None}, {"name": None}]}
+    ]
+    find = {"users.id": 2}
+    spec = {"$set": {"invoices.$.name": "david"}}
+
+    mongo_c = mongo_update(docs, spec, find)
+    monty_c = monty_update(docs, spec, find)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {
+        "users": [{"id": 1}, {"id": 2}],
+        "invoices": [{"name": None}, {"name": "david"}]
+    }
+
+
+def test_update_positional_2_across_fields_with_elemMatch(monty_update,
+                                                          mongo_update):
+    docs = [
+        {"users": [{"id": 1}, {"id": 2}],
+         "invoices": [{"name": None}, {"name": None}]}
+    ]
+    find = {"users": {"$elemMatch": {"id": 2}}}
+    spec = {"$set": {"invoices.$.name": "david"}}
+
+    mongo_c = mongo_update(docs, spec, find)
+    monty_c = monty_update(docs, spec, find)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {
+        "users": [{"id": 1}, {"id": 2}],
+        "invoices": [{"name": None}, {"name": "david"}]
+    }
+
+
 def test_update_positional_without_query_condition(monty_update, mongo_update):
     docs = [
         {"a": [{"b": 3, "c": 1}, {"b": 4, "c": 0}]}

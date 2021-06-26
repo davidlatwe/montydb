@@ -92,18 +92,18 @@ class FieldValues(object):
         """
         fieldwalker = self._fieldwalker
         for node in self.nodes:
-            fieldwalker._put_matched(node)
+            fieldwalker.put_matched(node)
 
             value = node.value
             if isinstance(value, list):
                 # value in array
-                if unpack and not node.located:
+                if unpack and (array_only or not node.located):
                     for i, elem in enumerate(value):
                         if elem is not _no_val:
                             matched = FieldNode(
                                 str(i), elem, exists=True, in_array=True, parent=node
                             )
-                            fieldwalker._put_matched(matched)
+                            fieldwalker.put_matched(matched)
                             yield elem
                 if pack:
                     # Include whole array as part of query result
@@ -114,7 +114,7 @@ class FieldValues(object):
                     yield value
 
         # Reset to `None` if the iter loop did not *break* in query
-        fieldwalker._put_matched(None)
+        fieldwalker.put_matched(None)
 
     def iter_plain(self):
         """Iterate each nodes value as is"""
@@ -581,10 +581,9 @@ class FieldTree(object):
                 raise FieldWriteError(msg, code=2)
 
             else:
-                # Replace "$" into top matched array element index
-                position_path = ".".join(fields).split(".$", 1)[0]
-                top_matched = fieldwalker.top_matched(position_path)
-                position = top_matched.split(".")[0]
+                # Replace "$" into matched array element index
+                matched = fieldwalker.get_matched()
+                position = matched.split(".")[0]
                 fields[fields.index("$")] = position
 
         if array_filters is None:
@@ -830,9 +829,9 @@ class FieldWalker(object):
         """
         return self.tree.extract(visited_only=True)
 
-    def top_matched(self, position_path):
+    def get_matched(self, position_path=None):
         for path, node in self.matched.items():
-            if path.startswith(position_path + "."):
+            if position_path is None or path.startswith(position_path + "."):
                 matched = node
                 break
         else:
@@ -850,7 +849,7 @@ class FieldWalker(object):
     def has_matched(self):
         return any(node.in_array for node in self.matched.values())
 
-    def _put_matched(self, node):
+    def put_matched(self, node):
         if node is None:
             self.matched.pop(self.path, None)
         else:
