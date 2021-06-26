@@ -704,10 +704,9 @@ def parse_elemMatch(query):
     def _elemMatch(fieldwalker):
         queryfilter = QueryFilter(query)
         doc_type = fieldwalker.doc_type
-        for value in fieldwalker.value.iter_arrays():
-            for v in value:
-                if queryfilter(v, doc_type):
-                    return True
+        for elem in fieldwalker.value.iter_elements():
+            if queryfilter(elem, doc_type):
+                return True
 
     return _elemMatch
 

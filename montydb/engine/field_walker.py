@@ -97,7 +97,7 @@ class FieldValues(object):
             value = node.value
             if isinstance(value, list):
                 # value in array
-                if unpack and not node.located:
+                if unpack and (array_only or not node.located):
                     for i, elem in enumerate(value):
                         if elem is not _no_val:
                             matched = FieldNode(
