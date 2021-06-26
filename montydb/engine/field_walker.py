@@ -92,7 +92,7 @@ class FieldValues(object):
         """
         fieldwalker = self._fieldwalker
         for node in self.nodes:
-            fieldwalker._put_matched(node)
+            fieldwalker.put_matched(node)
 
             value = node.value
             if isinstance(value, list):
@@ -103,7 +103,7 @@ class FieldValues(object):
                             matched = FieldNode(
                                 str(i), elem, exists=True, in_array=True, parent=node
                             )
-                            fieldwalker._put_matched(matched)
+                            fieldwalker.put_matched(matched)
                             yield elem
                 if pack:
                     # Include whole array as part of query result
@@ -114,7 +114,7 @@ class FieldValues(object):
                     yield value
 
         # Reset to `None` if the iter loop did not *break* in query
-        fieldwalker._put_matched(None)
+        fieldwalker.put_matched(None)
 
     def iter_plain(self):
         """Iterate each nodes value as is"""
@@ -850,7 +850,7 @@ class FieldWalker(object):
     def has_matched(self):
         return any(node.in_array for node in self.matched.values())
 
-    def _put_matched(self, node):
+    def put_matched(self, node):
         if node is None:
             self.matched.pop(self.path, None)
         else:
