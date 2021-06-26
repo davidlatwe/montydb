@@ -603,3 +603,22 @@ def test_update_with_empty_field_2(monty_update, mongo_update):
 
     # ignore comparing error code
     # assert mongo_err.value.code == monty_err.value.code
+
+
+def test_update_positional_with_elemMatch(monty_update, mongo_update):
+    docs = [
+        {"users": [{"id": 1}, {"id": 2}],
+         "invoices": [{"name": None}, {"name": None}]}
+    ]
+    find = {"users": {"$elemMatch": {"id": 2}}}
+    spec = {"$set": {"invoices.$.name": "david"}}
+
+    mongo_c = mongo_update(docs, spec, find)
+    monty_c = monty_update(docs, spec, find)
+
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {
+        "users": [{"id": 1}, {"id": 2}],
+        "invoices": [{"name": None}, {"name": "david"}]
+    }
