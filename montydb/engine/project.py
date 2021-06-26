@@ -88,7 +88,7 @@ class Projector(object):
         positioned = self.array_op_type == self.ARRAY_OP_POSITIONAL
 
         if positioned:
-            top_matched = fieldwalker.top_matched(self.position_path)
+            top_matched = fieldwalker.get_matched(self.position_path)
             if top_matched is not None:
                 self.matched = top_matched
 
