@@ -581,10 +581,9 @@ class FieldTree(object):
                 raise FieldWriteError(msg, code=2)
 
             else:
-                # Replace "$" into top matched array element index
-                position_path = ".".join(fields).split(".$", 1)[0]
-                top_matched = fieldwalker.top_matched(position_path)
-                position = top_matched.split(".")[0]
+                # Replace "$" into matched array element index
+                matched = fieldwalker.get_matched()
+                position = matched.split(".")[0]
                 fields[fields.index("$")] = position
 
         if array_filters is None:
@@ -830,9 +829,9 @@ class FieldWalker(object):
         """
         return self.tree.extract(visited_only=True)
 
-    def top_matched(self, position_path):
+    def get_matched(self, position_path=None):
         for path, node in self.matched.items():
-            if path.startswith(position_path + "."):
+            if position_path is None or path.startswith(position_path + "."):
                 matched = node
                 break
         else:
