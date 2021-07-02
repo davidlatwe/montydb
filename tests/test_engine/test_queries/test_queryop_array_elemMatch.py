@@ -228,3 +228,45 @@ def test_qop_elemMatch_15(monty_find, mongo_find):
     assert count_documents(mongo_c, spec) == 1
     assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
     assert next(mongo_c) == next(monty_c)
+
+
+def test_qop_elemMatch_16(monty_find, mongo_find):
+    docs = [
+        {"foo": [["bar"]]}
+    ]
+    spec = {"foo": {"$elemMatch": {"$elemMatch": {"$in": ["bar"]}}}}
+
+    mongo_c = mongo_find(docs, spec)
+    monty_c = monty_find(docs, spec)
+
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
+    assert next(mongo_c) == next(monty_c)
+
+
+def test_qop_elemMatch_17(monty_find, mongo_find):
+    docs = [
+        {"foo": [["bar"]]}
+    ]
+    spec = {"foo": {"$elemMatch": {"$elemMatch": {"$eq": "bar"}}}}
+
+    mongo_c = mongo_find(docs, spec)
+    monty_c = monty_find(docs, spec)
+
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
+    assert next(mongo_c) == next(monty_c)
+
+
+def test_qop_elemMatch_18(monty_find, mongo_find):
+    docs = [
+        {"foo": [["bar"]]}
+    ]
+    spec = {"foo": {"$elemMatch": {"$eq": ["bar"]}}}
+
+    mongo_c = mongo_find(docs, spec)
+    monty_c = monty_find(docs, spec)
+
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
+    assert next(mongo_c) == next(monty_c)

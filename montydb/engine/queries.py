@@ -173,7 +173,17 @@ class LogicBox(list):
         """ """
         with fieldwalker.value as field_value:
             for elem in field_value.iter_elements():
-                field_value.change_iter(lambda: iter([elem]))
+
+                def elem_iter():
+                    try:
+                        for e in elem:
+                            yield e
+                    except TypeError:
+                        pass
+                    finally:
+                        yield elem
+
+                field_value.change_iter(elem_iter)
                 if all(self._gen(fieldwalker)):
                     return True
 
