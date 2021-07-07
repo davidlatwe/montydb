@@ -50,7 +50,7 @@ jobs:
     - name: Lint with flake8
       run: |
         # Ideally max-complexity should be set to 10
-        flake8 . --count --ignore=F841,W503 --max-complexity=29 --max-line-length=88 --statistics
+        flake8 . --count --ignore=F841,W503 --max-complexity=32 --max-line-length=88 --statistics
 
     - name: Find typos with codespell
       run: codespell --ignore-words-list=nd,nin
