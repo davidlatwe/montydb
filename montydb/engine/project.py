@@ -138,8 +138,10 @@ class Projector(object):
         for key, val in spec.items():
             # check path collision (mongo-4.4+)
             if _check_path_collision:
-                collision = _has_path_collision(key, self.regular_field) \
-                                or _has_path_collision(key, self.array_field.keys())
+                collision = (
+                    _has_path_collision(key, self.regular_field)
+                    or _has_path_collision(key, self.array_field.keys())
+                )
                 if collision:
                     remaining = key[len(collision + "."):]
                     if remaining:
