@@ -13,6 +13,8 @@ pytest = "^6.2.4"
 pytest-cov = "^2.12.1"
 pymongo = "^3.11.4"
 lmdb = "^1.2.1"
+flake8 = "^3.9.2"
+codespell = "^2.1.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
