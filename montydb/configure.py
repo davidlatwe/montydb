@@ -310,6 +310,8 @@ def _mongo_compat(version):
                 getattr(project, "_positional_mismatch_v44"))
         setattr(project, "_check_positional_key",
                 getattr(project, "_check_positional_key_v44"))
+        setattr(project, "_check_path_collision",
+                getattr(project, "_check_path_collision_v44"))
         setattr(project, "_include_positional_non_located_match",
                 getattr(project, "_include_positional_non_located_match_v44"))
     else:
@@ -317,5 +319,7 @@ def _mongo_compat(version):
                 getattr(project, "_positional_mismatch_"))
         setattr(project, "_check_positional_key",
                 getattr(project, "_check_positional_key_"))
+        setattr(project, "_check_path_collision",
+                getattr(project, "_check_path_collision_"))
         setattr(project, "_include_positional_non_located_match",
                 getattr(project, "_include_positional_non_located_match_"))

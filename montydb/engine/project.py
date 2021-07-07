@@ -35,6 +35,15 @@ def _is_positional_match(conditions, match_field):
         return None
 
 
+def _has_path_collision(path, parsed_paths):
+    path = path.split(".$")[0]
+    for parsed in parsed_paths:
+        if path == parsed \
+                or path.startswith(parsed + ".") \
+                or parsed.startswith(path + "."):
+            return parsed
+
+
 def _perr_doc(val):
     """
     For pretty error msg, same as Mongo
@@ -61,6 +70,10 @@ def _perr_doc(val):
 _check_positional_key_ = False
 _check_positional_key_v44 = True
 _check_positional_key = _check_positional_key_v44
+
+_check_path_collision_ = False
+_check_path_collision_v44 = True
+_check_path_collision = _check_path_collision_v44
 
 
 class Projector(object):
@@ -123,6 +136,20 @@ class Projector(object):
         self.array_op_type = self.ARRAY_OP_NORMAL
 
         for key, val in spec.items():
+            # check path collision (mongo-4.4+)
+            if _check_path_collision:
+                collision = _has_path_collision(key, self.regular_field) \
+                                or _has_path_collision(key, self.array_field.keys())
+                if collision:
+                    remaining = key[len(collision + "."):]
+                    if remaining:
+                        raise OperationFailure(
+                            "Path collision at %s remaining portion %s"
+                            % (collision, remaining)
+                        )
+                    else:
+                        raise OperationFailure("Path collision at %s" % key)
+
             # Parsing options
             if is_duckument_type(val):
                 if not len(val) == 1:

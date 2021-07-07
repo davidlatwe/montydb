@@ -370,7 +370,7 @@ def test_projection_positional_14(monty_proj, mongo_proj):
         run(proj)
 
 
-def test_projection_positional_15(monty_proj, mongo_proj):
+def test_projection_positional_15(monty_proj, mongo_proj, mongo_version):
     docs = [
         {"a": [{"b": [0, 1, {"c": 5}]}, {"b": [3, 2, {"x": 5}]}]},
     ]
@@ -382,7 +382,15 @@ def test_projection_positional_15(monty_proj, mongo_proj):
 
     assert count_documents(mongo_c, spec) == 1
     assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
-    assert next(mongo_c) == next(monty_c)
+
+    if mongo_version[:2] < [4, 4]:
+        assert next(mongo_c) == next(monty_c)
+    else:
+        # Path collision at a.b.x remaining portion b.x
+        with pytest.raises(mongo_op_fail):
+            next(mongo_c)
+        with pytest.raises(monty_op_fail):
+            next(monty_c)
 
 
 def test_projection_positional_err_2(monty_proj, mongo_proj):
