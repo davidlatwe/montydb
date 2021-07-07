@@ -1,4 +1,7 @@
 
+import pytest
+from pymongo.errors import OperationFailure as mongo_op_fail
+from montydb.errors import OperationFailure as monty_op_fail
 from montydb.types import bson
 from ...conftest import skip_if_no_bson
 
@@ -102,7 +105,7 @@ def test_qop_mod_7(monty_find, mongo_find):
     assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
 
 
-def test_qop_mod_8(monty_find, mongo_find):
+def test_qop_mod_8(monty_find, mongo_find, mongo_version):
     docs = [
         {"a": 8}
     ]
@@ -111,8 +114,16 @@ def test_qop_mod_8(monty_find, mongo_find):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    assert count_documents(mongo_c, spec) == 1
-    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
+    if mongo_version < [4, 3, 1]:
+        assert count_documents(mongo_c, spec) == 1
+        assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
+    else:
+        # error raise if remainder is not a number, starting MongoDB 4.3.1
+        # https://jira.mongodb.org/browse/SERVER-23664
+        with pytest.raises(mongo_op_fail) as mongo_err:
+            next(mongo_c)
+        with pytest.raises(monty_op_fail) as monty_err:
+            next(monty_c)
 
 
 @skip_if_no_bson

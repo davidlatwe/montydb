@@ -306,6 +306,10 @@ def _mongo_compat(version):
         setattr(queries, "_regex_options_check", getattr(queries, "_regex_options_"))
 
     if version == "4.4":
+        # $mod checking remainder is starting from mongo-4.3.1 but since 4.3 is not
+        #   a stable release so we match this behavior in 4.4
+        setattr(queries, "_mod_check_numeric_remainder",
+                getattr(queries, "_mod_check_numeric_remainder_v431_"))
         setattr(project, "_positional_mismatch",
                 getattr(project, "_positional_mismatch_v44"))
         setattr(project, "_check_positional_key",
@@ -315,6 +319,8 @@ def _mongo_compat(version):
         setattr(project, "_include_positional_non_located_match",
                 getattr(project, "_include_positional_non_located_match_v44"))
     else:
+        setattr(queries, "_mod_check_numeric_remainder",
+                getattr(queries, "_mod_check_numeric_remainder_"))
         setattr(project, "_positional_mismatch",
                 getattr(project, "_positional_mismatch_"))
         setattr(project, "_check_positional_key",

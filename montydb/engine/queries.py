@@ -900,6 +900,11 @@ def parse_regex(query):
     return _regex
 
 
+_mod_check_numeric_remainder_ = False
+_mod_check_numeric_remainder_v431_ = True
+_mod_check_numeric_remainder = _mod_check_numeric_remainder_v431_
+
+
 def parse_mod(query):
     if not isinstance(query, list):
         raise OperationFailure("malformed mod, needs to be an array")
@@ -916,6 +921,8 @@ def parse_mod(query):
     if not isinstance(divisor, num_types):
         raise OperationFailure("malformed mod, divisor not a number")
     if not isinstance(remainder, num_types):
+        if _mod_check_numeric_remainder:
+            raise OperationFailure("malformed mod, remainder not a number")
         remainder = 0
 
     if isinstance(divisor, bson.Decimal128):
