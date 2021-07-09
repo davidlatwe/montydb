@@ -1,6 +1,7 @@
 import sys
 import types
 import base64
+from ast import literal_eval
 
 
 def _mock(name):
@@ -160,7 +161,7 @@ class NoBSON(types.ModuleType):
         for s in _encoder.iterencode(doc):
             if s == _key_sep:
                 if not _encoder.key_is_keyword:
-                    key = eval(candidate)
+                    key = literal_eval(candidate)
                     if not isinstance(key, cls._string_types):
                         raise cls.InvalidDocument(
                             "documents must have only string keys, key was %r" % key
