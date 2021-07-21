@@ -3,6 +3,7 @@ import types
 import base64
 import ast
 
+
 def _mock(name):
     class Mock(object):
         def __init__(self, *args, **kwargs):
