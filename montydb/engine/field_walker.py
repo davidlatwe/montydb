@@ -201,6 +201,7 @@ class FieldNode(str):
         return obj
 
     def __init__(self, *args, **kwargs):
+        super(FieldNode, self).__init__(*args, **kwargs)
         self.full_path = self.concat_parents()
 
     def __repr__(self):
