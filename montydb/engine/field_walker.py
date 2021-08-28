@@ -464,6 +464,10 @@ class FieldTree(object):
     def __init__(self, doc, doc_type=None):
         self.map_cls = doc_type or type(doc)
         self.root = FieldNode("", doc, exists=True)
+        self.handler = None
+        self.changes = None
+        self.picked = None
+        self.previous = None
         self.clear()
 
     def __str__(self):
@@ -494,7 +498,7 @@ class FieldTree(object):
 
     def restart(self):
         self.picked = [self.root]
-        self.previous = set([""])
+        self.previous = {""}
 
     def grow(self, fields):
 
@@ -616,10 +620,10 @@ class FieldTree(object):
         if isinstance(self.handler, FieldTreeWriter):
             ON_DELETE = self.handler.on_delete
 
-        def _extract(node, visited_only):
+        def _extract(node, visited_only_):
             doc = node.value
             has_children = bool(node.children)
-            visited_only_ = visited_only
+            _visited_only = visited_only_
 
             if isinstance(doc, self.map_cls):
                 new_doc = self.map_cls()
@@ -630,12 +634,12 @@ class FieldTree(object):
                     try:
                         child = node[field]
                     except KeyError:
-                        if visited_only and has_children:
-                            visited_only_ = False
+                        if visited_only_ and has_children:
+                            _visited_only = False
                             continue
                         value = doc[field]
                     else:
-                        value = _extract(child, visited_only_)
+                        value = _extract(child, _visited_only)
 
                     if value is not _no_val:
                         new_doc[field] = value
@@ -655,12 +659,12 @@ class FieldTree(object):
                     try:
                         child = node[str(index)]
                     except KeyError:
-                        if visited_only and has_children:
-                            visited_only_ = False
+                        if visited_only_ and has_children:
+                            _visited_only = False
                             continue
                         value = doc[index] if index < len(doc) else None
                     else:
-                        value = _extract(child, visited_only_)
+                        value = _extract(child, _visited_only)
 
                     if value is _no_val:
                         value = None
