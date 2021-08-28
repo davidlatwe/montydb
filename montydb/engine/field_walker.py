@@ -1,8 +1,7 @@
 class _NoVal(object):
     def __repr__(self):
         return "_NoVal()"
-
-    __solts__ = ()
+    __slots__ = ()
 
 
 # Value of missing field
