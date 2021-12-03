@@ -1,12 +1,32 @@
 [tool.poetry]
 name = "montydb"
-version = "2.3.11"
+version = "2.3.12"
 description = "Monty, Mongo tinified. MongoDB implemented in Python !"
 authors = ["davidlatwe <davidlatwe@gmail.com>"]
 license = "BSD-3-Clause License"
+readme = "README.md"
+repository = "https://github.com/davidlatwe/montydb"
+keywords = ["monty", "montydb", "pymongo", "mongodb", "database", "embedded"]
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 2.7",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Database",
+    "Topic :: Database :: Database Engines/Servers",
+]
+
+include=[
+    "LICENSE",
+]
 
 [tool.poetry.dependencies]
-python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*, ^3.9"
+python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, ^3.9"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
@@ -15,6 +35,7 @@ pymongo = "^3.11.4"
 lmdb = "^1.2.1"
 flake8 = "^3.9.2"
 codespell = "^2.1.0"
+black = {version = "^21.11b1", allow-prereleases = true}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
