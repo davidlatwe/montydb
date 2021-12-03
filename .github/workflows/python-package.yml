@@ -43,7 +43,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Run image
+    - name: Setup Poetry ${{ matrix.poetry-version }}
       uses: abatilo/actions-poetry@v2.0.0
       with:
         poetry-version: ${{ matrix.poetry-version }}
@@ -53,13 +53,10 @@ jobs:
 
     - name: Lint with flake8
       run: |
-        # Ideally max-complexity should be set to 10
-        # poetry run flake8 . --count --ignore=F841,W503 --max-complexity=26 --max-line-length=88 --statistics
-        make flake8
+        make lint
 
     - name: Find typos with codespell
       run: |
-        #poetry run codespell --ignore-words-list=nd,nin
         make codespell
 
     - name: Test with pytest (${{ matrix.monty-storage }})
