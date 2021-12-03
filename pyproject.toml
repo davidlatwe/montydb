@@ -30,7 +30,7 @@ python = ">=3.6, <3.10"
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
 pytest-cov = "^2.12.1"
-pymongo = "^3.11.4"
+pymongo = "=3.11.3"
 lmdb = "^1.2.1"
 flake8 = "^3.9.2"
 codespell = "^2.1.0"
