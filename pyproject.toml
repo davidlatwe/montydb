@@ -25,7 +25,7 @@ include=[
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.6, ^3.9"
+python = ">=3.6, <3.10"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
@@ -34,7 +34,7 @@ pymongo = "^3.11.4"
 lmdb = "^1.2.1"
 flake8 = "^3.9.2"
 codespell = "^2.1.0"
-black = {version = "^21.11b1", allow-prereleases = true}
+black = {version = "^21.11b1", python =">=3.6.2", allow-prereleases = true}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
