@@ -14,7 +14,7 @@ update:  ## update project dependencies locally (run after git update)
 	poetry update
 .PHONY: update
 
-ci: codespell lint test ## Run all checks (codespell, lint, test)
+ci: codespell lint bandit test ## Run all checks (codespell, lint, bandit, test)
 .PHONY: ci
 
 test:  ## Run tests
@@ -34,6 +34,10 @@ lint:  ## Run linting with flake8
 codespell:  ## Find typos with codespell
 	poetry run codespell --ignore-words-list=nd,nin --skip=".venv"
 .PHONY: lint
+
+bandit:  ## Run static security analysis with bandit
+	poetry run bandit montydb -r
+.PHONY: bandit
 
 build:  ## Build project using poetry
 	poetry build

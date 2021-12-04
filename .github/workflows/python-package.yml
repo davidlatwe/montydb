@@ -58,6 +58,9 @@ jobs:
     - name: Find typos with codespell
       run: make codespell
 
+    - name: Run static analysis with bandit
+      run: make bandit
+
     - name: Test with pytest (${{ matrix.monty-storage }})
       continue-on-error: ${{ matrix.experimental }}
       run: >

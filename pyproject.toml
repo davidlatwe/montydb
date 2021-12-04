@@ -35,6 +35,7 @@ lmdb = "^1.2.1"
 flake8 = "^3.9.2"
 codespell = "^2.1.0"
 black = {version = "^21.11b1", python =">=3.6.2", allow-prereleases = true}
+bandit = "^1.7.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
