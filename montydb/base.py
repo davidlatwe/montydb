@@ -20,9 +20,9 @@
 
 
 from collections import (
-    OrderedDict,
-    MutableMapping,
+    OrderedDict
 )
+from collections.abc import MutableMapping
 from .types import (
     abc,
     iteritems,
