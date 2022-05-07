@@ -1,7 +1,10 @@
 import re
 from copy import deepcopy
 from datetime import datetime
-from collections import Mapping
+try:
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Mapping
 
 from ..errors import OperationFailure
 
