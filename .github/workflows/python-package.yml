@@ -17,19 +17,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ 3.6, 3.7, 3.8, 3.9 ]
-        mongodb-version: [ "3.6", "4.0", "4.2" ]
-        monty-storage: [ memory, flatfile, sqlite ]
-        poetry-version: [ 1.1.12 ]
         experimental: [ false ]
+        monty-storage: [ memory, flatfile, sqlite ]
+        mongodb-version: [ "3.6", "4.0", "4.2" ]
+        python-version: [ "3.6", "3.7", "3.8", "3.9", "3.10" ]
+        poetry-version: [ "1.1.12" ]
         include:
-          # opt-out lmdb due to the seg fault in github action is
-          #  not reproducible on my Windows and Mac.
-          - monty-storage: lightning
+          # run lmdb tests as experimental due to the seg fault in GitHub
+          #  action is not reproducible on my Windows and Mac.
+          - experimental: true
+            monty-storage: lightning
             mongodb-version: "4.0"
-            python-version: 3.7
-            experimental: true
-            poetry-version: 1.1.12
+            python-version: "3.7"
+            poetry-version: "1.1.12"
 
     steps:
     - uses: actions/checkout@v2
