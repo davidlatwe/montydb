@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "montydb"
-version = "2.3.12"
+version = "2.4.0"
 description = "Monty, Mongo tinified. MongoDB implemented in Python !"
 authors = ["davidlatwe <davidlatwe@gmail.com>"]
 license = "BSD-3-Clause License"
