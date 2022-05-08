@@ -33,7 +33,7 @@ lint:  ## Run linting with flake8
 
 codespell:  ## Find typos with codespell
 	poetry run codespell --ignore-words-list=nd,nin --skip=".venv"
-.PHONY: lint
+.PHONY: codespell
 
 bandit:  ## Run static security analysis with bandit
 	poetry run bandit montydb -r
