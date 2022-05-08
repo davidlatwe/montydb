@@ -29,7 +29,7 @@ Most of the CRUD operators have been implemented. You can visit [issue #14](http
 This project is tested against:
 
 - MongoDB: 3.6, 4.0, 4.2 (4.4 on the way💦)
-- Python: 2.7, 3.6, 3.7, 3.8, 3.9
+- Python: 3.6, 3.7, 3.8, 3.9, 3.10
 
 
 ## Install
