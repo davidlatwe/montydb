@@ -3,6 +3,10 @@ import pytest
 from pymongo.errors import OperationFailure as mongo_op_fail
 from montydb.errors import OperationFailure as monty_op_fail
 from montydb.types import bson
+
+from pymongo.errors import OperationFailure as MongoOpFail
+from montydb.errors import OperationFailure as MontyOpFail
+
 from ...conftest import skip_if_no_bson
 
 

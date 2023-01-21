@@ -5,6 +5,10 @@ from pymongo.errors import WriteError as mongo_write_err
 from montydb.errors import WriteError as monty_write_err
 from ...conftest import skip_if_no_bson
 
+# max timestamp tolerance
+#   when testing against docker instance, datetime may not align with host.
+_tole = 60
+
 
 def test_update_currentDate_1(monty_update, mongo_update):
     docs = [
@@ -18,9 +22,7 @@ def test_update_currentDate_1(monty_update, mongo_update):
     mg_date = next(mongo_c)["a"]
     mt_date = next(monty_c)["a"]
 
-    assert mg_date.date() == mt_date.date()
-    assert mg_date.hour == mt_date.hour
-    assert mg_date.minute == mt_date.minute
+    assert mg_date.timestamp() == pytest.approx(mt_date.timestamp(), abs=_tole)
 
 
 def test_update_currentDate_2(monty_update, mongo_update):
@@ -35,9 +37,7 @@ def test_update_currentDate_2(monty_update, mongo_update):
     mg_date = next(mongo_c)["a"]
     mt_date = next(monty_c)["a"]
 
-    assert mg_date.date() == mt_date.date()
-    assert mg_date.hour == mt_date.hour
-    assert mg_date.minute == mt_date.minute
+    assert mg_date.timestamp() == pytest.approx(mt_date.timestamp(), abs=_tole)
 
 
 def test_update_currentDate_3(monty_update, mongo_update):
@@ -52,9 +52,7 @@ def test_update_currentDate_3(monty_update, mongo_update):
     mg_date = next(mongo_c)["a"]
     mt_date = next(monty_c)["a"]
 
-    assert mg_date.date() == mt_date.date()
-    assert mg_date.hour == mt_date.hour
-    assert mg_date.minute == mt_date.minute
+    assert mg_date.timestamp() == pytest.approx(mt_date.timestamp(), abs=_tole)
 
 
 @skip_if_no_bson
@@ -70,7 +68,7 @@ def test_update_currentDate_4(monty_update, mongo_update):
     mg_tstamp = next(mongo_c)["a"]
     mt_tstamp = next(monty_c)["a"]
 
-    assert mg_tstamp.time - mt_tstamp.time < 10
+    assert mg_tstamp.time == pytest.approx(mt_tstamp.time, abs=_tole)
     assert mg_tstamp.inc == mt_tstamp.inc
 
 
