@@ -29,7 +29,7 @@ Most of the CRUD operators have been implemented. You can visit [issue #14](http
 This project is tested against:
 
 - MongoDB: 3.6, 4.0, 4.2 (4.4 on the way💦)
-- Python: 2.7, 3.6, 3.7, 3.8, 3.9
+- Python: 3.6, 3.7, 3.8, 3.9, 3.10
 
 
 ## Install
@@ -286,12 +286,50 @@ client = MontyClient("montydb:///db/repo")
   
   ```
 
-### Why did I make this?
+## Development
+
+montydb uses [Poetry](https://python-poetry.org/) to make it easy manage dependencies and set up the development environment. 
+
+### Initial setup
+
+After cloning the repository, you need to run the following commands to set up the development environment:
+
+```bash
+make install
+```
+
+This will create a virtual environment and download the required dependencies.
+
+### updating dependencies
+
+To keep dependencies updated after git operations such as local updates or merging changes into local dev branch
+
+```bash
+make update
+```
+### Makefile
+
+A makefile is used to simplify common operations such as updating, testing, and deploying etc.
+
+```bash
+make or make help
+
+install                        install all dependencies locally
+update                         update project dependencies locally (run after git update)
+ci                             Run all checks (codespell, lint, bandit, test)
+test                           Run tests
+lint                           Run linting with flake8
+codespell                      Find typos with codespell
+bandit                         Run static security analysis with bandit
+build                          Build project using poetry
+clean                          Clean project
+```
+
+## Why did I make this?
 
 Mainly for personal skill practicing and fun.
 
 I work in the VFX industry and some of my production needs (mostly edge-case) requires to run in a limited environment (e.g. outsourced render farms), which may have problem to run or connect a MongoDB instance. And I found this project really helps.
-
 
 ---
 

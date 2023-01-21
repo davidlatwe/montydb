@@ -13,19 +13,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.x'
+    
+    - name: Setup Poetry
+      uses: abatilo/actions-poetry@v2.0.0
+      with:
+        poetry-version: 1.1.12
+    
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install setuptools wheel twine
-    - name: Build and publish
-      env:
-        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        make install
+    
+    - name: Check versions are in sync
       run: |
-        python setup.py sdist bdist_wheel
-        twine upload dist/*
+        poetry run pytest tests/test_packaging.py
+    
+    - name: Build and publish
+      run: |
+        poetry build
+        poetry publish -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }}

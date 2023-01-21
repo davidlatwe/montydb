@@ -1,3 +1,43 @@
+[tool.poetry]
+name = "montydb"
+version = "2.4.0"
+description = "Monty, Mongo tinified. MongoDB implemented in Python !"
+authors = ["davidlatwe <davidlatwe@gmail.com>"]
+license = "BSD-3-Clause License"
+readme = "README.md"
+repository = "https://github.com/davidlatwe/montydb"
+keywords = ["monty", "montydb", "pymongo", "mongodb", "database", "embedded"]
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Database",
+    "Topic :: Database :: Database Engines/Servers",
+]
+
+include=[
+    "LICENSE",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.6, <3.11"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.4"
+pytest-cov = "^2.12.1"
+pymongo = "=3.11.3"
+lmdb = "^1.2.1"
+flake8 = "^3.9.2"
+codespell = "^2.1.0"
+black = {version = "^21.11b1", python =">=3.6.2", allow-prereleases = true}
+bandit = "^1.7.1"
+
 [build-system]
-# Minimum requirements for the build system to execute.
-requires = ["setuptools", "wheel"]  # PEP 508 specifications.
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,5 +1,10 @@
 
+import pytest
 from montydb.types import bson
+
+from pymongo.errors import OperationFailure as MongoOpFail
+from montydb.errors import OperationFailure as MontyOpFail
+
 from ...conftest import skip_if_no_bson
 
 
@@ -102,7 +107,7 @@ def test_qop_mod_7(monty_find, mongo_find):
     assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
 
 
-def test_qop_mod_8(monty_find, mongo_find):
+def test_qop_mod_8(monty_find, mongo_find, mongo_version):
     docs = [
         {"a": 8}
     ]
@@ -110,6 +115,14 @@ def test_qop_mod_8(monty_find, mongo_find):
 
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
+
+    if mongo_version[:2] == [4, 2]:
+        # https://jira.mongodb.org/browse/SERVER-23664
+        with pytest.raises(MongoOpFail):
+            next(mongo_c)
+        with pytest.raises(MontyOpFail):
+            next(monty_c)
+        return
 
     assert count_documents(mongo_c, spec) == 1
     assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)

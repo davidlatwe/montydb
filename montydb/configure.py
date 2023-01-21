@@ -301,6 +301,24 @@ def _mongo_compat(version):
         setattr(queries, "_is_comparable", v4)
 
     if version == "4.2":
-        setattr(queries, "_regex_options_check", getattr(queries, "_regex_options_v42"))
+        setattr(
+            queries,
+            "_regex_options_check",
+            getattr(queries, "_regex_options_v42")
+        )
+        setattr(
+            queries,
+            "_mod_remainder_not_num",
+            getattr(queries, "_mod_remainder_not_num_v42")
+        )
     else:
-        setattr(queries, "_regex_options_check", getattr(queries, "_regex_options_"))
+        setattr(
+            queries,
+            "_regex_options_check",
+            getattr(queries, "_regex_options_")
+        )
+        setattr(
+            queries,
+            "_mod_remainder_not_num",
+            getattr(queries, "_mod_remainder_not_num_")
+        )
