@@ -901,13 +901,12 @@ def _mod_remainder_not_num_():
     pass
 
 
-def _mod_remainder_not_num_v42():
-    # mongo-4.2.19+
+def _mod_remainder_not_num_v44():
     # https://jira.mongodb.org/browse/SERVER-23664
     raise OperationFailure("malformed mod, remainder not a number")
 
 
-_mod_remainder_not_num = _mod_remainder_not_num_v42
+_mod_remainder_not_num = _mod_remainder_not_num_v44
 
 
 def parse_mod(query):
