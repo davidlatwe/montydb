@@ -29,7 +29,7 @@ Most of the CRUD operators have been implemented. You can visit [issue #14](http
 This project is tested against:
 
 - MongoDB: 3.6, 4.0, 4.2 (4.4 on the way💦)
-- Python: 3.6, 3.7, 3.8, 3.9, 3.10
+- Python: 3.6, 3.7, 3.8, 3.9, 3.10, 3.11
 
 
 ## Install
@@ -323,6 +323,11 @@ codespell                      Find typos with codespell
 bandit                         Run static security analysis with bandit
 build                          Build project using poetry
 clean                          Clean project
+```
+
+### Tests
+```shell
+poetry run pytest --storage {storage engin name} --mongodb {mongo instance url} [--use-bson]
 ```
 
 ## Why did I make this?

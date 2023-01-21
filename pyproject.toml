@@ -17,6 +17,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Topic :: Database",
     "Topic :: Database :: Database Engines/Servers",
 ]
@@ -26,7 +27,7 @@ include=[
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.6, <3.11"
+python = ">=3.6, <3.12"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
