@@ -25,7 +25,7 @@ lint:  ## Run linting with flake8
 	poetry run flake8 . \
 	--count \
 	--ignore=F841,W503 \
-	--max-complexity=26 \
+	--max-complexity=32 \
 	--max-line-length=88 \
 	--statistics \
 	--exclude .venv

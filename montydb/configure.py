@@ -292,50 +292,41 @@ def _bson_init(use_bson):
 def _mongo_compat(version):
     from .engine import queries, project
 
-    def patch(mod, func, ver_func):
-        setattr(mod, func, getattr(mod, ver_func))
+    def patch(mod, attr, ver):
+        setattr(mod, attr, getattr(mod, attr + ver))
 
     if version.startswith("3"):
-        patch(queries, "_is_comparable", "_is_comparable_ver3")
-        patch(queries, "_regex_options_check", "_regex_options_")
-        patch(queries, "_mod_remainder_not_num", "_mod_remainder_not_num_")
+        patch(queries, "_is_comparable", "_ver3")
+        patch(queries, "_regex_options", "_")
+        patch(queries, "_mod_check_numeric_remainder", "_")
+        patch(project, "_positional_mismatch", "_")
+        patch(project, "_check_positional_key", "_")
+        patch(project, "_check_path_collision", "_")
+        patch(project, "_include_positional_non_located_match", "_")
 
     elif version == "4.0":
-        patch(queries, "_is_comparable", "_is_comparable_ver4")
-        patch(queries, "_regex_options_check", "_regex_options_")
-        patch(queries, "_mod_remainder_not_num", "_mod_remainder_not_num_")
+        patch(queries, "_is_comparable", "_ver4")
+        patch(queries, "_regex_options", "_")
+        patch(queries, "_mod_check_numeric_remainder", "_")
+        patch(project, "_positional_mismatch", "_")
+        patch(project, "_check_positional_key", "_")
+        patch(project, "_check_path_collision", "_")
+        patch(project, "_include_positional_non_located_match", "_")
 
     elif version == "4.2":
-        patch(queries, "_is_comparable", "_is_comparable_ver4")
-        patch(queries, "_regex_options_check", "_regex_options_v42")
-        patch(queries, "_mod_remainder_not_num", "_mod_remainder_not_num_")
+        patch(queries, "_is_comparable", "_ver4")
+        patch(queries, "_regex_options", "_v42")
+        patch(queries, "_mod_check_numeric_remainder", "_")
+        patch(project, "_positional_mismatch", "_")
+        patch(project, "_check_positional_key", "_")
+        patch(project, "_check_path_collision", "_")
+        patch(project, "_include_positional_non_located_match", "_")
 
-    else:
-        patch(queries, "_is_comparable", "_is_comparable_ver4")
-        patch(queries, "_regex_options_check", "_regex_options_")
-        patch(queries, "_mod_remainder_not_num", "_mod_remainder_not_num_v44")
-
-    if version == "4.4":
-        # $mod checking remainder is starting from mongo-4.3.1 but since 4.3 is not
-        #   a stable release so we match this behavior in 4.4
-        setattr(queries, "_mod_check_numeric_remainder",
-                getattr(queries, "_mod_check_numeric_remainder_v431_"))
-        setattr(project, "_positional_mismatch",
-                getattr(project, "_positional_mismatch_v44"))
-        setattr(project, "_check_positional_key",
-                getattr(project, "_check_positional_key_v44"))
-        setattr(project, "_check_path_collision",
-                getattr(project, "_check_path_collision_v44"))
-        setattr(project, "_include_positional_non_located_match",
-                getattr(project, "_include_positional_non_located_match_v44"))
-    else:
-        setattr(queries, "_mod_check_numeric_remainder",
-                getattr(queries, "_mod_check_numeric_remainder_"))
-        setattr(project, "_positional_mismatch",
-                getattr(project, "_positional_mismatch_"))
-        setattr(project, "_check_positional_key",
-                getattr(project, "_check_positional_key_"))
-        setattr(project, "_check_path_collision",
-                getattr(project, "_check_path_collision_"))
-        setattr(project, "_include_positional_non_located_match",
-                getattr(project, "_include_positional_non_located_match_"))
+    else:  # 4.4+ (default)
+        patch(queries, "_is_comparable", "_ver4")
+        patch(queries, "_regex_options", "_")
+        patch(queries, "_mod_check_numeric_remainder", "_v431_")
+        patch(project, "_positional_mismatch", "_v44")
+        patch(project, "_check_positional_key", "_v44")
+        patch(project, "_check_path_collision", "_v44")
+        patch(project, "_include_positional_non_located_match", "_v44")

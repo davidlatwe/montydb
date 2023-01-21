@@ -421,7 +421,7 @@ def _regex_options_v42(regex_flag, opt_flag):
         raise OperationFailure("options set in both $regex and $options")
 
 
-_regex_options_check = _regex_options_v42
+_regex_options = _regex_options_v42
 
 
 def _modify_regex_optins(sub_spec):
@@ -451,7 +451,7 @@ def _modify_regex_optins(sub_spec):
             _re = sub_spec["$regex"]
             sub_spec["$regex"] = None
 
-    _regex_options_check(regex_flags, opt_flags)
+    _regex_options(regex_flags, opt_flags)
 
     new_sub_spec = deepcopy(sub_spec)
     new_sub_spec["$regex"] = {
@@ -897,18 +897,6 @@ def parse_regex(query):
     return _regex
 
 
-def _mod_remainder_not_num_():
-    pass
-
-
-def _mod_remainder_not_num_v44():
-    # https://jira.mongodb.org/browse/SERVER-23664
-    raise OperationFailure("malformed mod, remainder not a number")
-
-
-_mod_remainder_not_num = _mod_remainder_not_num_v44
-
-
 _mod_check_numeric_remainder_ = False
 _mod_check_numeric_remainder_v431_ = True
 _mod_check_numeric_remainder = _mod_check_numeric_remainder_v431_
@@ -930,7 +918,6 @@ def parse_mod(query):
     if not isinstance(divisor, num_types):
         raise OperationFailure("malformed mod, divisor not a number")
     if not isinstance(remainder, num_types):
-        # _mod_remainder_not_num()
         if _mod_check_numeric_remainder:
             raise OperationFailure("malformed mod, remainder not a number")
         remainder = 0
