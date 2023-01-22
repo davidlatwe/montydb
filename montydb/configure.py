@@ -18,7 +18,7 @@ MEMORY_REPOSITORY = ":memory:"
 
 URI_SCHEME_PREFIX = "montydb://"
 
-MONGO_COMPAT_VERSIONS = ("3.6", "4.0", "4.2", "4.4")  # 4.4 is experimenting
+MONGO_COMPAT_VERSIONS = ("3.6", "4.0", "4.2", "4.4", "5.0", "6.0")
 
 
 _pinned_repository = {"_": None}
