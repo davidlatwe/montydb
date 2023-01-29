@@ -1,7 +1,7 @@
 import re
 from copy import deepcopy
 from datetime import datetime
-from collections import Mapping
+from collections.abc import Mapping
 
 from ..errors import OperationFailure
 
@@ -897,6 +897,18 @@ def parse_regex(query):
     return _regex
 
 
+def _mod_remainder_not_num_():
+    pass
+
+
+def _mod_remainder_not_num_v44():
+    # https://jira.mongodb.org/browse/SERVER-23664
+    raise OperationFailure("malformed mod, remainder not a number")
+
+
+_mod_remainder_not_num = _mod_remainder_not_num_v44
+
+
 def parse_mod(query):
     if not isinstance(query, list):
         raise OperationFailure("malformed mod, needs to be an array")
@@ -913,6 +925,7 @@ def parse_mod(query):
     if not isinstance(divisor, num_types):
         raise OperationFailure("malformed mod, divisor not a number")
     if not isinstance(remainder, num_types):
+        _mod_remainder_not_num()
         remainder = 0
 
     if isinstance(divisor, bson.Decimal128):

@@ -1,6 +1,6 @@
 
 from datetime import datetime
-from collections import Mapping
+from collections.abc import Mapping
 
 from ..types import (
     bson,
