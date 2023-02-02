@@ -325,9 +325,22 @@ build                          Build project using poetry
 clean                          Clean project
 ```
 
+### Run mongo docker image
+Most of our tests compare montydb CRUD results against real mongodb instance, therefore we must have a running
+mongodb before testing.
+
+For example, if we want to test against mongo 4.4:
+```shell
+docker run --name monty-4.4 -p 30044:27017 -d mongo:4.4
+```
+
 ### Tests
 ```shell
 poetry run pytest --storage {storage engin name} --mongodb {mongo instance url} [--use-bson]
+```
+Example:
+```shell
+poetry run pytest --storage memory --mongodb localhost:30044 --use-bson
 ```
 
 ## Why did I make this?
