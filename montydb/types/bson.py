@@ -3,34 +3,34 @@ import sys
 
 
 __all__ = [
-    "SON",
-    "BSON",
-    "ObjectId",
-    "Timestamp",
-    "MinKey",
-    "MaxKey",
-    "Int64",
-    "Decimal128",
-    "Binary",
-    "Regex",
-    "Code",
-    "RawBSONDocument",
-    "CodecOptions",
+    "SON",  # noqa: F822
+    "BSON",  # noqa: F822
+    "ObjectId",  # noqa: F822
+    "Timestamp",  # noqa: F822
+    "MinKey",  # noqa: F822
+    "MaxKey",  # noqa: F822
+    "Int64",  # noqa: F822
+    "Decimal128",  # noqa: F822
+    "Binary",  # noqa: F822
+    "Regex",  # noqa: F822
+    "Code",  # noqa: F822
+    "RawBSONDocument",  # noqa: F822
+    "CodecOptions",  # noqa: F822
 
-    "decimal128_NaN",
-    "decimal128_INF",
-    "decimal128_NaN_ls",
+    "decimal128_NaN",  # noqa: F822
+    "decimal128_INF",  # noqa: F822
+    "decimal128_NaN_ls",  # noqa: F822
 
-    "BSONError",
-    "InvalidId",
-    "InvalidDocument",
+    "BSONError",  # noqa: F822
+    "InvalidId",  # noqa: F822
+    "InvalidDocument",  # noqa: F822
 
-    "id_encode",
-    "document_encode",
-    "document_decode",
-    "json_loads",
-    "json_dumps",
-    "parse_codec_options",
+    "id_encode",  # noqa: F822
+    "document_encode",  # noqa: F822
+    "document_decode",  # noqa: F822
+    "json_loads",  # noqa: F822
+    "json_dumps",  # noqa: F822
+    "parse_codec_options",  # noqa: F822
 ]
 
 
