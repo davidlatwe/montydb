@@ -138,7 +138,7 @@ class FieldValues(object):
     def change_iter(self, func):
         """Change value iterator
 
-        func: A function that retures a iterator
+        func: A function that returns an iterator
 
         """
         self._value_iter = func
