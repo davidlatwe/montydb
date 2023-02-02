@@ -52,15 +52,6 @@ jobs:
     - name: Install dependencies via poetry
       run: make install
 
-    - name: Lint with flake8
-      run: make lint
-
-    - name: Find typos with codespell
-      run: make codespell
-
-    - name: Run static analysis with bandit
-      run: make bandit
-
     - name: Test with pytest (${{ matrix.monty-storage }})
       continue-on-error: ${{ matrix.experimental }}
       run: >
@@ -70,3 +61,12 @@ jobs:
       continue-on-error: ${{ matrix.experimental }}
       run: >
         poetry run pytest --storage ${{ matrix.monty-storage }} --use-bson
+
+    - name: Lint with flake8
+      run: make lint
+
+    - name: Find typos with codespell
+      run: make codespell
+
+    - name: Run static analysis with bandit
+      run: make bandit
