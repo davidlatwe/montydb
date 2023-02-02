@@ -3,6 +3,7 @@ from copy import deepcopy
 
 from .base import (
     BaseObject,
+    WriteConcern,
     validate_is_mapping,
     validate_ok_for_update,
     validate_ok_for_replace,
@@ -128,15 +129,17 @@ class MontyCollection(BaseObject):
         """ """
         return self._database
 
-    def with_options(self, codec_options=None, read_preference=None, write_concern=None, read_concern=None):
+    def with_options(self, codec_options=None, write_concern=None, *args, **kwargs):
+        if not isinstance(write_concern, WriteConcern):
+            # Could be `pymongo.WriteConcern` if called from mongoengine.
+            write_concern = None
+
         return MontyCollection(
             self._database,
             self._name,
             False,
             codec_options or self.codec_options,
-            read_preference or self.read_preference,
             write_concern or self.write_concern,
-            read_concern or self.read_concern,
         )
 
     def insert_one(self, document, bypass_document_validation=False, *args, **kwargs):
@@ -483,4 +486,5 @@ class MontyCollection(BaseObject):
             self.insert_one(to_save, *args, **kwargs)
 
     def create_index(self, *args, **kwargs):
-        pass
+        """Not functioning, currently only exists for mongoengine support.
+        """

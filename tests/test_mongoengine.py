@@ -4,7 +4,7 @@ import mongoengine
 
 def test_mongoengine_basic(monty_database):
     mongoengine.connect(db="test_db",
-                        connection_class=montydb.MontyClient,
+                        mongo_client_class=montydb.MontyClient,
                         repository=":memory:")
 
     class BlogPost(mongoengine.Document):

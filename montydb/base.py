@@ -240,8 +240,9 @@ class BaseObject(object):
         self.__codec_options = codec_options
 
         if not isinstance(write_concern, WriteConcern):
-            raise TypeError("write_concern must be an "  # pragma: no cover
-                            "instance of montydb.base.WriteConcern")
+            raise TypeError(f"write_concern must be an "  # pragma: no cover
+                            f"instance of montydb.base.WriteConcern. "
+                            f"Got {type(write_concern)}")
         self.__write_concern = write_concern
 
     @property
