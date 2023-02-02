@@ -38,18 +38,12 @@ class MemoryStorage(AbstractStorage):
         return storage_kwargs
 
     @classmethod
-    def save_config(cls, repository, **storage_kwargs):
-        _config["_"] = storage_kwargs
+    def read_config(cls, repository):
+        return _config["_"].copy()
 
     @classmethod
-    def launch(cls, repository):
-        """Load config from repository and return a storage instance
-        """
-        # Pass to cls.config
-        storage_config = cls.config(**_config["_"].copy())
-
-        # Return an instance
-        return cls(repository, storage_config)
+    def save_config(cls, repository, **storage_kwargs):
+        _config["_"] = storage_kwargs
 
     def database_create(self, db_name):
         self._repo[db_name] = OrderedDict()
