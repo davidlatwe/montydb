@@ -2,7 +2,6 @@
 import pytest
 import os
 import sys
-import tempfile
 import platform
 import subprocess
 
@@ -182,11 +181,10 @@ def test_no_duplicated_docs_in_next_session(monty_client):
 
 
 def test_client_init_on_existing_storage(gettempdir):
-    tmp_dir = tempfile.mkdtemp()
     cmd = [
         sys.executable,
         "-c",
-        f"import montydb;montydb.MontyClient({tmp_dir!r})",
+        f"import montydb;montydb.MontyClient({gettempdir!r})",
     ]
 
     subprocess.check_call(cmd)

@@ -1,5 +1,6 @@
 
 import os
+import time
 import pytest
 import shutil
 import tempfile
@@ -58,7 +59,7 @@ def skip_if_no_bson(func):
 
 
 def _gettempdir():
-    return tempfile.gettempdir()
+    return tempfile.mkdtemp(prefix=f"montydb.{time.time()}.")
 
 
 @pytest.fixture
