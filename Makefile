@@ -32,7 +32,7 @@ lint:  ## Run linting with flake8
 .PHONY: lint
 
 codespell:  ## Find typos with codespell
-	poetry run codespell --ignore-words-list=nd,nin --skip=".venv"
+	poetry run codespell --ignore-words-list=nd,nin --skip=".venv,venv,.git"
 .PHONY: codespell
 
 bandit:  ## Run static security analysis with bandit

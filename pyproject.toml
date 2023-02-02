@@ -12,7 +12,6 @@ classifiers = [
     "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -27,17 +26,19 @@ include=[
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.6, <3.12"
+python = ">=3.7, <3.12"
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.2.4"
-pytest-cov = "^2.12.1"
+toml = "*"
+pytest = "*"
+pytest-cov = "*"
 pymongo = "=3.11.3"
-lmdb = "^1.2.1"
-flake8 = "^3.9.2"
-codespell = "^2.1.0"
-black = {version = "^21.11b1", python =">=3.6.2", allow-prereleases = true}
-bandit = "^1.7.1"
+lmdb = "^1"
+mongoengine = { git = "https://github.com/MongoEngine/mongoengine.git", rev = "e006c25d" }
+flake8 = "^5"
+codespell = "^2"
+black = {version = "*", python =">=3.6.2", allow-prereleases = true}
+bandit = "^1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

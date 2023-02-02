@@ -8,6 +8,11 @@ import pymongo
 import montydb
 
 
+__cache = {
+    "mongo_ver": {},
+}
+
+
 def pytest_addoption(parser):
 
     parser.addoption("--storage",
@@ -74,8 +79,13 @@ def mongodb_urls(request):
 
 
 def mongodb_id(url):
-    client = pymongo.MongoClient(url)
-    version_info = client.server_info()["versionArray"]
+    if url in __cache["mongo_ver"]:
+        version_info = __cache["mongo_ver"][url]
+    else:
+        client = pymongo.MongoClient(url)
+        version_info = client.server_info()["versionArray"]
+        __cache["mongo_ver"][url] = version_info
+
     return "mongodb-%d.%d" % tuple(version_info[:2])
 
 
