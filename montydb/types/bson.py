@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import sys
 
 
-__all__ = [
+__all__ = [  # noqa: F822
     "SON",  # noqa: F822
     "BSON",  # noqa: F822
     "ObjectId",  # noqa: F822
