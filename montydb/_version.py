@@ -1,6 +1,9 @@
 
-version_info = (2, 4, 0)
-__version__ = "%i.%i.%i" % version_info
+__version__ = "99.dev.0"
+version_info = tuple(
+    int(v) if v.isdigit() else v
+    for v in __version__.split(".")
+)
 
 
 __all__ = (

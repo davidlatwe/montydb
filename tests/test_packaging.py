@@ -1,3 +1,4 @@
+import os
 import toml
 from pathlib import Path
 import montydb
@@ -10,6 +11,10 @@ def test_versions_are_in_sync():
     pyproject = toml.loads(open(str(path)).read())
     pyproject_version = pyproject["tool"]["poetry"]["version"]
 
-    package_init_version = montydb.__version__
+    package_version = montydb.__version__
+    assert package_version == pyproject_version
 
-    assert package_init_version == pyproject_version
+    if os.getenv("GITHUB_REF_TYPE") == "tag":
+        # On package releasing
+        assert package_version == os.getenv("GITHUB_REF_NAME")
+        assert all(v.isdigit() for v in package_version.split("."))

@@ -28,6 +28,10 @@ jobs:
     - name: Install dependencies
       run: |
         make install
+
+    - name: Build version ${{github.ref_name}}
+      run: |
+        poetry run python build_version.py ${{github.ref_name}}
     
     - name: Check versions are in sync
       run: |
