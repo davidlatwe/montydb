@@ -218,9 +218,6 @@ def set_storage(
             value = _session_default[key]
         _session[key] = value
 
-    _bson_init(_session["use_bson"])
-    _mongo_compat(_session["mongo_version"])
-
     kwargs.update(_session)
 
     storage_cls = find_storage_cls(storage)
@@ -263,7 +260,16 @@ def provide_storage(repository):
         with open(setup, "r") as fp:
             storage_name = fp.readline().strip()
 
-    return find_storage_cls(storage_name)
+    storage_cls = find_storage_cls(storage_name)
+    config = storage_cls.read_config(repository)
+
+    for key in ("use_bson", "mongo_version"):
+        _session[key] = config.get(key, _session_default[key])
+
+    _bson_init(_session["use_bson"])
+    _mongo_compat(_session["mongo_version"])
+
+    return storage_cls
 
 
 def _bson_init(use_bson):

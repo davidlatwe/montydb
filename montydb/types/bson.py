@@ -1,37 +1,49 @@
 from __future__ import absolute_import
 import sys
 
+
+__all__ = [  # noqa: F822
+    "SON",  # noqa: F822
+    "BSON",  # noqa: F822
+    "ObjectId",  # noqa: F822
+    "Timestamp",  # noqa: F822
+    "MinKey",  # noqa: F822
+    "MaxKey",  # noqa: F822
+    "Int64",  # noqa: F822
+    "Decimal128",  # noqa: F822
+    "Binary",  # noqa: F822
+    "Regex",  # noqa: F822
+    "Code",  # noqa: F822
+    "RawBSONDocument",  # noqa: F822
+    "CodecOptions",  # noqa: F822
+
+    "decimal128_NaN",  # noqa: F822
+    "decimal128_INF",  # noqa: F822
+    "decimal128_NaN_ls",  # noqa: F822
+
+    "BSONError",  # noqa: F822
+    "InvalidId",  # noqa: F822
+    "InvalidDocument",  # noqa: F822
+
+    "id_encode",  # noqa: F822
+    "document_encode",  # noqa: F822
+    "document_decode",  # noqa: F822
+    "json_loads",  # noqa: F822
+    "json_dumps",  # noqa: F822
+    "parse_codec_options",  # noqa: F822
+]
+
+
 bson_used = None
 
 
-SON = None
-BSON = None
-ObjectId = None
-Timestamp = None
-MinKey = None
-MaxKey = None
-Int64 = None
-Decimal128 = None
-Binary = None
-Regex = None
-Code = None
-RawBSONDocument = None
-CodecOptions = None
+def __getattr__(name):
+    if name in __all__:
+        from .. import configure
 
-decimal128_NaN = None
-decimal128_INF = None
-decimal128_NaN_ls = None
-
-BSONError = None
-InvalidId = None
-InvalidDocument = None
-
-id_encode = None
-document_encode = None
-document_decode = None
-json_loads = None
-json_dumps = None
-parse_codec_options = None
+        config = configure.session_config()
+        init(config.get("use_bson"))
+        return getattr(sys.modules[__name__], name)
 
 
 def init(use_bson=None):
@@ -63,35 +75,3 @@ def init(use_bson=None):
         setattr(self, name, getattr(bson_, name))
 
     errors.init_bson_err()
-
-
-__all__ = [
-    "SON",
-    "BSON",
-    "ObjectId",
-    "Timestamp",
-    "MinKey",
-    "MaxKey",
-    "Int64",
-    "Decimal128",
-    "Binary",
-    "Regex",
-    "Code",
-    "RawBSONDocument",
-    "CodecOptions",
-
-    "decimal128_NaN",
-    "decimal128_INF",
-    "decimal128_NaN_ls",
-
-    "BSONError",
-    "InvalidId",
-    "InvalidDocument",
-
-    "id_encode",
-    "document_encode",
-    "document_decode",
-    "json_loads",
-    "json_dumps",
-    "parse_codec_options",
-]

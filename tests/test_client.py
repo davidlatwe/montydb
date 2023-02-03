@@ -1,7 +1,9 @@
 
 import pytest
 import os
+import sys
 import platform
+import subprocess
 
 import montydb
 from montydb.errors import OperationFailure
@@ -176,3 +178,17 @@ def test_no_duplicated_docs_in_next_session(monty_client):
     col_2 = new_client[db_name][col_name]
     col_2.update_one(find, update)
     assert col_2.count_documents(find) == 1
+
+
+def test_client_init_on_existing_storage(gettempdir):
+    cmd = [
+        sys.executable,
+        "-c",
+        f"import montydb;montydb.MontyClient({gettempdir!r})",
+    ]
+
+    subprocess.check_call(cmd)
+
+    p = subprocess.Popen(cmd, stderr=subprocess.PIPE)
+    o, e = p.communicate()
+    assert p.returncode == 0, e.decode()

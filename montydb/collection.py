@@ -3,6 +3,7 @@ from copy import deepcopy
 
 from .base import (
     BaseObject,
+    WriteConcern,
     validate_is_mapping,
     validate_ok_for_update,
     validate_ok_for_replace,
@@ -41,14 +42,12 @@ from .results import (
 NotImplementeds = {
     "aggregate",
     "aggregate_raw_batches",
-    "with_options",
     "bulk_write",
     "watch",
     "find_raw_batches",
     "find_one_and_delete",
     "find_one_and_replace",
     "find_one_and_update",
-    "create_index",
     "create_indexes",
     "drop_index",
     "drop_indexes",
@@ -70,7 +69,10 @@ class MontyCollection(BaseObject):
         name,
         create=False,
         codec_options=None,
+        read_preference=None,
         write_concern=None,
+        read_concern=None,
+        session=None,
         **kwargs
     ):
         """ """
@@ -126,6 +128,19 @@ class MontyCollection(BaseObject):
     def database(self):
         """ """
         return self._database
+
+    def with_options(self, codec_options=None, write_concern=None, *args, **kwargs):
+        if not isinstance(write_concern, WriteConcern):
+            # Could be `pymongo.WriteConcern` if called from mongoengine.
+            write_concern = None
+
+        return MontyCollection(
+            self._database,
+            self._name,
+            False,
+            codec_options or self.codec_options,
+            write_concern or self.write_concern,
+        )
 
     def insert_one(self, document, bypass_document_validation=False, *args, **kwargs):
         """ """
@@ -469,3 +484,7 @@ class MontyCollection(BaseObject):
             )
         else:
             self.insert_one(to_save, *args, **kwargs)
+
+    def create_index(self, *args, **kwargs):
+        """Not functioning, currently only exists for mongoengine support.
+        """

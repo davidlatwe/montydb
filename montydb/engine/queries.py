@@ -900,6 +900,8 @@ def parse_regex(query):
 _mod_check_numeric_remainder_ = False
 _mod_check_numeric_remainder_v431_ = True
 _mod_check_numeric_remainder = _mod_check_numeric_remainder_v431_
+# mongo-4.2.19+
+# https://jira.mongodb.org/browse/SERVER-23664
 
 
 def parse_mod(query):

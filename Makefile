@@ -24,15 +24,15 @@ test:  ## Run tests
 lint:  ## Run linting with flake8
 	poetry run flake8 . \
 	--count \
-	--ignore=F841,W503 \
+	--ignore=F841,W503,E741 \
 	--max-complexity=32 \
 	--max-line-length=88 \
 	--statistics \
-	--exclude .venv
+	--exclude .venv,venv
 .PHONY: lint
 
 codespell:  ## Find typos with codespell
-	poetry run codespell --ignore-words-list=nd,nin --skip=".venv"
+	poetry run codespell --ignore-words-list=nd,nin --skip=".venv,venv,.git"
 .PHONY: codespell
 
 bandit:  ## Run static security analysis with bandit
