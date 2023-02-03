@@ -58,6 +58,20 @@ def test_projection_regular_3(monty_proj, mongo_proj):
     assert next(mongo_c) == next(monty_c)
 
 
+def test_projection_regular_err_mix_include_exclude(monty_proj, mongo_proj):
+    docs = [
+        {"a": "foo", "b": "bar"},
+    ]
+    spec = {}
+    proj = {"a": 0, "b": 1}
+
+    with pytest.raises(mongo_op_fail) as mongo_err:
+        next(mongo_proj(docs, spec, proj))
+
+    with pytest.raises(monty_op_fail) as monty_err:
+        next(monty_proj(docs, spec, proj))
+
+
 def test_projection_path_collision_1(monty_proj, mongo_proj, mongo_version):
     if mongo_version[:2] < [4, 4]:
         return

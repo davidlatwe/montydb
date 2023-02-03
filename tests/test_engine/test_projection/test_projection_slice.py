@@ -103,3 +103,83 @@ def test_projection_slice_6(monty_proj, mongo_proj):
 
     proj = {"a": {"$slice": [-5, 4]}, "x": 0}
     run(proj)
+
+
+def test_projection_slice_fields(monty_proj, mongo_proj):
+    docs = [
+        {"a": [0, 1, 2], "b": 7, "c": 9}
+    ]
+    spec = {}
+    proj = {"a": {"$slice": 1}}
+
+    monty_c = monty_proj(docs, spec, proj)
+    mongo_c = mongo_proj(docs, spec, proj)
+
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
+    assert next(mongo_c) == next(monty_c)
+
+
+def test_projection_slice_fields_with_regular_exclusion(monty_proj, mongo_proj):
+    docs = [
+        {"a": [0, 1, 2], "b": 7, "c": 9}
+    ]
+    spec = {}
+    proj = {"a": {"$slice": 1}, "b": 0}
+
+    monty_c = monty_proj(docs, spec, proj)
+    mongo_c = mongo_proj(docs, spec, proj)
+
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
+    assert next(mongo_c) == next(monty_c)
+
+
+def test_projection_slice_fields_with_regular_inclusion(monty_proj, mongo_proj):
+    docs = [
+        {"a": [0, 1, 2], "b": 7, "c": 9}
+    ]
+    spec = {}
+    proj = {"a": {"$slice": 1}, "b": 1}
+
+    monty_c = monty_proj(docs, spec, proj)
+    mongo_c = mongo_proj(docs, spec, proj)
+
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
+    res = next(mongo_c)
+    print(res)
+    assert res == next(monty_c)
+
+
+def test_projection_slice_fields_with_id_exclusion(monty_proj, mongo_proj):
+    docs = [
+        {"a": [0, 1, 2], "b": 7, "c": 9}
+    ]
+    spec = {}
+    proj = {"a": {"$slice": 1}, "_id": 0}
+
+    monty_c = monty_proj(docs, spec, proj)
+    mongo_c = mongo_proj(docs, spec, proj)
+
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
+    assert next(mongo_c) == next(monty_c)
+
+
+def test_projection_slice_mongo_44_example(monty_proj, mongo_proj):
+    docs = [
+        {"item": "socks",
+         "qty": 100,
+         "details": {"colors": ["blue", "red"],
+                     "sizes": ["S", "M", "L"]}}
+    ]
+    spec = {}
+    proj = {"qty": 1, "details.colors": {"$slice": 1}}
+
+    monty_c = monty_proj(docs, spec, proj)
+    mongo_c = mongo_proj(docs, spec, proj)
+
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
+    assert next(mongo_c) == next(monty_c)
