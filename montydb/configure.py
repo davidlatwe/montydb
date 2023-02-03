@@ -322,7 +322,7 @@ def _mongo_compat(version):
     elif version == "4.2":
         patch(queries, "_is_comparable", "_ver4")
         patch(queries, "_regex_options", "_v42")
-        patch(queries, "_mod_check_numeric_remainder", "_")
+        patch(queries, "_mod_check_numeric_remainder", "_v42_")
         patch(project, "_positional_mismatch", "_")
         patch(project, "_check_positional_key", "_")
         patch(project, "_check_path_collision", "_")
@@ -331,7 +331,7 @@ def _mongo_compat(version):
     else:  # 4.4+ (default)
         patch(queries, "_is_comparable", "_ver4")
         patch(queries, "_regex_options", "_")
-        patch(queries, "_mod_check_numeric_remainder", "_v431_")
+        patch(queries, "_mod_check_numeric_remainder", "_v42_")
         patch(project, "_positional_mismatch", "_v44")
         patch(project, "_check_positional_key", "_v44")
         patch(project, "_check_path_collision", "_v44")
