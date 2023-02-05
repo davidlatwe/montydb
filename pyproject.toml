@@ -40,6 +40,11 @@ codespell = "^2"
 black = {version = "*", python =">=3.6.2", allow-prereleases = true}
 bandit = "^1"
 
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::pytest.PytestUnraisableExceptionWarning",
+]
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
