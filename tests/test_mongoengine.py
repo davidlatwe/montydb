@@ -3,9 +3,12 @@ import mongoengine
 
 
 def test_mongoengine_basic(monty_database):
-    mongoengine.connect(db="test_db",
-                        mongo_client_class=montydb.MontyClient,
-                        repository=":memory:")
+    mongoengine.connect(
+        db="test_db",
+        mongo_client_class=montydb.MontyClient,
+        repository=":memory:",
+        uuidRepresentation="standard",  # so mongoengine don't raise DeprecationWarning
+    )
 
     class BlogPost(mongoengine.Document):
         title = mongoengine.StringField(required=True, max_length=200)

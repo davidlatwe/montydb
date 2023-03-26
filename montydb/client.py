@@ -128,9 +128,9 @@ class MontyClient(BaseObject):
         """
         # verify database name
         if platform.system() == "Windows":
-            is_invalid = set('/\\. "$*<>:|?').intersection(set(name))
+            is_invalid = set(r'/\. "$*<>:|?').intersection(set(name))
         else:
-            is_invalid = set('/\\. "$').intersection(set(name))
+            is_invalid = set(r'/\. "$').intersection(set(name))
 
         if is_invalid or not name:
             raise errors.OperationFailure("Invalid database name.")

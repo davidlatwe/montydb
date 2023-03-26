@@ -35,6 +35,15 @@ def _is_positional_match(conditions, match_field):
         return None
 
 
+def _has_path_collision(path, parsed_paths):
+    path = path.split(".$")[0]
+    for parsed in parsed_paths:
+        if path == parsed \
+                or path.startswith(parsed + ".") \
+                or parsed.startswith(path + "."):
+            return parsed
+
+
 def _perr_doc(val):
     """
     For pretty error msg, same as Mongo
@@ -56,6 +65,15 @@ def _perr_doc(val):
                 _v = "[ " + ", ".join(_) + " ]"
             v_lis.append("{0}: {1}".format(_k, _v))
     return "{ " + ", ".join(v_lis) + " }"
+
+
+_check_positional_key_ = False
+_check_positional_key_v44 = True
+_check_positional_key = _check_positional_key_v44
+
+_check_path_collision_ = False
+_check_path_collision_v44 = True
+_check_path_collision = _check_path_collision_v44
 
 
 class Projector(object):
@@ -104,11 +122,10 @@ class Projector(object):
                 fieldwalker.go(path).get()
 
             if self.include_flag:
-                located_match = None
-                if self.matched is not None:
-                    located_match = self.matched.located
-
-                projected = inclusion(fieldwalker, positioned, located_match, init_doc)
+                projected = inclusion(fieldwalker,
+                                      positioned,
+                                      self.matched,
+                                      init_doc)
             else:
                 projected = exclusion(fieldwalker, init_doc)
 
@@ -119,6 +136,22 @@ class Projector(object):
         self.array_op_type = self.ARRAY_OP_NORMAL
 
         for key, val in spec.items():
+            # check path collision (mongo-4.4+)
+            if _check_path_collision:
+                collision = (
+                    _has_path_collision(key, self.regular_field)
+                    or _has_path_collision(key, self.array_field.keys())
+                )
+                if collision:
+                    remaining = key[len(collision + "."):]
+                    if remaining:
+                        raise OperationFailure(
+                            "Path collision at %s remaining portion %s"
+                            % (collision, remaining)
+                        )
+                    else:
+                        raise OperationFailure("Path collision at %s" % key)
+
             # Parsing options
             if is_duckument_type(val):
                 if not len(val) == 1:
@@ -180,6 +213,12 @@ class Projector(object):
             elif key == "_id" and not _is_include(val):
                 self.proj_with_id = False
 
+            elif _check_positional_key and key.startswith("$."):
+                raise OperationFailure("FieldPath field names may not start "
+                                       "with '$'.")
+            elif _check_positional_key and key.endswith("."):
+                raise OperationFailure("FieldPath must not end with a '.'.")
+
             else:
                 # Normal field options, include or exclude.
                 flag = _is_include(val)
@@ -217,6 +256,17 @@ class Projector(object):
                     raise OperationFailure(
                         "Positional projection '{}' contains the positional "
                         "operator more than once.".format(key)
+                    )
+
+                if _check_positional_key and ".$." in key:
+                    raise OperationFailure(
+                        "As of 4.4, it's illegal to specify positional "
+                        "operator in the middle of a path.Positional "
+                        "projection may only be used at the end, for example: "
+                        "a.b.$. If the query previously used a form like "
+                        "a.b.$.d, remove the parts following the '$' and the "
+                        "results will be equivalent.",
+                        code=31394
                     )
 
                 path = key.split(".$", 1)[0]
@@ -305,10 +355,11 @@ class Projector(object):
                             code=2,
                         )
 
-                    if int(
-                        matched_index
-                    ) >= elem_count and self.matched.full_path.startswith(
-                        node.full_path
+                    if _positional_mismatch(
+                            int(matched_index),
+                            elem_count,
+                            self.matched.full_path,
+                            node.full_path
                     ):
                         raise OperationFailure(
                             "Executor error during find command "
@@ -323,8 +374,20 @@ class Projector(object):
         return _positional
 
 
-def inclusion(fieldwalker, positioned, located_match, init_doc):
+def _positional_mismatch_(matched, elem_count, matched_path, node_path):
+    return matched >= elem_count and matched_path.startswith(node_path)
+
+
+def _positional_mismatch_v44(matched, elem_count, matched_path, node_path):
+    return matched >= elem_count
+
+
+_positional_mismatch = _positional_mismatch_v44
+
+
+def inclusion(fieldwalker, positioned, matched, init_doc):
     _doc_type = fieldwalker.doc_type
+    located_match = False if matched is None else matched.located
 
     def _inclusion(node, init_doc=None):
         doc = node.value
@@ -358,7 +421,10 @@ def inclusion(fieldwalker, positioned, located_match, init_doc):
                         if isinstance(child.value, _doc_type):
                             new_doc.append(child.value)
                     else:
-                        new_doc.append(child.value)
+                        if _include_positional_non_located_match(matched, node):
+                            new_doc.append(child.value)
+                        else:
+                            new_doc.append(_doc_type())
 
                 return new_doc or _no_val
 
@@ -394,6 +460,18 @@ def inclusion(fieldwalker, positioned, located_match, init_doc):
             return doc
 
     return _inclusion(fieldwalker.tree.root, init_doc)
+
+
+def _include_positional_non_located_match_(matched, node):
+    return True
+
+
+def _include_positional_non_located_match_v44(matched, node):
+    return matched.full_path.startswith(node.full_path)
+
+
+_include_positional_non_located_match = \
+    _include_positional_non_located_match_v44
 
 
 def exclusion(fieldwalker, init_doc):

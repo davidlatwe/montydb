@@ -18,7 +18,7 @@ MEMORY_REPOSITORY = ":memory:"
 
 URI_SCHEME_PREFIX = "montydb://"
 
-MONGO_COMPAT_VERSIONS = ("3.6", "4.0", "4.2", "4.4")  # 4.4 is experimenting
+MONGO_COMPAT_VERSIONS = ("3.6", "4.0", "4.2", "4.4", "5.0", "6.0")
 
 
 _pinned_repository = {"_": None}
@@ -296,27 +296,43 @@ def _bson_init(use_bson):
 
 
 def _mongo_compat(version):
-    from .engine import queries
+    from .engine import queries, project
 
-    def patch(mod, func, ver_func):
-        setattr(mod, func, getattr(mod, ver_func))
+    def patch(mod, attr, ver):
+        setattr(mod, attr, getattr(mod, attr + ver))
 
     if version.startswith("3"):
-        patch(queries, "_is_comparable", "_is_comparable_ver3")
-        patch(queries, "_regex_options_check", "_regex_options_")
-        patch(queries, "_mod_remainder_not_num", "_mod_remainder_not_num_")
+        patch(queries, "_is_comparable", "_ver3")
+        patch(queries, "_regex_options", "_")
+        patch(queries, "_mod_check_numeric_remainder", "_")
+        patch(project, "_positional_mismatch", "_")
+        patch(project, "_check_positional_key", "_")
+        patch(project, "_check_path_collision", "_")
+        patch(project, "_include_positional_non_located_match", "_")
 
     elif version == "4.0":
-        patch(queries, "_is_comparable", "_is_comparable_ver4")
-        patch(queries, "_regex_options_check", "_regex_options_")
-        patch(queries, "_mod_remainder_not_num", "_mod_remainder_not_num_")
+        patch(queries, "_is_comparable", "_ver4")
+        patch(queries, "_regex_options", "_")
+        patch(queries, "_mod_check_numeric_remainder", "_")
+        patch(project, "_positional_mismatch", "_")
+        patch(project, "_check_positional_key", "_")
+        patch(project, "_check_path_collision", "_")
+        patch(project, "_include_positional_non_located_match", "_")
 
     elif version == "4.2":
-        patch(queries, "_is_comparable", "_is_comparable_ver4")
-        patch(queries, "_regex_options_check", "_regex_options_v42")
-        patch(queries, "_mod_remainder_not_num", "_mod_remainder_not_num_v42")
+        patch(queries, "_is_comparable", "_ver4")
+        patch(queries, "_regex_options", "_v42")
+        patch(queries, "_mod_check_numeric_remainder", "_v42_")
+        patch(project, "_positional_mismatch", "_")
+        patch(project, "_check_positional_key", "_")
+        patch(project, "_check_path_collision", "_")
+        patch(project, "_include_positional_non_located_match", "_")
 
-    else:
-        patch(queries, "_is_comparable", "_is_comparable_ver4")
-        patch(queries, "_regex_options_check", "_regex_options_")
-        patch(queries, "_mod_remainder_not_num", "_mod_remainder_not_num_v42")
+    else:  # 4.4+ (default)
+        patch(queries, "_is_comparable", "_ver4")
+        patch(queries, "_regex_options", "_")
+        patch(queries, "_mod_check_numeric_remainder", "_v42_")
+        patch(project, "_positional_mismatch", "_v44")
+        patch(project, "_check_positional_key", "_v44")
+        patch(project, "_check_path_collision", "_v44")
+        patch(project, "_include_positional_non_located_match", "_v44")
