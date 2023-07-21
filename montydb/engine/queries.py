@@ -377,8 +377,7 @@ class QueryFilter(object):
             for op in sub_spec:
                 if op not in self.field_ops:
                     raise OperationFailure("unknown operator: {}".format(op))
-                if op == "$regex":
-                    raise OperationFailure("$not cannot have a regex")
+                _not_subspec_op_check(op)
 
             return self.subparser("$not", sub_spec)
 
@@ -401,6 +400,18 @@ class QueryFilter(object):
 
 def _is_expression_obj(sub_spec):
     return is_duckument_type(sub_spec) and next(iter(sub_spec)).startswith("$")
+
+
+def _not_validate_subspec_op_(op):
+    if op == "$regex":
+        raise OperationFailure("$not cannot have a regex")
+
+
+def _not_validate_subspec_op_v4(sub_spec):
+    pass
+
+
+_not_subspec_op_check = _not_validate_subspec_op_
 
 
 # Only for preserving `int` type flags to bypass
