@@ -2,6 +2,7 @@
 import pytest
 import os
 import sys
+import shutil
 import platform
 import subprocess
 
@@ -192,3 +193,45 @@ def test_client_init_on_existing_storage(gettempdir):
     p = subprocess.Popen(cmd, stderr=subprocess.PIPE)
     o, e = p.communicate()
     assert p.returncode == 0, e.decode()
+
+
+def test_independent_repositories(gettempdir,
+                                  monty_client,
+                                  mongo_version,
+                                  use_bson):
+    client_repo_1 = monty_client
+
+    # Create another repository and client
+    engine = monty_client.server_info()["storageEngine"]
+    tmp_dir = None
+    if engine == "memory":
+        repo_2 = ":memory:repo_2"
+    else:
+        tmp_dir = os.path.join(gettempdir, "monty.repo_2")
+        repo_2 = tmp_dir
+
+    mongo_ver = "%d.%d" % (mongo_version[0], mongo_version[1])
+    montydb.set_storage(repo_2,
+                        engine,
+                        mongo_version=mongo_ver,
+                        use_bson=use_bson)
+    client_repo_2 = montydb.MontyClient(repo_2)
+
+    bar1 = client_repo_1.get_database("foo").get_collection("bar")
+    bar2 = client_repo_2.get_database("foo").get_collection("bar")
+
+    bar1.insert_one({"repo": 1})
+    bar2.insert_one({"repo": 2})
+
+    find_1 = {"repo": 1}
+    find_2 = {"repo": 2}
+
+    assert bar1.count_documents(find_1) == 1
+    assert bar2.count_documents(find_2) == 1
+
+    assert bar1.count_documents(find_2) == 0
+    assert bar2.count_documents(find_1) == 0
+
+    # Cleanup
+    if tmp_dir and os.path.isdir(tmp_dir):
+        shutil.rmtree(tmp_dir)
