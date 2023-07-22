@@ -84,16 +84,31 @@ SELECT_ALL_KEYS = """
 
 class SQLiteKVEngine(object):
 
-    def __init__(self, db_pragmas):
-        self.__db_pragmas = db_pragmas
+    def __init__(self, config):
         self.__conn = None
+
+        self.__db_pragmas = {
+            key: config[key]
+            for key in [
+                "journal_mode",
+            ]
+            if key in config
+        }
+
+        self.__conn_kwargs = {
+            key: cast(config[key])
+            for key, cast in [
+                ("check_same_thread", bool)
+            ]
+            if key in config
+        }
 
     @property
     def db_pragmas(self):
         return self._assemble_pragmas(self.__db_pragmas)
 
     def _connect(self, db_file, wconcern=None):
-        self.__conn = sqlite3.connect(db_file)
+        self.__conn = sqlite3.connect(db_file, **self.__conn_kwargs)
         self.__conn.text_factory = str
 
         wcon_pragmas = ""
@@ -234,17 +249,20 @@ class SQLiteStorage(AbstractStorage):
         return "sqlite"
 
     @classmethod
-    def config(cls, journal_mode="WAL", **kwargs):
+    def config(cls, journal_mode="WAL", check_same_thread=True, **kwargs):
         """
 
         Args:
             journal_mode (str): Default "WAL"
                 type: string
                 enum: [DELETE, TRUNCATE, PERSIST, MEMORY, WAL, "OFF"]
+            check_same_thread (bool): Default True
+                See `sqlite3.connect`
 
         """
         return {
             "journal_mode": journal_mode,
+            "check_same_thread": check_same_thread,
         }
 
     def wconcern_parser(self,
