@@ -148,7 +148,24 @@ SQLite config:
 
 ```ini
 [sqlite]
-journal_mode: WAL
+journal_mode = WAL
+check_same_thread =   # Leave it empty as False, or any value will be True
+```
+Or,
+
+```python
+repo = "path_to/repo"
+set_storage(
+    repository=repo,
+    storage="sqlite",
+    use_bson=True,
+    # sqlite pragma
+    journal_mode="WAL",
+    # sqlite connection option
+    check_same_thread=False,
+)
+client = MontyClient(repo)
+...
 ```
 
 SQLite write concern:
