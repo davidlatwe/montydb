@@ -1,6 +1,6 @@
 
 from itertools import islice
-from collections import OrderedDict
+from collections import defaultdict, OrderedDict
 
 from ..types import bson
 from . import (
@@ -13,7 +13,7 @@ from . import (
 )
 
 
-_repo = OrderedDict()
+_repos = defaultdict(OrderedDict)
 _config = {"_": {}}
 
 
@@ -27,7 +27,7 @@ class MemoryStorage(AbstractStorage):
 
     def __init__(self, repository, storage_config):
         super(MemoryStorage, self).__init__(repository, storage_config)
-        self._repo = _repo
+        self._repo = _repos[repository]
 
     @classmethod
     def nice_name(cls):

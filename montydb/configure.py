@@ -247,7 +247,7 @@ def provide_storage(repository):
         A Subclass of `montydb.storage.abcs.AbstractStorage`
 
     """
-    if repository == MEMORY_REPOSITORY:
+    if repository.startswith(MEMORY_REPOSITORY):
         storage_name = MEMORY_STORAGE
         if not memory.is_memory_storage_set():
             set_storage(repository, storage_name)
