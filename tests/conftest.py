@@ -62,7 +62,7 @@ def _gettempdir():
     return tempfile.mkdtemp(prefix=f"montydb.{time.time()}.")
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def gettempdir():
     return _gettempdir()
 
@@ -124,16 +124,16 @@ def pytest_generate_tests(metafunc):
 
 
 @pytest.fixture(scope="session")
-def tmp_monty_repo():
-    tmp_dir = os.path.join(_gettempdir(), "monty")
+def tmp_monty_repo(gettempdir):
+    tmp_dir = os.path.join(gettempdir, "monty")
     if os.path.isdir(tmp_dir):
         shutil.rmtree(tmp_dir)
     return tmp_dir
 
 
 @pytest.fixture
-def tmp_monty_utils_repo(tmp_monty_repo):
-    tmp_dir = os.path.join(tmp_monty_repo, "monty.utils")
+def tmp_monty_utils_repo(gettempdir):
+    tmp_dir = os.path.join(gettempdir, "monty.utils")
     os.makedirs(tmp_dir)
     yield tmp_dir
     if os.path.isdir(tmp_dir):
