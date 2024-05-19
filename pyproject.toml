@@ -17,6 +17,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Database",
     "Topic :: Database :: Database Engines/Servers",
 ]
@@ -26,7 +27,7 @@ include=[
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.7, <3.12"
+python = ">=3.7"
 
 [tool.poetry.dev-dependencies]
 toml = "*"
