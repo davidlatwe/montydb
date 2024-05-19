@@ -34,8 +34,8 @@ toml = "*"
 pytest = "*"
 pytest-cov = "*"
 pymongo = "=3.11.3"
-lmdb = "^1"
-mongoengine = { git = "https://github.com/MongoEngine/mongoengine.git", rev = "e006c25d" }
+lmdb = { git = "https://github.com/Bye-lemon/py-lmdb.git", rev = "2141c16" }
+mongoengine = "*"
 flake8 = "^5"
 codespell = "^2"
 black = {version = "*", python =">=3.6.2", allow-prereleases = true}
