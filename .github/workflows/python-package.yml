@@ -20,7 +20,7 @@ jobs:
         experimental: [ false ]
         monty-storage: [ memory, flatfile, sqlite ]
         mongodb-version: [ "3.6", "4.0", "4.2" ]
-        python-version: [ "3.7", "3.8", "3.9", "3.10", "3.11" ]
+        python-version: [ "3.7", "3.8", "3.9", "3.10", "3.11", "3.12" ]
 
         include:
           # run lmdb tests as experimental due to the seg fault in GitHub
