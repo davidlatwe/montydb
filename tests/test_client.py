@@ -185,7 +185,7 @@ def test_client_init_on_existing_storage(gettempdir):
     cmd = [
         sys.executable,
         "-c",
-        f"import montydb;montydb.MontyClient({gettempdir!r})",
+        f"import montydb; montydb.MontyClient({gettempdir!r})",  # noqa
     ]
 
     subprocess.check_call(cmd)
