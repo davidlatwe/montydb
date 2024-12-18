@@ -1,46 +1,46 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = [ "poetry-core>=1" ]
+
 [tool.poetry]
 name = "montydb"
 version = "99.dev.0"
 description = "Monty, Mongo tinified. MongoDB implemented in Python !"
-authors = ["davidlatwe <davidlatwe@gmail.com>"]
+authors = [ "davidlatwe <davidlatwe@gmail.com>" ]
 license = "BSD-3-Clause License"
 readme = "README.md"
 repository = "https://github.com/davidlatwe/montydb"
-keywords = ["monty", "montydb", "pymongo", "mongodb", "database", "embedded"]
+keywords = [ "monty", "montydb", "pymongo", "mongodb", "database", "embedded" ]
 classifiers = [
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: BSD License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Topic :: Database",
-    "Topic :: Database :: Database Engines/Servers",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: BSD License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Database",
+  "Topic :: Database :: Database Engines/Servers",
 ]
 
-include=[
-    "LICENSE",
+include = [
+  "LICENSE",
 ]
 
 [tool.poetry.dependencies]
 python = ">=3.7"
 
 [tool.poetry.dev-dependencies]
-toml = "*"
-pytest = "*"
-pytest-cov = "*"
-pymongo = "=3.11.3"
+bandit = "^1"
+black = { version = "*", python = ">=3.6.2", allow-prereleases = true }
+codespell = "^2"
+flake8 = "^5"
 lmdb = { git = "https://github.com/Bye-lemon/py-lmdb.git", rev = "2141c16" }
 mongoengine = "*"
-flake8 = "^5"
-codespell = "^2"
-black = {version = "*", python =">=3.6.2", allow-prereleases = true}
-bandit = "^1"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+pymongo = "=3.11.3"
+pytest = "*"
+pytest-cov = "*"
+toml = "*"

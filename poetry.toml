@@ -1,2 +1,3 @@
-virtualenvs.in-project=true
+# See https://github.com/abatilo/actions-poetry to understand this file.
 virtualenvs.create = true
+virtualenvs.in-project = true
