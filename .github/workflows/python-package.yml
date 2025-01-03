@@ -48,6 +48,8 @@ jobs:
       with:
         poetry-version: "1.3"
 
+    - run: pipx ensurepath
+    
     - name: Install dependencies via poetry
       run: make install
 
