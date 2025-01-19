@@ -27,7 +27,7 @@ jobs:
     - run: pipx install poetry==1.3
 
     - name: Set up MongoDB ${{ matrix.mongodb-version }}
-      uses: supercharge/mongodb-github-action@1.11.0
+      uses: supercharge/mongodb-github-action@1.12.0
       with:
         mongodb-version: ${{ matrix.mongodb-version }}
 
