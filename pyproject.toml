@@ -38,7 +38,7 @@ bandit = "^1"
 black = { version = "*", python = ">=3.6.2", allow-prereleases = true }
 codespell = "^2"
 flake8 = "^5"
-lmdb = { git = "https://github.com/Bye-lemon/py-lmdb.git", rev = "2141c16" }
+lmdb = ">=1.5.1"
 mongoengine = "*"
 pymongo = "=3.11.3"
 pytest = "*"
