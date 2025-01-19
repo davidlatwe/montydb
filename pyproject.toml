@@ -33,7 +33,7 @@ include = [
 [tool.poetry.dependencies]
 python = ">=3.7"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 bandit = "^1"
 black = { version = "*", python = ">=3.6.2", allow-prereleases = true }
 codespell = "^2"
