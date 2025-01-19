@@ -20,18 +20,11 @@ jobs:
         experimental: [ false ]
         monty-storage: [ memory, flatfile, sqlite ]
         mongodb-version: [ "3.6", "4.0", "4.2" ]
-        python-version: [ "3.7", "3.8", "3.9", "3.10", "3.11", "3.12" ]
-
-        include:
-          # run lmdb tests as experimental due to the seg fault in GitHub
-          #  action is not reproducible on my Windows and Mac.
-          - experimental: true
-            monty-storage: lightning
-            mongodb-version: "4.0"
-            python-version: "3.7"
+        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13" ]
 
     steps:
     - uses: actions/checkout@v4
+    - run: pipx install poetry==1.3
 
     - name: Set up MongoDB ${{ matrix.mongodb-version }}
       uses: supercharge/mongodb-github-action@1.11.0
@@ -42,11 +35,7 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-
-    - name: Setup Poetry 1.3
-      uses: abatilo/actions-poetry@v3
-      with:
-        poetry-version: "1.3"
+        cache: "poetry"
 
     - name: Install dependencies via poetry
       run: make install
