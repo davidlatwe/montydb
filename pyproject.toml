@@ -38,9 +38,18 @@ bandit = "^1"
 black = { version = "*", python = ">=3.6.2", allow-prereleases = true }
 codespell = "^2"
 flake8 = "^5"
+ruff = "0.9.2"
 lmdb = ">=1.5.1"
 mongoengine = "*"
 pymongo = "=3.11.3"
 pytest = "*"
 pytest-cov = "*"
 toml = "*"
+
+[tool.codespell]
+ignore-words-list = "nd,nin,socio-economic"
+
+[tool.ruff.lint]
+select = [ "C90", "E", "F", "S", "W" ]
+ignore= [ "F841", "S101" ]
+mccabe.max-complexity = 26

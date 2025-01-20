@@ -188,9 +188,9 @@ def test_client_init_on_existing_storage(gettempdir):
         f"import montydb; montydb.MontyClient({gettempdir!r})",  # noqa
     ]
 
-    subprocess.check_call(cmd)
+    subprocess.check_call(cmd)  # noqa: S603
 
-    p = subprocess.Popen(cmd, stderr=subprocess.PIPE)
+    p = subprocess.Popen(cmd, stderr=subprocess.PIPE)  # noqa: S603
     o, e = p.communicate()
     assert p.returncode == 0, e.decode()
 

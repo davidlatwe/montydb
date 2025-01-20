@@ -21,18 +21,12 @@ test:  ## Run tests
 	poetry run pytest . --no-cov
 .PHONY: test
 
-lint:  ## Run linting with flake8
-	poetry run flake8 . \
-	--count \
-	--ignore=F841,W503,E741 \
-	--max-complexity=26 \
-	--max-line-length=88 \
-	--statistics \
-	--exclude .venv,venv
+lint:  ## Run linting with ruff
+	poetry run ruff check
 .PHONY: lint
 
 codespell:  ## Find typos with codespell
-	poetry run codespell --ignore-words-list=nd,nin --skip=".venv,venv,.git"
+	poetry run codespell --skip=".venv,venv,.git"
 .PHONY: codespell
 
 bandit:  ## Run static security analysis with bandit
