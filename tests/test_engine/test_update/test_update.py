@@ -394,7 +394,7 @@ def test_update_positional_without_query_condition(monty_update, mongo_update):
 
 
 def test_update_positional_3(monty_update, mongo_update):
-    docs = [{"a": 1, "b": [{"c": 1, "d": 2 }]}]
+    docs = [{"a": 1, "b": [{"c": 1, "d": 2}]}]
     spec = {"$set": {"b.$.d": 10}}
     find = {"a": 1, "b.c": 1}
 
