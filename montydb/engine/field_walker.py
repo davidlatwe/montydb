@@ -847,7 +847,6 @@ class FieldWalker(object):
         else:
             return
 
-
     def has_matched(self):
         return any(node.in_array for node in self.matched.values())
 
