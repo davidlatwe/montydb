@@ -834,18 +834,19 @@ class FieldWalker(object):
         for path, node in self.matched.items():
             if position_path is None or path.startswith(position_path + "."):
                 matched = node
-                break
+
+                first = None
+                while matched.parent is not None:
+                    if not matched.in_array:
+                        break
+                    first = matched
+                    matched = matched.parent
+
+                if first is not None:
+                    return first
         else:
             return
 
-        first = None
-        while matched.parent is not None:
-            if not matched.in_array:
-                break
-            first = matched
-            matched = matched.parent
-
-        return first
 
     def has_matched(self):
         return any(node.in_array for node in self.matched.values())
