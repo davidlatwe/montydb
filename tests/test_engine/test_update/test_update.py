@@ -401,7 +401,12 @@ def test_update_positional_3(monty_update, mongo_update):
     mongo_c = mongo_update(docs, spec, find)
     monty_c = monty_update(docs, spec, find)
 
-    assert list(mongo_c) == list(monty_c)
+    assert next(mongo_c) == next(monty_c)
+    monty_c.rewind()
+    assert next(monty_c) == {
+        "a": 1,
+        "b": [{"c": 1, "d": 10}]
+    }
 
 
 def test_update_array_faild_1(monty_update, mongo_update):
