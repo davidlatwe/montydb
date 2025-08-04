@@ -3,7 +3,7 @@ from datetime import datetime
 
 from ..errors import WriteError
 
-from .field_walker import FieldWalker, FieldWriteError
+from .field_walker import FieldWalker, FieldWriteError, is_conflict
 from .weighted import Weighted, _cmp_decimal
 from .queries import QueryFilter, ordering
 from ..types import (
@@ -164,7 +164,7 @@ class Updator(object):
 
     def check_conflict(self, field):
         for staged in self.fields_to_update:
-            if field.startswith(staged) or staged.startswith(field):
+            if is_conflict(field, staged):
                 msg = (
                     "Updating the path {0!r} would create a "
                     "conflict at {1!r}".format(field, staged[: len(field)])
@@ -318,7 +318,7 @@ def parse_rename(field, new_field, array_filters):
         )
         raise WriteError(msg, code=2)
 
-    if field.startswith(new_field) or new_field.startswith(field):
+    if is_conflict(new_field, field):
         msg = (
             "The source and target field for $rename must not be on the "
             "same path: {0}: {1!r}".format(field, new_field)
