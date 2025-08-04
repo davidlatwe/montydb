@@ -50,7 +50,7 @@ jobs:
       run: >
         poetry run pytest --storage ${{ matrix.monty-storage }} --use-bson
 
-    - name: Lint with flake8
+    - name: Lint with ruff
       run: make lint
 
     - name: Find typos with codespell
