@@ -54,4 +54,6 @@ def test_upsert_4(monty_update, mongo_update):
     monty_c = monty_update(docs, spec, find, upsert=True)
     mongo_c = mongo_update(docs, spec, find, upsert=True)
 
-    assert list(mongo_c) == list(monty_c)
+    assert mongo_c[0] == monty_c[0]
+    monty_c.rewind()
+    assert monty_c[0] == {"a": 1, "ab": 2, "x": 1}
