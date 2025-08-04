@@ -48,8 +48,8 @@ def test_upsert_3(monty_update, mongo_update):
 def test_upsert_4(monty_update, mongo_update):
     docs = []
 
-    find = {"x": 1}
     spec = {"$set": {"a": 1, "ab": 2}}
+    find = {"x": 1}
 
     monty_c = monty_update(docs, spec, find, upsert=True)
     mongo_c = mongo_update(docs, spec, find, upsert=True)
