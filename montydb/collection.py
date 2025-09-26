@@ -428,7 +428,7 @@ class MontyCollection(BaseObject):
         **kwargs
     ):
         """
-        Find a single document and update it, returning either the original 
+        Find a single document and update it, returning either the original
         or updated document.
 
         Arguments:
@@ -447,7 +447,7 @@ class MontyCollection(BaseObject):
                 document level validation. Not implemented.
             array_filters: A list of filters specifying which array elements an update
                 should apply.
-            
+
         Returns:
             The matching document, before or after the update, or None if no document
             matches the filter.

@@ -385,7 +385,7 @@ def test_find_one_and_update_empty_collection(monty_collection, mongo_collection
 
 
 def test_find_one_and_update_projection_before_update(
-    monty_collection, 
+    monty_collection,
     mongo_collection
 ):
     doc = {
