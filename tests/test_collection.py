@@ -337,7 +337,7 @@ def test_find_one_and_update_upsert_no_match(monty_collection, mongo_collection)
     assert "_id" in monty_result
 
     assert monty_collection.count_documents({"a": "X"}) == 1
-    
+
     # Compare with MongoDB result excluding _id
     monty_no_id = {k: v for k, v in monty_result.items() if k != "_id"}
     mongo_no_id = {k: v for k, v in mongo_result.items() if k != "_id"}
@@ -384,7 +384,10 @@ def test_find_one_and_update_empty_collection(monty_collection, mongo_collection
     assert monty_result == mongo_result
 
 
-def test_find_one_and_update_projection_before_update(monty_collection, mongo_collection):
+def test_find_one_and_update_projection_before_update(
+    monty_collection, 
+    mongo_collection
+):
     doc = {
         "_id": 1,
         "a": "X",

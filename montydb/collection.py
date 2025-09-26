@@ -428,26 +428,28 @@ class MontyCollection(BaseObject):
         **kwargs
     ):
         """
-        Find a single document and update it, returning either the original or updated document.
-        
+        Find a single document and update it, returning either the original 
+        or updated document.
+
         Arguments:
             filter: A query that matches the document to update.
             update: The update operations to apply.
-            projection: A list of field names that should be returned in the result document
-                or a mapping specifying the fields to include or exclude.
-            sort: A list of (key, direction) pairs specifying the sort order for the query.
-            return_document: If False (the default), returns the original document 
-                before it was updated. If True, returns the updated or inserted document.
-                A boolean to match the original ReturnDocument in pymongo.
-            upsert: When True, inserts a new document if no document matches the query. 
+            projection: A list of field names that should be returned in the result
+                document or a mapping specifying the fields to include or exclude.
+            sort: A list of (key, direction) pairs specifying the sort order for the
+                query.
+            return_document: If False (the default), returns the original document
+                before it was updated. If True, returns the updated or inserted
+                document. A boolean to match the original ReturnDocument in pymongo.
+            upsert: When True, inserts a new document if no document matches the query.
                 Defaults to False.
-            bypass_document_validation: If True, allows the write to opt-out of document 
-                level validation. Not implemented.
-            array_filters: A list of filters specifying which array elements an update 
+            bypass_document_validation: If True, allows the write to opt-out of
+                document level validation. Not implemented.
+            array_filters: A list of filters specifying which array elements an update
                 should apply.
             
         Returns:
-            The matching document, before or after the update, or None if no document 
+            The matching document, before or after the update, or None if no document
             matches the filter.
         """
         validate_ok_for_update(update)
@@ -455,10 +457,10 @@ class MontyCollection(BaseObject):
         validate_boolean("upsert", upsert)
         validate_boolean("return_document", return_document)
         # filter is validated in MontyCursor
-        
+
         if bypass_document_validation:
             pass
-            
+
         updator = Updator(update, array_filters)
         self._no_id_update(updator, filter)
 
@@ -479,14 +481,15 @@ class MontyCollection(BaseObject):
                 # Return None as the document did not exist.
                 if not return_document:
                     return None
-                
+
                 # Retrieve the document from the generated id.
                 # Recreating the document from doc_to_update may be complicated
                 # as it also needs to consider filtering fields that are added
                 # during the upsert.
                 upserted_id = raw_result.get("upserted")
                 if upserted_id:
-                    # do not use the projection in find_one to use the original queryfilter
+                    # do not use the projection in find_one to use the
+                    # original queryfilter
                     new_doc = self.find_one({"_id": upserted_id})
                     if projection:
                         queryfilter = QueryFilter(filter)
