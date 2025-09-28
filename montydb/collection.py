@@ -488,19 +488,12 @@ class MontyCollection(BaseObject):
                 # during the upsert.
                 upserted_id = raw_result.get("upserted")
                 if upserted_id:
-                    # do not use the projection in find_one to use the
-                    # original queryfilter
-                    new_doc = self.find_one({"_id": upserted_id})
-                    if projection:
-                        queryfilter = QueryFilter(filter)
-                        projector = Projector(projection, queryfilter)
-                        new_fw = FieldWalker(new_doc)
-                        projector(new_fw)
-                        return new_fw.doc
-                    return new_doc
-                return None
-            else:
-                return None
+                    return self.find_one(
+                        {"_id": upserted_id},
+                        projection=projection
+                    )
+
+            return None
         else:
             fw = FieldWalker(doc_to_update)
 
