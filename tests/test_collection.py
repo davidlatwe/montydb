@@ -9,6 +9,7 @@ from pymongo.errors import (
     DuplicateKeyError as mongo_dup_key_err,
     BulkWriteError as mongo_bulkw_err,
 )
+from pymongo import ReturnDocument
 from montydb.errors import (
     DuplicateKeyError as monty_dup_key_err,
     BulkWriteError as monty_bulkw_err,
@@ -188,3 +189,232 @@ def test_collection_count_documents(monty_collection, mongo_collection):
     mongo_res = mongo_collection.count_documents({"a": 1})
 
     assert monty_res == mongo_res
+
+
+def test_find_one_and_update_basic(monty_collection, mongo_collection):
+    doc = {"_id": 1, "a": 10}
+    monty_collection.insert_one(doc.copy())
+    mongo_collection.insert_one(doc.copy())
+
+    monty_result = monty_collection.find_one_and_update(
+        {"_id": 1},
+        {"$set": {"a": 20}},
+        return_document=False
+    )
+
+    mongo_result = mongo_collection.find_one_and_update(
+        {"_id": 1},
+        {"$set": {"a": 20}},
+        return_document=ReturnDocument.BEFORE
+    )
+
+    assert monty_result["a"] == 10
+    assert monty_collection.find_one({"_id": 1})["a"] == 20
+
+    assert monty_result == mongo_result
+
+
+def test_find_one_and_update_return_after(monty_collection, mongo_collection):
+    doc = {"_id": 1, "a": 10}
+    monty_collection.insert_one(doc.copy())
+    mongo_collection.insert_one(doc.copy())
+
+    monty_result = monty_collection.find_one_and_update(
+        {"_id": 1},
+        {"$inc": {"a": 5}},
+        return_document=True
+    )
+
+    mongo_result = mongo_collection.find_one_and_update(
+        {"_id": 1},
+        {"$inc": {"a": 5}},
+        return_document=ReturnDocument.AFTER
+    )
+
+    assert monty_result["a"] == 15
+    assert monty_collection.find_one({"_id": 1})["a"] == 15
+
+    assert monty_result == mongo_result
+
+
+def test_find_one_and_update_with_sort(monty_collection, mongo_collection):
+    docs = [
+        {"_id": 1, "priority": 3, "a": 10},
+        {"_id": 2, "priority": 1, "a": 10},
+        {"_id": 3, "priority": 2, "a": 10}
+    ]
+    for doc in docs:
+        monty_collection.insert_one(doc.copy())
+        mongo_collection.insert_one(doc.copy())
+
+    # Update document based on sorting priority
+    monty_result = monty_collection.find_one_and_update(
+        {"a": 10},
+        {"$set": {"a": 20}},
+        sort=[("priority", 1)],
+        return_document=True
+    )
+
+    mongo_result = mongo_collection.find_one_and_update(
+        {"a": 10},
+        {"$set": {"a": 20}},
+        sort=[("priority", 1)],
+        return_document=ReturnDocument.AFTER
+    )
+
+    assert monty_result["_id"] == 2
+    assert monty_result["a"] == 20
+    assert monty_collection.count_documents({"a": 20}) == 1
+
+    assert monty_result == mongo_result
+
+
+def test_find_one_and_update_with_projection(monty_collection, mongo_collection):
+    doc = {"_id": 1, "a": "X", "b": 30, "c": "Y"}
+    monty_collection.insert_one(doc.copy())
+    mongo_collection.insert_one(doc.copy())
+
+    monty_result = monty_collection.find_one_and_update(
+        {"_id": 1},
+        {"$set": {"b": 31}},
+        projection={"a": 1, "b": 1, "_id": 0},
+        return_document=True
+    )
+
+    mongo_result = mongo_collection.find_one_and_update(
+        {"_id": 1},
+        {"$set": {"b": 31}},
+        projection={"a": 1, "b": 1, "_id": 0},
+        return_document=ReturnDocument.AFTER
+    )
+
+    assert monty_result == {"a": "X", "b": 31}
+    assert "city" not in monty_result
+
+    assert monty_result == mongo_result
+
+
+def test_find_one_and_update_no_match(monty_collection, mongo_collection):
+    doc = {"_id": 1, "a": 10}
+    monty_collection.insert_one(doc.copy())
+    mongo_collection.insert_one(doc.copy())
+
+    monty_result = monty_collection.find_one_and_update(
+        {"_id": 999},
+        {"$set": {"a": 20}},
+        return_document=False
+    )
+
+    mongo_result = mongo_collection.find_one_and_update(
+        {"_id": 999},
+        {"$set": {"a": 20}},
+        return_document=ReturnDocument.BEFORE
+    )
+
+    assert monty_result is None
+    assert monty_collection.find_one({"_id": 1})["a"] == 10
+
+    assert monty_result == mongo_result
+
+
+def test_find_one_and_update_upsert_no_match(monty_collection, mongo_collection):
+    monty_result = monty_collection.find_one_and_update(
+        {"a": "X"},
+        {"$set": {"b": 25}},
+        upsert=True,
+        return_document=True
+    )
+
+    mongo_result = mongo_collection.find_one_and_update(
+        {"a": "X"},
+        {"$set": {"b": 25}},
+        upsert=True,
+        return_document=ReturnDocument.AFTER
+    )
+
+    assert monty_result["a"] == "X"
+    assert monty_result["b"] == 25
+    assert "_id" in monty_result
+
+    assert monty_collection.count_documents({"a": "X"}) == 1
+
+    # Compare with MongoDB result excluding _id
+    monty_no_id = {k: v for k, v in monty_result.items() if k != "_id"}
+    mongo_no_id = {k: v for k, v in mongo_result.items() if k != "_id"}
+    assert monty_no_id == mongo_no_id
+
+
+def test_find_one_and_update_upsert_return_before(monty_collection, mongo_collection):
+    monty_result = monty_collection.find_one_and_update(
+        {"a": "Y"},
+        {"$set": {"b": 35}},
+        upsert=True,
+        return_document=False
+    )
+
+    mongo_result = mongo_collection.find_one_and_update(
+        {"a": "Y"},
+        {"$set": {"b": 35}},
+        upsert=True,
+        return_document=ReturnDocument.BEFORE
+    )
+
+    assert monty_result is None
+    assert monty_collection.find_one({"a": "Y"})["b"] == 35
+
+    assert monty_result == mongo_result
+
+
+def test_find_one_and_update_empty_collection(monty_collection, mongo_collection):
+    monty_result = monty_collection.find_one_and_update(
+        {},
+        {"$set": {"a": 1}},
+        return_document=False
+    )
+
+    mongo_result = mongo_collection.find_one_and_update(
+        {},
+        {"$set": {"a": 1}},
+        return_document=ReturnDocument.BEFORE
+    )
+
+    assert monty_result is None
+    assert monty_collection.count_documents({}) == 0
+
+    assert monty_result == mongo_result
+
+
+def test_find_one_and_update_projection_before_update(
+    monty_collection,
+    mongo_collection
+):
+    doc = {
+        "_id": 1,
+        "a": "X",
+        "b": 1,
+        "c": "AA"
+    }
+    monty_collection.insert_one(doc.copy())
+    mongo_collection.insert_one(doc.copy())
+
+    monty_result = monty_collection.find_one_and_update(
+        {"_id": 1},
+        {"$set": {"b": 20, "c": "BB"}},
+        projection={"a": 1, "b": 1, "_id": 0},
+        return_document=False
+    )
+
+    mongo_result = mongo_collection.find_one_and_update(
+        {"_id": 1},
+        {"$set": {"b": 20, "c": "BB"}},
+        projection={"a": 1, "b": 1, "_id": 0},
+        return_document=ReturnDocument.BEFORE
+    )
+
+    assert monty_result == {"a": "X", "b": 1}
+    # Verify update was applied
+    doc = monty_collection.find_one({"_id": 1})
+    assert doc["b"] == 20
+    assert doc["c"] == "BB"
+
+    assert monty_result == mongo_result

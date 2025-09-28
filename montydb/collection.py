@@ -16,6 +16,7 @@ from .engine.field_walker import FieldWalker
 from .engine.weighted import Weighted
 from .engine.queries import QueryFilter
 from .engine.update import Updator
+from .engine.project import Projector
 from .types import (
     abc,
     bson,
@@ -47,7 +48,6 @@ NotImplementeds = {
     "find_raw_batches",
     "find_one_and_delete",
     "find_one_and_replace",
-    "find_one_and_update",
     "create_indexes",
     "drop_index",
     "drop_indexes",
@@ -414,6 +414,115 @@ class MontyCollection(BaseObject):
         storage.delete_many(self, doc_ids)
 
         return DeleteResult(raw_result)
+
+    def find_one_and_update(
+        self,
+        filter,
+        update,
+        projection=None,
+        sort=None,
+        return_document=False,
+        upsert=False,
+        bypass_document_validation=False,
+        array_filters=None,
+        **kwargs
+    ):
+        """
+        Find a single document and update it, returning either the original
+        or updated document.
+
+        Arguments:
+            filter: A query that matches the document to update.
+            update: The update operations to apply.
+            projection: A list of field names that should be returned in the result
+                document or a mapping specifying the fields to include or exclude.
+            sort: A list of (key, direction) pairs specifying the sort order for the
+                query.
+            return_document: If False (the default), returns the original document
+                before it was updated. If True, returns the updated or inserted
+                document. A boolean to match the original ReturnDocument in pymongo.
+            upsert: When True, inserts a new document if no document matches the query.
+                Defaults to False.
+            bypass_document_validation: If True, allows the write to opt-out of
+                document level validation. Not implemented.
+            array_filters: A list of filters specifying which array elements an update
+                should apply.
+
+        Returns:
+            The matching document, before or after the update, or None if no document
+            matches the filter.
+        """
+        validate_ok_for_update(update)
+        validate_list_or_none("array_filters", array_filters)
+        validate_boolean("upsert", upsert)
+        validate_boolean("return_document", return_document)
+        # filter is validated in MontyCursor
+
+        if bypass_document_validation:
+            pass
+
+        updator = Updator(update, array_filters)
+        self._no_id_update(updator, filter)
+
+        # find the document to modify
+        cursor = MontyCursor(self, filter=filter, sort=sort, limit=1, **kwargs)
+        doc_to_update = None
+        for doc in cursor:
+            doc_to_update = doc
+            break
+
+        if doc_to_update is None:
+            if upsert:
+                # Create the document
+                raw_result = {"n": 0, "nModified": 0}
+                self._internal_upsert(filter, updator, raw_result)
+
+                # "not return_document" -> BEFORE
+                # Return None as the document did not exist.
+                if not return_document:
+                    return None
+
+                # Retrieve the document from the generated id.
+                # Recreating the document from doc_to_update may be complicated
+                # as it also needs to consider filtering fields that are added
+                # during the upsert.
+                upserted_id = raw_result.get("upserted")
+                if upserted_id:
+                    return self.find_one(
+                        {"_id": upserted_id},
+                        projection=projection
+                    )
+
+            return None
+        else:
+            fw = FieldWalker(doc_to_update)
+
+            # if not an upsert, validate that the _id is not modified.
+            self._no_id_update(updator)
+            if updator(fw):
+                self._storage.update_one(self, fw.doc)
+
+            if projection:
+                # Apply the projection to the original or new document
+                # No need to query the document here.
+                queryfilter = QueryFilter(filter)
+                projector = Projector(projection, queryfilter)
+
+                if not return_document:
+                    # The updator does not alter the original document.
+                    # doc_to_update can be filtered and returned.
+                    original_fw = FieldWalker(doc_to_update)
+                    projector(original_fw)
+                    return original_fw.doc
+                else:
+                    updated_fw = FieldWalker(fw.doc)
+                    projector(updated_fw)
+                    return updated_fw.doc
+            else:
+                if not return_document:
+                    return doc_to_update
+                else:
+                    return fw.doc
 
     def find(self, *args, **kwargs):
         # return a cursor
