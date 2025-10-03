@@ -335,7 +335,7 @@ install                        install all dependencies locally
 update                         update project dependencies locally (run after git update)
 ci                             Run all checks (codespell, lint, bandit, test)
 test                           Run tests
-lint                           Run linting with flake8
+lint                           Run linting with ruff
 codespell                      Find typos with codespell
 bandit                         Run static security analysis with bandit
 build                          Build project using poetry
