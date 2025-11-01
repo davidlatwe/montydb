@@ -51,3 +51,21 @@ def test_storage_module_not_found():
 def test_provide_repository_type_err():
     with pytest.raises(TypeError):
         provide_repository(True)
+
+
+def test_config_int_value(tmp_config_repo):
+    expected = 5
+
+    tmp_dir = os.path.join(tmp_config_repo, "flatfile")
+    set_storage(repository=tmp_dir,
+                storage="flatfile",
+                cache_modified=expected)
+    storage = provide_storage(repository=tmp_dir).launch(tmp_dir)
+    assert storage._config["cache_modified"] == expected
+
+    tmp_dir = os.path.join(tmp_config_repo, "flatfile_str")
+    set_storage(repository=tmp_dir,
+                storage="flatfile",
+                cache_modified=str(expected))
+    storage = provide_storage(repository=tmp_dir).launch(tmp_dir)
+    assert storage._config["cache_modified"] == expected
