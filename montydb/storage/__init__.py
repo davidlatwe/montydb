@@ -100,6 +100,13 @@ class AbstractStorage(object):
             if value is None:
                 value = ""
 
+            # ConfigParser only accept string type.
+            # NOTE: Right now only `flatfile` and `lightning` have int type in storage
+            #   config. See their Storage class `config` methods.
+            # TODO:  We should migrate to use `toml`.
+            if not isinstance(value, str):
+                value = str(value)
+
             parser.set(section, str(option), value)
 
         with open(config_file, "w") as fp:
