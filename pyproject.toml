@@ -1,15 +1,21 @@
 [build-system]
-build-backend = "poetry.core.masonry.api"
-requires = [ "poetry-core>=1" ]
+build-backend = "hatchling.build"
+requires = [ "hatchling" ]
 
-[tool.poetry]
+[project]
 name = "montydb"
 version = "99.dev.0"
 description = "Monty, Mongo tinified. MongoDB implemented in Python !"
-authors = [ "davidlatwe <davidlatwe@gmail.com>" ]
-license = "BSD-3-Clause License"
+authors = [
+  { name = "davidlatwe", email = "davidlatwe@gmail.com" },
+]
+maintainers = [
+  { name = "davidlatwe", email = "davidlatwe@gmail.com" },
+]
+license = "BSD-3-Clause"
+license-files = [ "LICENSE" ]
 readme = "README.md"
-repository = "https://github.com/davidlatwe/montydb"
+requires-python = ">=3.7"
 keywords = [ "monty", "montydb", "pymongo", "mongodb", "database", "embedded" ]
 classifiers = [
   "Intended Audience :: Developers",
@@ -25,22 +31,27 @@ classifiers = [
   "Topic :: Database",
   "Topic :: Database :: Database Engines/Servers",
 ]
+dependencies = []
 
-include = [
-  "LICENSE",
+[project.optional-dependencies]
+bson = [ "pymongo" ]
+lmdb = [ "lmdb" ]
+
+[project.urls]
+Repository = "https://github.com/davidlatwe/montydb"
+Source = "https://github.com/davidlatwe/montydb"
+Tracker = "https://github.com/davidlatwe/montydb/issues"
+
+[dependency-groups]
+dev = [
+  "bandit>=1",
+  "black",
+  "codespell>=2",
+  "flake8>=5",
+  "lmdb>=1.5.1",
+  "mongoengine",
+  "pymongo==3.11.3",
+  "pytest",
+  "pytest-cov",
+  "toml",
 ]
-
-[tool.poetry.dependencies]
-python = ">=3.7"
-
-[tool.poetry.dev-dependencies]
-bandit = "^1"
-black = { version = "*", python = ">=3.6.2", allow-prereleases = true }
-codespell = "^2"
-flake8 = "^5"
-lmdb = ">=1.5.1"
-mongoengine = "*"
-pymongo = "=3.11.3"
-pytest = "*"
-pytest-cov = "*"
-toml = "*"

@@ -88,6 +88,10 @@ celerybeat-schedule
 venv/
 ENV/
 
+# uv local artifacts
+uv.lock
+.uv-cache/
+
 # Spyder project settings
 .spyderproject
 .spyproject
