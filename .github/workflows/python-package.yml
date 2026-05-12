@@ -56,7 +56,7 @@ jobs:
       run: uv run ruff check .
 
     - name: Find typos with codespell
-      run: uv run codespell --ignore-words-list=nd,nin --skip=".venv,venv,.git"
+      run: uv run codespell
 
     - name: Run static analysis with bandit
       run: uv run bandit montydb -r

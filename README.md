@@ -336,7 +336,7 @@ uv sync
 uv run pytest . --no-cov
 uv run ruff check .
 uv run ruff format .
-uv run codespell --ignore-words-list=nd,nin --skip=".venv,venv,.git"
+uv run codespell
 uv run bandit montydb -r
 uv build
 ```
