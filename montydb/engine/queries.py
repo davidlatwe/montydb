@@ -35,13 +35,13 @@ def ordering(fieldwalkers, order, doc_type=None):
     total = len(fieldwalkers)
     pre_sect_stack = []
 
-    for path, revr in order.items():
-        validate_sort_specifier(revr)
+    for path, direction in order.items():
+        validate_sort_specifier(direction)
 
-        is_reverse = bool(1 - revr)
+        is_reverse = direction == -1
         value_stack = []
 
-        for indx, fieldwalker in enumerate(fieldwalkers):
+        for index, fieldwalker in enumerate(fieldwalkers):
             # get field value
             fieldwalker = FieldWalker(fieldwalker.doc, doc_type).go(path).get()
             values = list(fieldwalker.value.iter_flat())
@@ -61,12 +61,12 @@ def ordering(fieldwalkers, order, doc_type=None):
                 value = (0, ())
 
             # read previous section
-            pre_sect = pre_sect_stack[indx] if pre_sect_stack else 0
+            pre_sect = pre_sect_stack[index] if pre_sect_stack else 0
             # inverse if in reverse mode
             pre_sect = (total - pre_sect) if is_reverse else pre_sect
-            indx = (total - indx) if is_reverse else indx
+            index = (total - index) if is_reverse else index
 
-            value_stack.append((pre_sect, value, indx))
+            value_stack.append((pre_sect, value, index))
 
         # sort docs
         value_stack.sort(reverse=is_reverse)
@@ -75,10 +75,10 @@ def ordering(fieldwalkers, order, doc_type=None):
         sect_stack = []
         sect_id = -1
         last_doc = None
-        for _, value, indx in value_stack:
+        for _, value, index in value_stack:
             # restore if in reverse mode
-            indx = (total - indx) if is_reverse else indx
-            ordereddoc.append(fieldwalkers[indx])
+            index = (total - index) if is_reverse else index
+            ordereddoc.append(fieldwalkers[index])
 
             # define section
             # maintain the sorting result in next level sorting

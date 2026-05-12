@@ -38,15 +38,27 @@ This project is tested against:
 pip install montydb
 ```
 
+Or with [uv](https://docs.astral.sh/uv/):
+
+```sh
+uv pip install montydb
+```
+
 - optional, to use *real* `bson` in operation (`pymongo` will be installed)
     _For minimum requirements, `montydb` ships with it's own fork of `ObjectId` in `montydb.types`, so you may ignore this option if `ObjectId` is all you need from `bson`_
 
     ```sh
     pip install montydb[bson]
     ```
+    ```sh
+    uv pip install montydb[bson]
+    ```
 - optional, to use lightning memory-mapped db as storage engine
     ```sh
     pip install montydb[lmdb]
+    ```
+    ```sh
+    uv pip install montydb[lmdb]
     ```
 
 
@@ -305,41 +317,28 @@ client = MontyClient("montydb:///db/repo")
 
 ## Development
 
-montydb uses [Poetry](https://python-poetry.org/) to make it easy manage dependencies and set up the development environment. 
+montydb uses [uv](https://docs.astral.sh/uv/) for dependency management, task execution, builds, and publishing.
 
 ### Initial setup
 
-After cloning the repository, you need to run the following commands to set up the development environment:
+After cloning the repository, run:
 
 ```bash
-make install
+uv sync
 ```
 
-This will create a virtual environment and download the required dependencies.
+This creates a virtual environment and installs development dependencies.
 
-### updating dependencies
-
-To keep dependencies updated after git operations such as local updates or merging changes into local dev branch
+### Common commands
 
 ```bash
-make update
-```
-### Makefile
-
-A makefile is used to simplify common operations such as updating, testing, and deploying etc.
-
-```bash
-make or make help
-
-install                        install all dependencies locally
-update                         update project dependencies locally (run after git update)
-ci                             Run all checks (codespell, lint, bandit, test)
-test                           Run tests
-lint                           Run linting with flake8
-codespell                      Find typos with codespell
-bandit                         Run static security analysis with bandit
-build                          Build project using poetry
-clean                          Clean project
+uv sync
+uv run pytest . --no-cov
+uv run ruff check .
+uv run ruff format .
+uv run codespell
+uv run bandit montydb -r
+uv build
 ```
 
 ### Run mongo docker image
@@ -353,11 +352,11 @@ docker run --name monty-4.4 -p 30044:27017 -d mongo:4.4
 
 ### Tests
 ```shell
-poetry run pytest --storage {storage engin name} --mongodb {mongo instance url} [--use-bson]
+uv run pytest --storage {storage engin name} --mongodb {mongo instance url} [--use-bson]
 ```
 Example:
 ```shell
-poetry run pytest --storage memory --mongodb localhost:30044 --use-bson
+uv run pytest --storage memory --mongodb localhost:30044 --use-bson
 ```
 
 ## Why did I make this?

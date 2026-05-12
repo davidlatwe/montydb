@@ -1,0 +1,52 @@
+name: TestPyPI package publish
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - pyproject.toml
+      - build_version.py
+      - README.md
+      - LICENSE
+      - .github/workflows/python-publish.yml
+      - .github/workflows/python-publish-test.yml
+
+jobs:
+  test-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+      with:
+        enable-cache: true
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.x"
+
+    - name: Install dependencies
+      run: uv sync
+
+    - name: Build test version
+      run: uv run python build_version.py 0.0.0.dev${{ github.run_number }}
+
+    - name: Check versions are in sync
+      run: uv run pytest tests/test_packaging.py
+
+    - name: Build package
+      run: uv build
+
+    - name: Publish to TestPyPI
+      env:
+        UV_PUBLISH_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
+      run: >
+        uv publish
+        --publish-url https://test.pypi.org/legacy/
+        --check-url https://test.pypi.org/simple/montydb/

@@ -23,38 +23,40 @@ jobs:
         python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13" ]
 
     steps:
-    - uses: actions/checkout@v4
-    - run: pipx install poetry==2.0.1
+    - uses: actions/checkout@v6
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+      with:
+        enable-cache: true
 
     - name: Set up MongoDB ${{ matrix.mongodb-version }}
-      uses: supercharge/mongodb-github-action@1.12.0
+      uses: supercharge/mongodb-github-action@1.12.1
       with:
         mongodb-version: ${{ matrix.mongodb-version }}
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
-        cache: "poetry"
 
-    - name: Install dependencies via poetry
-      run: make install
+    - name: Install dependencies
+      run: uv sync
 
     - name: Test with pytest (${{ matrix.monty-storage }})
       continue-on-error: ${{ matrix.experimental }}
       run: >
-        poetry run pytest --storage ${{ matrix.monty-storage }}
+        uv run pytest --storage ${{ matrix.monty-storage }}
 
     - name: Test with pytest (${{ matrix.monty-storage }} + bson)
       continue-on-error: ${{ matrix.experimental }}
       run: >
-        poetry run pytest --storage ${{ matrix.monty-storage }} --use-bson
+        uv run pytest --storage ${{ matrix.monty-storage }} --use-bson
 
-    - name: Lint with flake8
-      run: make lint
+    - name: Lint with Ruff
+      run: uv run ruff check .
 
     - name: Find typos with codespell
-      run: make codespell
+      run: uv run codespell
 
     - name: Run static analysis with bandit
-      run: make bandit
+      run: uv run bandit montydb -r

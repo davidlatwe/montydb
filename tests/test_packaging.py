@@ -9,10 +9,10 @@ def test_versions_are_in_sync():
 
     path = Path(__file__).resolve().parents[1] / "pyproject.toml"
     pyproject = toml.loads(open(str(path)).read())
-    pyproject_version = pyproject["tool"]["poetry"]["version"]
+    project_version = pyproject["project"]["version"]
 
     package_version = montydb.__version__
-    assert package_version == pyproject_version
+    assert package_version == project_version
 
     if os.getenv("GITHUB_REF_TYPE") == "tag":
         # On package releasing
