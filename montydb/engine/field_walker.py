@@ -57,7 +57,7 @@ class FieldValues(object):
     def is_exists(self):
         """Is field exists ?"""
         if self._is_exists is None:
-            is_exists = any(nd.exists for nd in self.nodes)
+            is_exists = any(node.exists for node in self.nodes)
             # Cache
             self._is_exists = is_exists
 
@@ -69,7 +69,7 @@ class FieldValues(object):
         """Is None value or missing field ?"""
         if self._null_or_missing is None:
             null_or_missing = (
-                any(nd.is_missing() for nd in self.nodes)
+                any(node.is_missing() for node in self.nodes)
                 or self.is_exists()
                 and None in self.iter_flat()
             )
