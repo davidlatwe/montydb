@@ -16,7 +16,8 @@ if PY3:
     def iteritems(d, **kw):
         return iter(d.items(**kw))
 
-    unicode_ = (lambda s: s)
+    def unicode_(s):
+        return s
 
     def encode_(s):
         return s

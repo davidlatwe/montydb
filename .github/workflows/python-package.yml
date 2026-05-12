@@ -52,15 +52,8 @@ jobs:
       run: >
         uv run pytest --storage ${{ matrix.monty-storage }} --use-bson
 
-    - name: Lint with flake8
-      run: >
-        uv run flake8 .
-        --count
-        --ignore=F841,W503,E741
-        --max-complexity=26
-        --max-line-length=88
-        --statistics
-        --exclude .venv,venv
+    - name: Lint with Ruff
+      run: uv run ruff check .
 
     - name: Find typos with codespell
       run: uv run codespell --ignore-words-list=nd,nin --skip=".venv,venv,.git"

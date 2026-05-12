@@ -45,13 +45,19 @@ Tracker = "https://github.com/davidlatwe/montydb/issues"
 [dependency-groups]
 dev = [
   "bandit>=1",
-  "black",
   "codespell>=2",
-  "flake8>=5",
   "lmdb>=1.5.1",
   "mongoengine",
   "pymongo==3.11.3",
   "pytest",
   "pytest-cov",
+  "ruff",
   "toml",
 ]
+
+[tool.ruff]
+line-length = 88
+exclude = [ ".venv", "venv" ]
+
+[tool.ruff.lint]
+ignore = [ "E741", "F841" ]

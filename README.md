@@ -334,7 +334,8 @@ This creates a virtual environment and installs development dependencies.
 ```bash
 uv sync
 uv run pytest . --no-cov
-uv run flake8 . --count --ignore=F841,W503,E741 --max-complexity=26 --max-line-length=88 --statistics --exclude .venv,venv
+uv run ruff check .
+uv run ruff format .
 uv run codespell --ignore-words-list=nd,nin --skip=".venv,venv,.git"
 uv run bandit montydb -r
 uv build
