@@ -73,7 +73,7 @@ class AbstractStorage:
 
             section = cls.nice_name()
             if parser.has_section(section):
-                config = {k: v for k, v in parser.items(section)}
+                config = dict(parser.items(section))
 
         return config
 

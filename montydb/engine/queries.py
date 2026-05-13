@@ -840,7 +840,7 @@ def obj_to_bson_type_id(obj):
 
 def parse_type(query):
     def get_bson_type_id_set(values):
-        return set([obj_to_bson_type_id(v) for v in values])
+        return {obj_to_bson_type_id(v) for v in values}
 
     def str_type_to_int(query):
         if len(query) == 0:

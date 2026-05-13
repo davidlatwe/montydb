@@ -198,5 +198,5 @@ class BulkWriteResult(_WriteResult):
     def upserted_ids(self):
         """A map of operation index to the _id of the upserted document."""
         if self.__bulk_api_result:
-            return dict((upsert["index"], upsert["_id"])
-                        for upsert in self.bulk_api_result["upserted"])
+            return {upsert["index"]: upsert["_id"] for upsert in self.bulk_api_result["upserted"]}
+        return {}

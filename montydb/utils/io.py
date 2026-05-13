@@ -1,4 +1,3 @@
-
 import os
 import time
 from collections import defaultdict, OrderedDict
@@ -55,7 +54,7 @@ def montyimport(database,
         for doc in documents:
             try:
                 collection.insert_one(doc)
-            except DuplicateKeyError:
+            except DuplicateKeyError:  # noqa: PERF203
                 print("Duplicate id: {}".format(doc["_id"]))
 
     elif mode == "upsert":
@@ -107,7 +106,7 @@ def montyexport(database,
     if isinstance(fields, string_types):
         fields = [fields]
 
-    projection = {field: True for field in fields} or None
+    projection = dict.fromkeys(fields, True) or None
 
     with open(out, "w") as fp:
         for doc in collection.find(query, projection=projection):

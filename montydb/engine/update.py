@@ -751,7 +751,7 @@ class EachPusher:
             return sort
 
         if is_duckument_type(sort):
-            for key, value in sort.items():
+            for value in sort.values():
                 self._validate_sort(value, int_only=True)
             return sort
 
