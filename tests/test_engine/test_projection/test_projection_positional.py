@@ -343,10 +343,10 @@ def test_projection_positional_err_2(monty_proj, mongo_proj):
     spec = {"b.0.b": 2}
     proj = {"a.b.$": 1}
 
-    with pytest.raises(mongo_op_fail) as mongo_err:
+    with pytest.raises(mongo_op_fail):
         next(mongo_proj(docs, spec, proj))
 
-    with pytest.raises(monty_op_fail) as monty_err:
+    with pytest.raises(monty_op_fail):
         next(monty_proj(docs, spec, proj))
 
     # ignore comparing error code\n# # ignore comparing error code
@@ -360,10 +360,10 @@ def test_projection_positional_err_96_1(monty_proj, mongo_proj):
     spec = {"a.0.b": 2}
     proj = {"a.b.$": 1}
 
-    with pytest.raises(mongo_op_fail) as mongo_err:
+    with pytest.raises(mongo_op_fail):
         next(mongo_proj(docs, spec, proj))
 
-    with pytest.raises(monty_op_fail) as monty_err:
+    with pytest.raises(monty_op_fail):
         next(monty_proj(docs, spec, proj))
 
     # ignore comparing error code
@@ -377,10 +377,10 @@ def test_projection_positional_err_96_2(monty_proj, mongo_proj):
     spec = {"a.0.b": 2}
     proj = {"a.$": 1}
 
-    with pytest.raises(mongo_op_fail) as mongo_err:
+    with pytest.raises(mongo_op_fail):
         next(mongo_proj(docs, spec, proj))
 
-    with pytest.raises(monty_op_fail) as monty_err:
+    with pytest.raises(monty_op_fail):
         next(monty_proj(docs, spec, proj))
 
     # ignore comparing error code
@@ -394,10 +394,10 @@ def test_projection_positional_err_96_3(monty_proj, mongo_proj):
     spec = {"a.1": 1}
     proj = {"a.$": 1}
 
-    with pytest.raises(mongo_op_fail) as mongo_err:
+    with pytest.raises(mongo_op_fail):
         next(mongo_proj(docs, spec, proj))
 
-    with pytest.raises(monty_op_fail) as monty_err:
+    with pytest.raises(monty_op_fail):
         next(monty_proj(docs, spec, proj))
 
     # ignore comparing error code

@@ -16,10 +16,10 @@ def test_projection_elemMatch_unsupported_option(monty_proj, mongo_proj):
     spec = {}
     proj = {"x": {"a": {"$elemMatch": {"b": 3}}}}
 
-    with pytest.raises(mongo_op_fail) as mongo_err:
+    with pytest.raises(mongo_op_fail):
         next(mongo_proj(docs, spec, proj))
 
-    with pytest.raises(monty_op_fail) as monty_err:
+    with pytest.raises(monty_op_fail):
         next(monty_proj(docs, spec, proj))
 
     # ignore comparing error code
@@ -33,10 +33,10 @@ def test_projection_elemMatch_nested_field(monty_proj, mongo_proj):
     spec = {}
     proj = {"x.a": {"$elemMatch": {"b": 3}}}
 
-    with pytest.raises(mongo_op_fail) as mongo_err:
+    with pytest.raises(mongo_op_fail):
         next(mongo_proj(docs, spec, proj))
 
-    with pytest.raises(monty_op_fail) as monty_err:
+    with pytest.raises(monty_op_fail):
         next(monty_proj(docs, spec, proj))
 
     # ignore comparing error code
@@ -123,10 +123,10 @@ def test_projection_elemMatch_mix_with_slice_1(monty_proj, mongo_proj):
     spec = {}
     proj = {"a": {"$elemMatch": {"$eq": 2}, "$slice": [1, 4]}}
 
-    with pytest.raises(mongo_op_fail) as mongo_err:
+    with pytest.raises(mongo_op_fail):
         next(mongo_proj(docs, spec, proj))
 
-    with pytest.raises(monty_op_fail) as monty_err:
+    with pytest.raises(monty_op_fail):
         next(monty_proj(docs, spec, proj))
 
     # ignore comparing error code

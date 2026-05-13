@@ -25,10 +25,10 @@ def test_update_pull_2(monty_update, mongo_update):
     ]
     spec = {"$pull": {"a": 3}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         next(monty_update(docs, spec))
 
     # ignore comparing error code

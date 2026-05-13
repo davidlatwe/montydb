@@ -393,11 +393,11 @@ def test_sort_21(monty_sort, mongo_sort):
     ]
     sort = [("a", 3)]
 
-    with pytest.raises(mongo_op_err) as mongo_err:
+    with pytest.raises(mongo_op_err):
         mongo_c = mongo_sort(docs, sort)
         next(mongo_c)
 
-    with pytest.raises(monty_op_err) as monty_err:
+    with pytest.raises(monty_op_err):
         monty_c = monty_sort(docs, sort)
         next(monty_c)
 

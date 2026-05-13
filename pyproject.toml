@@ -59,9 +59,6 @@ dev = [
 line-length = 88
 exclude = [ ".venv", "venv" ]
 
-[tool.ruff.lint]
-ignore = [ "E741", "F841" ]
-
 [tool.codespell]
 skip = ".venv,venv,.git"
 # MongoDB query operator: $nin

@@ -37,10 +37,10 @@ def test_update_pop_3(monty_update, mongo_update):
     docs = []
     spec = {"$pop": {"a": 3}}  # Expected an integer
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         next(monty_update(docs, spec))
 
     # ignore comparing error code
@@ -53,10 +53,10 @@ def test_update_pop_4(monty_update, mongo_update):
     # Cannot represent as a 64-bit integer
     spec = {"$pop": {"a": Decimal128("1.1")}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         next(monty_update(docs, spec))
 
     # ignore comparing error code
@@ -67,10 +67,10 @@ def test_update_pop_5(monty_update, mongo_update):
     docs = []
     spec = {"$pop": {"a": "not num"}}  # Expected a number
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         next(monty_update(docs, spec))
 
     # ignore comparing error code
@@ -83,10 +83,10 @@ def test_update_pop_6(monty_update, mongo_update):
     ]
     spec = {"$pop": {"a.b": 1}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         next(monty_update(docs, spec))
 
     # ignore comparing error code
@@ -99,10 +99,10 @@ def test_update_pop_7(monty_update, mongo_update):
     ]
     spec = {"$pop": {"a": True}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         next(monty_update(docs, spec))
 
     # ignore comparing error code

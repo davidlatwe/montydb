@@ -12,10 +12,10 @@ def test_update_err_1(monty_update, mongo_update):
     ]
     spec = {"$inc": {"a.b": 1}, "$min": {"a.b": 1}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code
@@ -46,10 +46,10 @@ def test_update_positional_filtered_err_2(monty_update, mongo_update):
     spec = {"$inc": {"a.$[elem].b": 1}}
     array_filters = [{"elem.b": {"$gt": 4}}, {"elem.c": {"$gt": 4}}]
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec, array_filters=array_filters)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec, array_filters=array_filters)
 
     # ignore comparing error code
@@ -64,10 +64,10 @@ def test_update_positional_filtered_err_3(monty_update, mongo_update):
     spec = {"$inc": {"a.$[elem].b": 1}}
     array_filters = [{"elem.b": {"$gt": 4}}, {"other": {"$gt": 4}}]
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec, array_filters=array_filters)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec, array_filters=array_filters)
 
     # ignore comparing error code
@@ -82,10 +82,10 @@ def test_update_positional_filtered_err_4(monty_update, mongo_update):
     spec = {"$inc": {"a.$[elem].b": 1}}
     array_filters = [{"elem.b": {"$gt": 4}}, {"notuse": {"$gt": 4}}]
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec, array_filters=array_filters)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec, array_filters=array_filters)
 
     # ignore comparing error code
@@ -102,10 +102,10 @@ def test_update_positional_filtered_err_5(monty_update, mongo_update):
                      {"notuse": {"$gt": 4}},
                      {"notuse2": {"$gt": 4}}]
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec, array_filters=array_filters)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec, array_filters=array_filters)
 
     # ignore comparing error code
@@ -120,10 +120,10 @@ def test_update_positional_filtered_err_6(monty_update, mongo_update):
     spec = {"$inc": {"a.$[elem.b].c": 1}}
     array_filters = [{"elem.b.d": {"$gt": 0}}]
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec, array_filters=array_filters)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec, array_filters=array_filters)
 
     # ignore comparing error code
@@ -138,10 +138,10 @@ def test_update_positional_filtered_err_7(monty_update, mongo_update):
     spec = {"$inc": {"a.$[elem].b.c": 1}}
     array_filters = []
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec, array_filters=array_filters)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec, array_filters=array_filters)
 
     # ignore comparing error code
@@ -190,10 +190,10 @@ def test_update_positional_filtered_has_conflict_1(monty_update, mongo_update):
     array_filters = [{"elem.c": {"$gt": 0}},  # update element 0
                      {"conflict": {"b": 4, "c": 1}}]  # update element 0, too.
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec, array_filters=array_filters)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec, array_filters=array_filters)
 
     # ignore comparing error code
@@ -208,10 +208,10 @@ def test_update_positional_filtered_has_conflict_2(monty_update, mongo_update):
     array_filters = [{"elem.c": 5},  # update element 0
                      {"conflict.b": 1}]  # update element 0, too.
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec, array_filters=array_filters)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec, array_filters=array_filters)
 
     # ignore comparing error code
@@ -383,10 +383,10 @@ def test_update_positional_without_query_condition(monty_update, mongo_update):
     spec = {"$inc": {"a.$.b": 1}}
     find = {}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec, find)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec, find)
 
     # ignore comparing error code
@@ -415,10 +415,10 @@ def test_update_array_faild_1(monty_update, mongo_update):
     ]
     spec = {"$inc": {"a.1.$[]": 1}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code
@@ -431,10 +431,10 @@ def test_update_array_faild_2(monty_update, mongo_update):
     ]
     spec = {"$inc": {"a.1.$[]": 1}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code
@@ -447,10 +447,10 @@ def test_update_array_faild_3(monty_update, mongo_update):
     ]
     spec = {"$inc": {"a.1.$[]": 1}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code
@@ -463,10 +463,10 @@ def test_update_with_dollar_prefixed_field_1(monty_update, mongo_update):
     ]
     spec = {"$inc": {"a.$a": 1}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code
@@ -479,10 +479,10 @@ def test_update_with_dollar_prefixed_field_2(monty_update, mongo_update):
     ]
     spec = {"$set": {"b": {"$ey": [5]}}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code
@@ -495,10 +495,10 @@ def test_update_with_dollar_prefixed_field_3(monty_update, mongo_update):
     ]
     spec = {"$set": {"a": {"b": [{"$a": 5}]}}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code
@@ -573,10 +573,10 @@ def test_update_complex_position_3(monty_update, mongo_update):
     spec = {"$inc": {"a.$[].$[]": 10}}
     find = {"a.b.1": {"$gt": 5}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec, find)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec, find)
 
     # ignore comparing error code
@@ -603,10 +603,10 @@ def test_update_with_bad_spec(monty_update, mongo_update):
     ]
     spec = {"$inc": 5}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code
@@ -619,10 +619,10 @@ def test_update_rename_conflict_1(monty_update, mongo_update):
     ]
     spec = {"$set": {"c.d": {}}, "$rename": {"a.b": "c.d.b"}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code
@@ -635,10 +635,10 @@ def test_update_rename_conflict_2(monty_update, mongo_update):
     ]
     spec = {"$rename": {"a.b": "c.b.f", "d.e": "c.b"}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code
@@ -651,10 +651,10 @@ def test_update_with_empty_field_1(monty_update, mongo_update):
     ]
     spec = {"$inc": {"": 5}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code
@@ -667,10 +667,10 @@ def test_update_with_empty_field_2(monty_update, mongo_update):
     ]
     spec = {"$inc": {".": 5}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code

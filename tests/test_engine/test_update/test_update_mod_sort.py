@@ -72,10 +72,10 @@ def test_update_mod_sort_5(monty_update, mongo_update):
     ]
     spec = {"$push": {"a": {"$each": [], "$sort": []}}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code
@@ -88,10 +88,10 @@ def test_update_mod_sort_6(monty_update, mongo_update):
     ]
     spec = {"$push": {"a": {"$each": [], "$sort": 2}}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code
@@ -124,10 +124,10 @@ def test_update_mod_sort_8(monty_update, mongo_update):
     ]
     spec = {"$push": {"a": {"$each": [], "$sort": {"x": 3, "y": 1}}}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code
@@ -140,10 +140,10 @@ def test_update_mod_sort_9(monty_update, mongo_update):
     ]
     spec = {"$push": {"a": {"$each": [], "$sort": {"x": {"z": 1}, "y": 1}}}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code

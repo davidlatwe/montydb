@@ -117,10 +117,10 @@ def test_collection_insert_one_has_duplicate_key(monty_collection, mongo_collect
     mongo_collection.insert_one(doc)
     monty_collection.insert_one(doc)
 
-    with pytest.raises(mongo_dup_key_err) as mongo_err:
+    with pytest.raises(mongo_dup_key_err):
         mongo_collection.insert_one(doc)
 
-    with pytest.raises(monty_dup_key_err) as monty_err:
+    with pytest.raises(monty_dup_key_err):
         monty_collection.insert_one(doc)
 
     # ignore comparing error code
