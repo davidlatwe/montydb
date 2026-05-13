@@ -36,7 +36,7 @@ def _drop(fieldwalker, field, array_filters):
         raise WriteError(str(err), code=err.code)
 
 
-class Updator(object):
+class Updator:
     def __init__(self, spec, array_filters=None):
 
         self.update_ops = {
@@ -102,15 +102,14 @@ class Updator(object):
                 if not top and id_s[0] in filters:
                     msg = (
                         "Found multiple array filters with the same "
-                        "top-level field name {}".format(id_s[0])
+                        f"top-level field name {id_s[0]}"
                     )
                     raise WriteError(msg, code=9)
 
                 if top and id_s[0] != top:
                     msg = (
                         "Error parsing array filter: Expected a single "
-                        "top-level field name, found {0!r} and {1!r}"
-                        "".format(top, id_s[0])
+                        f"top-level field name, found {top!r} and {id_s[0]!r}"
                     )
                     raise WriteError(msg, code=9)
 
@@ -130,19 +129,19 @@ class Updator(object):
 
         for op, cmd_doc in spec.items():
             if op not in self.update_ops:
-                raise WriteError("Unknown modifier: {}".format(op))
+                raise WriteError(f"Unknown modifier: {op}")
 
             if not is_duckument_type(cmd_doc):
                 msg = (
-                    "Modifiers operate on fields but we found type {0} "
-                    "instead. For example: {{$mod: {{<field>: ...}}}} "
-                    "not {1}".format(type(cmd_doc).__name__, spec)
+                    f"Modifiers operate on fields but we found type {type(cmd_doc).__name__} "
+                    "instead. For example: {$mod: {<field>: ...}} "
+                    f"not {spec}"
                 )
                 raise WriteError(msg, code=9)
 
             for field, value in cmd_doc.items():
                 for top in list(idnt_tops):
-                    if "$[{}]".format(top) in field:
+                    if f"$[{top}]" in field:
                         idnt_tops.remove(top)
 
                 update_stack[field] = self.update_ops[op](
@@ -155,8 +154,8 @@ class Updator(object):
 
         if idnt_tops:
             msg = (
-                "The array filter for identifier {0!r} was not "
-                "used in the update {1}".format(idnt_tops[0], spec)
+                f"The array filter for identifier {idnt_tops[0]!r} was not "
+                f"used in the update {spec}"
             )
             raise WriteError(msg, code=9)
 
@@ -166,8 +165,8 @@ class Updator(object):
         for staged in self.fields_to_update:
             if is_conflict(field, staged):
                 msg = (
-                    "Updating the path {0!r} would create a "
-                    "conflict at {1!r}".format(field, staged[: len(field)])
+                    f"Updating the path {field!r} would create a "
+                    f"conflict at {staged[: len(field)]!r}"
                 )
                 raise WriteError(msg, code=40)
 
@@ -186,9 +185,7 @@ def parse_inc(field, value, array_filters):
     if not is_numeric_type(value):
         val_repr_ = "{!r}" if isinstance(value, string_types) else "{}"
         val_repr_ = val_repr_.format(value)
-        msg = "Cannot increment with non-numeric argument: {{{0}: {1}}}".format(
-            field, val_repr_
-        )
+        msg = f"Cannot increment with non-numeric argument: {{{field}: {val_repr_}}}"
         raise WriteError(msg, code=14)
 
     @keep(value)
@@ -200,8 +197,8 @@ def parse_inc(field, value, array_filters):
                 value_type = type(old_val).__name__
                 msg = (
                     "Cannot apply $inc to a value of non-numeric type. "
-                    "{{_id: {0}}} has the field {1!r} of non-numeric type "
-                    "{2}".format(_id, str(node), value_type)
+                    f"{{_id: {_id}}} has the field {str(node)!r} of non-numeric type "
+                    f"{value_type}"
                 )
                 raise WriteError(msg, code=14)
 
@@ -261,9 +258,7 @@ def parse_mul(field, value, array_filters):
     if not is_numeric_type(value):
         val_repr_ = "{!r}" if isinstance(value, string_types) else "{}"
         val_repr_ = val_repr_.format(value)
-        msg = "Cannot multiply with non-numeric argument: {{{0}: {1}}}".format(
-            field, val_repr_
-        )
+        msg = f"Cannot multiply with non-numeric argument: {{{field}: {val_repr_}}}"
         raise WriteError(msg, code=14)
 
     @keep(value)
@@ -275,8 +270,8 @@ def parse_mul(field, value, array_filters):
                 value_type = type(old_val).__name__
                 msg = (
                     "Cannot apply $mul to a value of non-numeric type. "
-                    "{{_id: {0}}} has the field {1!r} of non-numeric type "
-                    "{2}".format(_id, str(node), value_type)
+                    f"{{_id: {_id}}} has the field {str(node)!r} of non-numeric type "
+                    f"{value_type}"
                 )
                 raise WriteError(msg, code=14)
 
@@ -306,22 +301,20 @@ def _get_array_member(fieldvalues):
 
 def parse_rename(field, new_field, array_filters):
     if not isinstance(new_field, string_types):
-        msg = "The 'to' field for $rename must be a string: {0}: {1}".format(
-            field, new_field
-        )
+        msg = f"The 'to' field for $rename must be a string: {field}: {new_field}"
         raise WriteError(msg, code=2)
 
     if field == new_field:
         msg = (
             "The source and target field for $rename must differ: "
-            "{0}: {1!r}".format(field, new_field)
+            f"{field}: {new_field!r}"
         )
         raise WriteError(msg, code=2)
 
     if is_conflict(new_field, field):
         msg = (
             "The source and target field for $rename must not be on the "
-            "same path: {0}: {1!r}".format(field, new_field)
+            f"same path: {field}: {new_field!r}"
         )
         raise WriteError(msg, code=2)
 
@@ -344,8 +337,8 @@ def parse_rename(field, new_field, array_filters):
             array_field = str(array_member.parent)
             msg = (
                 "The source field cannot be an array element, "
-                "{0!r} in doc with _id: {1} has an array field "
-                "called {2!r}".format(field, _id, array_field)
+                f"{field!r} in doc with _id: {_id} has an array field "
+                f"called {array_field!r}"
             )
             raise WriteError(msg, code=2)
 
@@ -358,8 +351,8 @@ def parse_rename(field, new_field, array_filters):
             array_field = str(array_member.parent)
             msg = (
                 "The destination field cannot be an array element, "
-                "{0!r} in doc with _id: {1} has an array field "
-                "called {2!r}".format(new_field, _id, array_field)
+                f"{new_field!r} in doc with _id: {_id} has an array field "
+                f"called {array_field!r}"
             )
             raise WriteError(msg, code=2)
 
@@ -396,15 +389,15 @@ def parse_currentDate(field, value, array_filters):
     if not isinstance(value, bool):
         if not is_duckument_type(value):
             msg = (
-                "{} is not valid type for $currentDate. Please use a "
-                "boolean ('true') or a $type expression ({{$type: "
-                "'timestamp/date'}}).".format(type(value).__name__)
+                f"{type(value).__name__} is not valid type for $currentDate. Please use a "
+                "boolean ('true') or a $type expression ({$type: "
+                "'timestamp/date'})."
             )
             raise WriteError(msg, code=2)
 
         for k, v in value.items():
             if k != "$type":
-                msg = "Unrecognized $currentDate option: {}".format(k)
+                msg = f"Unrecognized $currentDate option: {k}"
                 raise WriteError(msg, code=2)
             if v not in date_type:
                 msg = (
@@ -441,8 +434,7 @@ def parse_add_to_set(field, value_or_each, array_filters):
                 value_type = type(old_val).__name__
                 msg = (
                     "Cannot apply $addToSet to non-array field. Field "
-                    "named {0!r} has non-array type {1}"
-                    "".format(str(node), value_type)
+                    f"named {str(node)!r} has non-array type {value_type}"
                 )
                 raise WriteError(msg, code=2)
 
@@ -463,7 +455,7 @@ def parse_add_to_set(field, value_or_each, array_filters):
 
 def parse_pop(field, value, array_filters):
     if not is_numeric_type(value):
-        msg = "Expected a number in: {0}: {1!r}".format(field, value)
+        msg = f"Expected a number in: {field}: {value!r}"
         raise WriteError(msg, code=9)
     else:
         try:
@@ -483,8 +475,8 @@ def parse_pop(field, value, array_filters):
             if node.exists and not isinstance(old_val, list):
                 value_type = type(old_val).__name__
                 msg = (
-                    "Path {0!r} contains an element of non-array type "
-                    "{1!r}".format(str(node), value_type)
+                    f"Path {str(node)!r} contains an element of non-array type "
+                    f"{value_type!r}"
                 )
                 raise WriteError(msg, code=14)
 
@@ -555,9 +547,8 @@ def parse_push(field, value_or_each, array_filters):
                 value_type = type(old_val).__name__
                 _id = fieldwalker.doc["_id"]
                 msg = (
-                    "The field {0!r} must be an array but is of type "
-                    "{1} in document {{_id: {2}}}"
-                    "".format(str(node), value_type, _id)
+                    f"The field {str(node)!r} must be an array but is of type "
+                    f"{value_type} in document {{_id: {_id}}}"
                 )
                 raise WriteError(msg, code=2)
 
@@ -578,9 +569,7 @@ def parse_push(field, value_or_each, array_filters):
 def parse_pull_all(field, value, array_filters):
     if not isinstance(value, list):
         value_type = type(value).__name__
-        msg = "$pullAll requires an array argument but was given a {}".format(
-            value_type
-        )
+        msg = f"$pullAll requires an array argument but was given a {value_type}"
         raise WriteError(msg, code=2)
 
     @keep(value)
@@ -613,7 +602,7 @@ def parse_pull_all(field, value, array_filters):
     return _pull_all
 
 
-class EachAdder(object):
+class EachAdder:
     def __init__(self, spec):
         spec = spec.copy()
 
@@ -626,7 +615,7 @@ class EachAdder(object):
                 type_check = self.validators[mod]
             except KeyError:
                 raise WriteError(
-                    "Found unexpected fields after $each in $addToSet: %s" % spec,
+                    f"Found unexpected fields after $each in $addToSet: {spec}",
                     code=2,
                 )
 
@@ -646,7 +635,7 @@ class EachAdder(object):
             type_name = type(each).__name__
             raise WriteError(
                 "The argument to $each in $addToSet must be an "
-                "array but it was of type %s" % type_name,
+                f"array but it was of type {type_name}",
                 code=14,
             )
         return each
@@ -656,7 +645,7 @@ class EachAdder(object):
     }
 
 
-class EachPusher(object):
+class EachPusher:
     def __init__(self, spec):
         spec = spec.copy()
 
@@ -671,7 +660,7 @@ class EachPusher(object):
             try:
                 type_check = self.validators[mod]
             except KeyError:
-                raise WriteError("Unrecognized clause in $push: %s" % mod, code=2)
+                raise WriteError(f"Unrecognized clause in $push: {mod}", code=2)
 
             self.mods[mod] = type_check(self, value)
 
@@ -728,7 +717,7 @@ class EachPusher(object):
             type_name = type(each).__name__
             raise WriteError(
                 "The argument to $each in $push must be an "
-                "array but it was of type: %s" % type_name,
+                f"array but it was of type: {type_name}",
                 code=2,
             )
         return each
@@ -738,7 +727,7 @@ class EachPusher(object):
             type_name = type(position).__name__
             raise WriteError(
                 "The value for $position must be an integer "
-                "value, not of type: %s" % type_name,
+                f"value, not of type: {type_name}",
                 code=2,
             )
         return position
@@ -748,7 +737,7 @@ class EachPusher(object):
             type_name = type(slice).__name__
             raise WriteError(
                 "The value for $slice must be an integer "
-                "value but was given type: %s" % type_name,
+                f"value but was given type: {type_name}",
                 code=2,
             )
         return slice

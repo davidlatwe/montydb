@@ -48,7 +48,7 @@ class MontyClient(BaseObject):
         options["document_class"] = document_class
         options["tz_aware"] = tz_aware or False
         self.__options = ClientOptions(options, wconcern)
-        super(MontyClient, self).__init__(self.__options.codec_options,
+        super().__init__(self.__options.codec_options,
                                           self.__options.write_concern)
 
     def __eq__(self, other):
@@ -62,24 +62,20 @@ class MontyClient(BaseObject):
     def __repr__(self):
         return ("MontyClient({})".format(
             ", ".join([
-                "repository={!r}".format(
-                    self.address
-                ),
+                f"repository={self.address!r}",
                 "document_class={}.{}".format(
                     self.__options._options["document_class"].__module__,
                     self.__options._options["document_class"].__name__
                 ),
-                "storage_engine={}".format(
-                    self._storage
-                ),
+                f"storage_engine={self._storage}",
             ]))
         )
 
     def __getattr__(self, name):
         if name.startswith('_'):
             raise AttributeError(
-                "MontyClient has no attribute {0!r}. To access the {0}"
-                " database, use client[{0!r}].".format(name))
+                f"MontyClient has no attribute {name!r}. To access the {name}"
+                f" database, use client[{name!r}].")
         return self.get_database(name)
 
     def __getitem__(self, key):

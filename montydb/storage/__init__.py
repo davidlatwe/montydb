@@ -13,7 +13,7 @@ class StorageDuplicateKeyError(StorageError):
     """Raise when an insert or update fails due to a duplicate key error."""
 
 
-class AbstractStorage(object):
+class AbstractStorage:
     """
     """
 
@@ -25,7 +25,7 @@ class AbstractStorage(object):
         self._config = storage_config
 
     def __repr__(self):
-        return "MontyStorage(engine: {!r})".format(self.__class__.__name__)
+        return f"MontyStorage(engine: {self.__class__.__name__!r})"
 
     def __getattribute__(self, attr):
         def obj_attr(attr_):
@@ -162,7 +162,7 @@ class AbstractStorage(object):
         return NotImplemented
 
 
-class AbstractDatabase(object):
+class AbstractDatabase:
 
     def __init__(self, storage, subject):
         self._name = subject._name
@@ -189,7 +189,7 @@ class AbstractDatabase(object):
         return NotImplemented
 
 
-class AbstractCollection(object):
+class AbstractCollection:
 
     def __init__(self, database, subject):
         self._name = subject._name
@@ -234,7 +234,7 @@ class AbstractCollection(object):
         return NotImplemented
 
 
-class AbstractCursor(object):
+class AbstractCursor:
 
     def __init__(self, collection, subject):
         self._collection = collection

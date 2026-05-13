@@ -30,14 +30,14 @@ class MontyList(list):
                  name=None,
                  doc_type=None,
                  use_bson=None):
-        super(MontyList, self).__init__(documents or [])
+        super().__init__(documents or [])
         init_bson(use_bson=use_bson)
         self.name = name or bson.ObjectId()
         self.doc_type = doc_type or dict  # Set `dict` as default doc type
         self.rewind()
 
     def __repr__(self):
-        return "MontyList({})".format(super(MontyList, self).__repr__())
+        return f"MontyList({super().__repr__()})"
 
     def __iter__(self):
         return self
@@ -75,11 +75,11 @@ class MontyList(list):
 
     def __getitem__(self, index):
         if isinstance(index, slice):
-            return MontyList(super(MontyList, self).__getitem__(index))
+            return MontyList(super().__getitem__(index))
         if isinstance(index, integer_types):
-            return super(MontyList, self).__getitem__(index)
-        raise TypeError("index %r cannot be applied to MontyList "
-                        "instances" % index)
+            return super().__getitem__(index)
+        raise TypeError(f"index {index!r} cannot be applied to MontyList "
+                        "instances")
 
     def rewind(self):
         self.__iter_count = -1

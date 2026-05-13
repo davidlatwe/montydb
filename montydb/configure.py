@@ -165,7 +165,7 @@ def find_storage_cls(storage_name):
         try:
             module = importlib.import_module(storage_name)
         except ImportError:
-            raise ConfigurationError("Storage module '%s' not found." % storage_name)
+            raise ConfigurationError(f"Storage module '{storage_name}' not found.")
 
     for name, cls in inspect.getmembers(module, inspect.isclass):
         if name != "AbstractStorage" and issubclass(cls, AbstractStorage):
@@ -206,8 +206,7 @@ def set_storage(
 
     if mongo_version and mongo_version not in MONGO_COMPAT_VERSIONS:
         raise ConfigurationError(
-            "Unknown mongodb version: %s, currently supported versions are: %s"
-            % (mongo_version, ", ".join(MONGO_COMPAT_VERSIONS))
+            "Unknown mongodb version: {}, currently supported versions are: {}".format(mongo_version, ", ".join(MONGO_COMPAT_VERSIONS))
         )
 
     use_bson = bson.bson_used if use_bson is None else use_bson

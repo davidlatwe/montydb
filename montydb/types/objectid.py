@@ -15,7 +15,6 @@
 """Tools for working with MongoDB `ObjectIds
 <http://dochub.mongodb.org/core/objectids>`_.
 """
-from __future__ import absolute_import
 import binascii
 import calendar
 import datetime
@@ -51,8 +50,8 @@ _MAX_COUNTER_VALUE = 0xFFFFFF
 
 def _raise_invalid_id(oid):
     raise bson.InvalidId(
-        "%r is not a valid ObjectId, it must be a 12-byte input"
-        " or a 24-character hex string" % oid)
+        f"{oid!r} is not a valid ObjectId, it must be a 12-byte input"
+        " or a 24-character hex string")
 
 
 def _random_bytes():
@@ -60,7 +59,7 @@ def _random_bytes():
     return os.urandom(5)
 
 
-class ObjectId(object):
+class ObjectId:
     """A MongoDB ObjectId.
     """
 
@@ -227,8 +226,8 @@ class ObjectId(object):
             else:
                 _raise_invalid_id(oid)
         else:
-            raise TypeError("id must be an instance of (bytes, %s, ObjectId), "
-                            "not %s" % (text_type.__name__, type(oid)))
+            raise TypeError(f"id must be an instance of (bytes, {text_type.__name__}, ObjectId), "
+                            f"not {type(oid)}")
 
     @property
     def binary(self):
@@ -277,7 +276,7 @@ class ObjectId(object):
         return binascii.hexlify(self.__id)
 
     def __repr__(self):
-        return "ObjectId('%s')" % (str(self),)
+        return f"ObjectId('{str(self)}')"
 
     def __eq__(self, other):
         if isinstance(other, self._objectId_types):

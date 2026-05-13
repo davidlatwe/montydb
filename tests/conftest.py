@@ -87,7 +87,7 @@ def mongodb_id(url):
         version_info = client.server_info()["versionArray"]
         __cache["mongo_ver"][url] = version_info
 
-    return "mongodb-%d.%d" % tuple(version_info[:2])
+    return f"mongodb-{version_info[0]}.{version_info[1]}"
 
 
 def montydb_storages(request):
@@ -162,7 +162,7 @@ def monty_client(request, tmp_monty_repo, mongo_version, use_bson):
     if os.path.isdir(tmp_monty_repo):
         shutil.rmtree(tmp_monty_repo)
 
-    mongo_ver = "%d.%d" % (mongo_version[0], mongo_version[1])
+    mongo_ver = f"{mongo_version[0]}.{mongo_version[1]}"
 
     if request.param == "memory":
         tmp_monty_repo = ":memory:"

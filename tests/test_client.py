@@ -210,7 +210,7 @@ def test_independent_repositories(gettempdir,
         tmp_dir = os.path.join(gettempdir, "monty.repo_2")
         repo_2 = tmp_dir
 
-    mongo_ver = "%d.%d" % (mongo_version[0], mongo_version[1])
+    mongo_ver = f"{mongo_version[0]}.{mongo_version[1]}"
     montydb.set_storage(repo_2,
                         engine,
                         mongo_version=mongo_ver,

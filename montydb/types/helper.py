@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import re
 import sys
 import platform
@@ -142,7 +141,7 @@ def keep(query):
     return _
 
 
-class Counter(object):
+class Counter:
     """An iterator that could trace the progress of iteration
 
     Args:
@@ -195,8 +194,7 @@ def on_err_close(generator):
     def decorator(func):
         def wrapper(*args, **kwargs):
             try:
-                for i in func(*args, **kwargs):
-                    yield i
+                yield from func(*args, **kwargs)
             except Exception:
                 generator.close()
                 raise

@@ -20,7 +20,7 @@
 # True.
 
 
-class _WriteResult(object):
+class _WriteResult:
     """Base class for write result classes."""
 
     __slots__ = ("__acknowledged",)
@@ -43,10 +43,10 @@ class InsertOneResult(_WriteResult):
 
     def __init__(self, inserted_id, *args):
         self.__inserted_id = inserted_id
-        super(InsertOneResult, self).__init__()
+        super().__init__()
 
     def __repr__(self):
-        return "InsertOneResult(%s)" % repr(self.__inserted_id)
+        return f"InsertOneResult({repr(self.__inserted_id)})"
 
     @property
     def inserted_id(self):
@@ -62,7 +62,7 @@ class InsertManyResult(_WriteResult):
 
     def __init__(self, inserted_ids, *args):
         self.__inserted_ids = inserted_ids
-        super(InsertManyResult, self).__init__()
+        super().__init__()
 
     def __repr__(self):
         return "InsertManyResult(\n  {}\n)".format(
@@ -90,7 +90,7 @@ class UpdateResult(_WriteResult):
 
     def __init__(self, raw_result, *args):
         self.__raw_result = raw_result
-        super(UpdateResult, self).__init__()
+        super().__init__()
 
     @property
     def raw_result(self):
@@ -131,7 +131,7 @@ class DeleteResult(_WriteResult):
 
     def __init__(self, raw_result, *args):
         self.__raw_result = raw_result
-        super(DeleteResult, self).__init__()
+        super().__init__()
 
     @property
     def raw_result(self):
@@ -156,7 +156,7 @@ class BulkWriteResult(_WriteResult):
           - `bulk_api_result`: A result dict from the bulk API
         """
         self.__bulk_api_result = bulk_api_result
-        super(BulkWriteResult, self).__init__()
+        super().__init__()
 
     @property
     def bulk_api_result(self):

@@ -47,14 +47,14 @@ _QUERY_OPTIONS = {
 }
 
 
-class CursorType(object):
+class CursorType:
     NON_TAILABLE = 0
     TAILABLE = _QUERY_OPTIONS["tailable_cursor"]
     TAILABLE_AWAIT = TAILABLE | _QUERY_OPTIONS["await_data"]
     EXHAUST = _QUERY_OPTIONS["exhaust"]
 
 
-class MontyCursor(object):
+class MontyCursor:
     def __init__(
         self,
         collection,
@@ -139,8 +139,8 @@ class MontyCursor(object):
 
     def __getattr__(self, name):
         if name in NotImplementeds:
-            raise NotImplementedError("'MontyCursor.%s' is NOT implemented !" % name)
-        raise AttributeError("'MontyCursor' object has no attribute '%s'" % name)
+            raise NotImplementedError(f"'MontyCursor.{name}' is NOT implemented !")
+        raise AttributeError(f"'MontyCursor' object has no attribute '{name}'")
 
     def __getitem__(self, index):
         """Get a single document or a slice of documents from this cursor."""
@@ -163,7 +163,7 @@ class MontyCursor(object):
                 if limit < 0:
                     raise IndexError(
                         "stop index must be greater than start "
-                        "index for slice %r" % index
+                        f"index for slice {index!r}"
                     )
                 if limit == 0:
                     self._empty = True
@@ -186,7 +186,7 @@ class MontyCursor(object):
                 return doc
 
             raise IndexError("no such item for Cursor instance")
-        raise TypeError("index %r cannot be applied to Cursor instances" % index)
+        raise TypeError(f"index {index!r} cannot be applied to Cursor instances")
 
     def __iter__(self):
         return self
@@ -280,8 +280,7 @@ class MontyCursor(object):
 
         if self._skip < 0:
             raise OperationFailure(
-                "Skip value must be non-negative, but received: {}"
-                "".format(self._skip)
+                f"Skip value must be non-negative, but received: {self._skip}"
             )
 
         max_scan = 0
@@ -292,8 +291,7 @@ class MontyCursor(object):
                 raise OperationFailure("'maxScan' field must be numeric.")
             if int(self._max_scan) < 0:
                 raise OperationFailure(
-                    "MaxScan value must be non-negative, but received: {}"
-                    "".format(self._max_scan)
+                    f"MaxScan value must be non-negative, but received: {self._max_scan}"
                 )
             max_scan = int(self._max_scan)
 

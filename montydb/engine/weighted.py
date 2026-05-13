@@ -12,7 +12,7 @@ from ..types import (
 )
 
 
-class _cmp_decimal(object):
+class _cmp_decimal:
 
     __slots__ = ("_dec",)
 
@@ -35,7 +35,7 @@ class _cmp_decimal(object):
         return other
 
     def __repr__(self):
-        return "Decimal128({!r})".format(str(self._dec))
+        return f"Decimal128({str(self._dec)!r})"
 
     def __eq__(self, other):
         if self._is_numeric(other):
@@ -85,7 +85,7 @@ class Weighted(tuple):
     """
     """
     def __new__(cls, value):
-        return super(Weighted, cls).__new__(cls, gravity(value))
+        return super().__new__(cls, gravity(value))
 
     def __init__(self, value):
         self.value = value
@@ -138,7 +138,7 @@ def gravity(value, weight_only=None):
         elif isinstance(value, Mapping):
             wgt = 4
         else:
-            raise TypeError("Not weightable type: {!r}".format(type(value)))
+            raise TypeError(f"Not weightable type: {type(value)!r}")
 
     if weight_only:
         return wgt

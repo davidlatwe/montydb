@@ -82,7 +82,7 @@ SELECT_ALL_KEYS = """
 """
 
 
-class SQLiteKVEngine(object):
+class SQLiteKVEngine:
 
     def __init__(self, config):
         self.__conn = None
@@ -128,7 +128,7 @@ class SQLiteKVEngine(object):
         return contextlib.closing(self.__conn)
 
     def _assemble_pragmas(self, pragma_dict):
-        return ";".join(["PRAGMA {0}={1}".format(k, v)
+        return ";".join([f"PRAGMA {k}={v}"
                          for k, v in pragma_dict.items()])
 
     def create_table(self, db_file):
@@ -218,7 +218,7 @@ class SQLiteWriteConcern(WriteConcern):
                  synchronous="NORMAL",
                  automatic_index=False):
 
-        super(SQLiteWriteConcern, self).__init__(busy_timeout)
+        super().__init__(busy_timeout)
 
         if synchronous is not None:
             self._document["synchronous"] = synchronous
@@ -227,7 +227,7 @@ class SQLiteWriteConcern(WriteConcern):
 
     def __repr__(self):
         return ("SQLiteWriteConcern({})".format(
-            ", ".join("%s=%s" % kvt for kvt in self.document.items()),))
+            ", ".join("{}={}".format(*kvt) for kvt in self.document.items()),))
 
 
 class SQLiteStorage(AbstractStorage):
@@ -235,7 +235,7 @@ class SQLiteStorage(AbstractStorage):
     """
 
     def __init__(self, repository, storage_config):
-        super(SQLiteStorage, self).__init__(repository, storage_config)
+        super().__init__(repository, storage_config)
         self._conn = SQLiteKVEngine(self._config)
 
     def _db_path(self, db_name):
@@ -294,7 +294,7 @@ class SQLiteStorage(AbstractStorage):
 class SQLiteDatabase(AbstractDatabase):
 
     def __init__(self, storage, subject):
-        super(SQLiteDatabase, self).__init__(storage, subject)
+        super().__init__(storage, subject)
         self._db_path = storage._db_path(self._name)
 
     def _col_path(self, col_name):
@@ -335,7 +335,7 @@ SQLiteStorage.contractor_cls = SQLiteDatabase
 class SQLiteCollection(AbstractCollection):
 
     def __init__(self, database, subject):
-        super(SQLiteCollection, self).__init__(database, subject)
+        super().__init__(database, subject)
 
         self._col_path = self._database._col_path(self._name)
 
@@ -436,7 +436,7 @@ SQLiteDatabase.contractor_cls = SQLiteCollection
 class SQLiteCursor(AbstractCursor):
 
     def __init__(self, collection, subject):
-        super(SQLiteCursor, self).__init__(collection, subject)
+        super().__init__(collection, subject)
 
     @property
     def _conn(self):
