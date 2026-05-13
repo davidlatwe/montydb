@@ -28,10 +28,10 @@ def test_update_mul_2(monty_update, mongo_update):
     ]
     spec = {"$mul": {"a": 2}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code
@@ -44,10 +44,10 @@ def test_update_mul_3(monty_update, mongo_update):
     ]
     spec = {"$mul": {"a": "2"}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         monty_update(docs, spec)
 
     # ignore comparing error code
@@ -102,10 +102,10 @@ def test_update_mul_7(monty_update, mongo_update):
     ]
     spec = {"$mul": {"a.b": 2}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         next(monty_update(docs, spec))
 
     # ignore comparing error code
@@ -279,10 +279,10 @@ def test_update_mul_null(monty_update, mongo_update):
     ]
     spec = {"$mul": {"a": 2}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         next(monty_update(docs, spec))
 
     # ignore comparing error code
@@ -295,10 +295,10 @@ def test_update_mul_bool(monty_update, mongo_update):
     ]
     spec = {"$mul": {"a": 2}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         next(monty_update(docs, spec))
 
     # ignore comparing error code

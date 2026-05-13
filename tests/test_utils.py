@@ -114,8 +114,8 @@ def test_utils_montyexport(monty_client, tmp_monty_utils_repo):
                 loaded_exported.append(json_util.loads(d))
                 loaded_examples.append(json_util.loads(s))
 
-        def sort(l):
-            return sorted(l, key=lambda i: i["_id"])
+        def sort(lst):
+            return sorted(lst, key=lambda i: i["_id"])
 
         for d, s in zip(sort(loaded_exported), sort(loaded_examples)):
             assert d == s

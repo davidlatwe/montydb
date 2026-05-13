@@ -53,10 +53,10 @@ def test_update_rename_4(monty_update, mongo_update):
     ]
     spec = {"$rename": {"a.b": "a"}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         next(monty_update(docs, spec))
 
     # ignore comparing error code
@@ -69,10 +69,10 @@ def test_update_rename_5(monty_update, mongo_update):
     ]
     spec = {"$rename": {"a.1.b": "b"}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         next(monty_update(docs, spec))
 
     # ignore comparing error code
@@ -85,10 +85,10 @@ def test_update_rename_6(monty_update, mongo_update):
     ]
     spec = {"$rename": {"a.b": 5}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         next(monty_update(docs, spec))
 
     # ignore comparing error code
@@ -101,10 +101,10 @@ def test_update_rename_7(monty_update, mongo_update):
     ]
     spec = {"$rename": {"a.b": "c.0"}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         next(monty_update(docs, spec))
 
     # ignore comparing error code
@@ -117,10 +117,10 @@ def test_update_rename_8(monty_update, mongo_update):
     ]
     spec = {"$rename": {"a": "a"}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         next(monty_update(docs, spec))
 
     # ignore comparing error code
@@ -161,10 +161,10 @@ def test_update_rename_11(monty_update, mongo_update):
     ]
     spec = {"$rename": {"a.0.b": "a"}}
 
-    with pytest.raises(mongo_write_err) as mongo_err:
+    with pytest.raises(mongo_write_err):
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err) as monty_err:
+    with pytest.raises(monty_write_err):
         next(monty_update(docs, spec))
 
     # ignore comparing error code
