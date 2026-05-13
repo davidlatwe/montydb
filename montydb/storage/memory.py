@@ -26,7 +26,7 @@ class MemoryStorage(AbstractStorage):
     """
 
     def __init__(self, repository, storage_config):
-        super(MemoryStorage, self).__init__(repository, storage_config)
+        super().__init__(repository, storage_config)
         self._repo = _repos[repository]
 
     @classmethod

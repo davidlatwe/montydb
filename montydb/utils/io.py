@@ -56,7 +56,7 @@ def montyimport(database,
             try:
                 collection.insert_one(doc)
             except DuplicateKeyError:
-                print("Duplicate id: %s" % doc["_id"])
+                print("Duplicate id: {}".format(doc["_id"]))
 
     elif mode == "upsert":
         for doc in documents:
@@ -180,7 +180,7 @@ def montydump(database, collection, dumpfile):
         fp.write(raw)
 
 
-class MongoQueryRecorder(object):
+class MongoQueryRecorder:
     """Record MongoDB query results in a period of time
 
     :Important: Requires to access database profiler.
@@ -218,8 +218,7 @@ class MongoQueryRecorder(object):
         self._rec_etime = None
 
     def __repr__(self):
-        return ("MongoQueryRecorder(mongodb=%s, namespace=%s, user=%s)"
-                "" % (self._mongodb.name, self._namespace, self._user))
+        return (f"MongoQueryRecorder(mongodb={self._mongodb.name}, namespace={self._namespace}, user={self._user})")
 
     def reset_profile(self, level=0):
         """Drop and reset database profile

@@ -1,11 +1,10 @@
-import sys
 import types
 import base64
 import ast
 
 
 def _mock(name):
-    class Mock(object):
+    class Mock:
         def __init__(self, *args, **kwargs):
             self.name = name
             self.args = args
@@ -65,7 +64,7 @@ class NoBSON(types.ModuleType):
     from .objectid import ObjectId
     from .tz_util import utc
 
-    class CodecOptions(object):
+    class CodecOptions:
         def __init__(self, document_class=dict, tz_aware=False, tzinfo=None):
             self.document_class = document_class
             self.tz_aware = tz_aware
@@ -75,7 +74,7 @@ class NoBSON(types.ModuleType):
 
     def __init__(self):
         self.bson_used = False
-        super(NoBSON, self).__init__(__name__)
+        super().__init__(__name__)
 
     @classmethod
     def parse_codec_options(cls, options):
@@ -149,9 +148,9 @@ class NoBSON(types.ModuleType):
     @classmethod
     def _key_validate(cls, key):
         if "." in key:
-            raise cls.InvalidDocument("key '%s' must not contain '.'" % key)
+            raise cls.InvalidDocument(f"key '{key}' must not contain '.'")
         if key.startswith("$"):
-            raise cls.InvalidDocument("key '%s' must not start with '$'" % key)
+            raise cls.InvalidDocument(f"key '{key}' must not start with '$'")
 
     @classmethod
     def document_encode(cls, doc, check_keys=False, *args, **kwargs):
@@ -164,7 +163,7 @@ class NoBSON(types.ModuleType):
                     key = ast.literal_eval(candidate)
                     if not isinstance(key, cls._string_types):
                         raise cls.InvalidDocument(
-                            "documents must have only string keys, key was %r" % key
+                            f"documents must have only string keys, key was {key!r}"
                         )
                     if check_keys:
                         cls._key_validate(key)
@@ -228,14 +227,9 @@ class NoBSON(types.ModuleType):
         ("x", re.VERBOSE),
     )
 
-    if sys.version_info[0] == 3:
-        _string_types = (str,)
-        _integer_types = (int,)
-        _text_type = str
-    else:
-        _string_types = (basestring,)  # noqa
-        _integer_types = (int, long)  # noqa
-        _text_type = unicode  # noqa
+    _string_types = (str,)
+    _integer_types = (int,)
+    _text_type = str  # noqa
 
     @classmethod
     def _re_int_flag_to_str(cls, int_flags):

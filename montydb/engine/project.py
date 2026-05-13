@@ -42,7 +42,7 @@ def _perr_doc(val):
     v_lis = []
     for _k, _v in val.items():
         if isinstance(_v, string_types):
-            v_lis.append('{0}: "{1}"'.format(_k, _v))
+            v_lis.append(f'{_k}: "{_v}"')
         else:
             if is_duckument_type(_v):
                 _v = _perr_doc(_v)
@@ -54,11 +54,11 @@ def _perr_doc(val):
                     else:
                         _.append(str(v))
                 _v = "[ " + ", ".join(_) + " ]"
-            v_lis.append("{0}: {1}".format(_k, _v))
+            v_lis.append(f"{_k}: {_v}")
     return "{ " + ", ".join(v_lis) + " }"
 
 
-class Projector(object):
+class Projector:
     """ """
 
     ARRAY_OP_NORMAL = 0
@@ -123,7 +123,7 @@ class Projector(object):
             if is_duckument_type(val):
                 if not len(val) == 1:
                     _v = _perr_doc(val)
-                    raise OperationFailure(">1 field in obj: {}".format(_v), code=2)
+                    raise OperationFailure(f">1 field in obj: {_v}", code=2)
 
                 # Array field options
                 sub_k, sub_v = next(iter(val.items()))
@@ -173,7 +173,7 @@ class Projector(object):
                 else:
                     _v = _perr_doc(val)
                     raise OperationFailure(
-                        "Unsupported projection option: {0}: {1}".format(key, _v),
+                        f"Unsupported projection option: {key}: {_v}",
                         code=2,
                     )
 
@@ -215,8 +215,8 @@ class Projector(object):
                     )
                 if ".$" in key.split(".$", 1)[-1]:
                     raise OperationFailure(
-                        "Positional projection '{}' contains the positional "
-                        "operator more than once.".format(key)
+                        f"Positional projection '{key}' contains the positional "
+                        "operator more than once."
                     )
 
                 path = key.split(".$", 1)[0]
@@ -224,8 +224,8 @@ class Projector(object):
                 match_query = _is_positional_match(conditions, path)
                 if match_query is None:
                     raise OperationFailure(
-                        "Positional projection '{}' does not match the query "
-                        "document.".format(key),
+                        f"Positional projection '{key}' does not match the query "
+                        "document.",
                         code=2,
                     )
 
@@ -300,8 +300,8 @@ class Projector(object):
                         raise OperationFailure(
                             "Executor error during find command "
                             ":: caused by :: errmsg: "
-                            '"positional operator (%s.$) requires '
-                            'corresponding field in query specifier"' % field,
+                            f'"positional operator ({field}.$) requires '
+                            'corresponding field in query specifier"',
                             code=2,
                         )
 

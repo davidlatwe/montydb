@@ -38,23 +38,23 @@ DESCENDING = -1
 def validate_is_document_type(option, value):
     """Validate the type of method arguments that expect a MongoDB document."""
     if not isinstance(value, (MutableMapping, bson.RawBSONDocument)):
-        raise TypeError("%s must be an instance of dict, bson.son.SON, "
+        raise TypeError(f"{option} must be an instance of dict, bson.son.SON, "
                         "bson.raw_bson.RawBSONDocument, or "
                         "a type that inherits from "
-                        "collections.MutableMapping" % (option,))
+                        "collections.MutableMapping")
 
 
 def validate_boolean(option, value):
     """Validates that 'value' is True or False."""
     if isinstance(value, bool):
         return value
-    raise TypeError("%s must be True or False" % (option,))
+    raise TypeError(f"{option} must be True or False")
 
 
 def validate_list(option, value):
     """Validates that 'value' is a list."""
     if not isinstance(value, list):
-        raise TypeError("%s must be a list" % (option,))
+        raise TypeError(f"{option} must be a list")
     return value
 
 
@@ -68,9 +68,9 @@ def validate_list_or_none(option, value):
 def validate_is_mapping(option, value):
     """Validate the type of method arguments that expect a document."""
     if not isinstance(value, abc.Mapping):
-        raise TypeError("%s must be an instance of dict, bson.son.SON, or "
+        raise TypeError(f"{option} must be an instance of dict, bson.son.SON, or "
                         "other type that inherits from "
-                        "collections.Mapping" % (option,))
+                        "collections.Mapping")
 
 
 def validate_ok_for_update(update):
@@ -105,13 +105,12 @@ def _fields_list_to_dict(fields, option_name):
 
     if isinstance(fields, (abc.Sequence, abc.Set)):
         if not all(isinstance(field, string_types) for field in fields):
-            raise TypeError("%s must be a list of key names, each an "
-                            "instance of %s" % (option_name,
-                                                string_types.__name__))
+            raise TypeError(f"{option_name} must be a list of key names, each an "
+                            f"instance of {string_types.__name__}")
         return dict.fromkeys(fields, 1)
 
-    raise TypeError("%s must be a mapping or "
-                    "list of key names" % (option_name,))
+    raise TypeError(f"{option_name} must be a mapping or "
+                    "list of key names")
 
 
 def _index_list(key_or_list, direction=None):
@@ -138,7 +137,7 @@ def _index_document(index_list):
     if isinstance(index_list, abc.Mapping):
         raise TypeError("passing a dict to sort/create_index/hint is not "
                         "allowed - use a list of tuples instead. did you "
-                        "mean %r?" % list(iteritems(index_list)))
+                        f"mean {list(iteritems(index_list))!r}?")
     elif not isinstance(index_list, (list, tuple)):
         raise TypeError("must use a list of (key, direction) pairs, "
                         "not: " + repr(index_list))
@@ -157,7 +156,7 @@ def _index_document(index_list):
     return index
 
 
-class WriteConcern(object):
+class WriteConcern:
     """MontyWriteConcern
     """
 
@@ -179,7 +178,7 @@ class WriteConcern(object):
 
     def __repr__(self):
         return ("MontyWriteConcern({})".format(
-            ", ".join("%s=%s" % kvt for kvt in self.document.items()),))
+            ", ".join("{}={}".format(*kvt) for kvt in self.document.items()),))
 
     def __eq__(self, other):
         return self.document == other.document
@@ -197,7 +196,7 @@ def _parse_write_concern(options):
     return WriteConcern(wtimeout)
 
 
-class ClientOptions(object):
+class ClientOptions:
     """ClientOptions"""
 
     def __init__(self, options, storage_wconcern=None):
@@ -225,7 +224,7 @@ class ClientOptions(object):
         return self.__write_concern
 
 
-class BaseObject(object):
+class BaseObject:
     """A base class that provides attributes and methods common
     to multiple montydb classes.
 

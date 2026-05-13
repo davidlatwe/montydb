@@ -18,7 +18,7 @@ from . import (
 LMDB_DB_EXT = ".mdb"
 
 
-class LMDBKVEngine(object):
+class LMDBKVEngine:
     """Per collection"""
 
     dbname = to_bytes("documents")
@@ -52,8 +52,7 @@ class LMDBKVEngine(object):
             db = env.open_db(self.dbname)
             with env.begin(db, write=False) as txn:
                 cursor = txn.cursor()
-                for encoded_doc in cursor.iternext(keys=False, values=True):
-                    yield encoded_doc
+                yield from cursor.iternext(keys=False, values=True)
 
     def write(self, environment, pairs, overwrite=False):
         if not os.path.isfile(self._path):
@@ -90,7 +89,7 @@ class LMDBStorage(AbstractStorage):
     """
 
     def __init__(self, repository, storage_config):
-        super(LMDBStorage, self).__init__(repository, storage_config)
+        super().__init__(repository, storage_config)
         self._conn = LMDBKVEngine(self._config)
 
     def _db_path(self, db_name):
@@ -132,7 +131,7 @@ class LMDBDatabase(AbstractDatabase):
     """
 
     def __init__(self, storage, subject):
-        super(LMDBDatabase, self).__init__(storage, subject)
+        super().__init__(storage, subject)
         self._db_path = storage._db_path(self._name)
         self._conn = storage._conn
 
@@ -176,7 +175,7 @@ class LMDBCollection(AbstractCollection):
     """
 
     def __init__(self, database, subject):
-        super(LMDBCollection, self).__init__(database, subject)
+        super().__init__(database, subject)
         self._conn = database._conn
         self._conn.set_path(database._col_path(self._name))
 
@@ -246,7 +245,7 @@ class LMDBCursor(AbstractCursor):
     """
 
     def __init__(self, collection, subject):
-        super(LMDBCursor, self).__init__(collection, subject)
+        super().__init__(collection, subject)
         self._conn = self._collection._conn
 
     def query(self, max_scan):

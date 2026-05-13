@@ -1,4 +1,4 @@
-class _NoVal(object):
+class _NoVal:
     def __repr__(self):
         return "_NoVal()"
     __slots__ = ()
@@ -17,14 +17,14 @@ class FieldWriteError(FieldWalkError):
 
     def __init__(self, error, code=None):
         self.__code = code
-        super(FieldWriteError, self).__init__(error)
+        super().__init__(error)
 
     @property
     def code(self):
         return self.__code
 
 
-class FieldValues(object):
+class FieldValues:
     """Document field status and values iterator
 
     Store document tree nodes that matched from query, and iterate nodes values
@@ -159,7 +159,7 @@ class FieldValues(object):
         self._value_iter = self.iter_full
 
     def __repr__(self):
-        return "FieldValues({})".format(self.iter_plain())
+        return f"FieldValues({self.iter_plain()})"
 
     def __eq__(self, other):
         return list(self.iter_plain()) == other
@@ -198,11 +198,11 @@ class FieldNode(str):
         return obj
 
     def __init__(self, *args, **kwargs):
-        super(FieldNode, self).__init__()
+        super().__init__()
         self.full_path = self.concat_parents()
 
     def __repr__(self):
-        return "FieldNode({})".format(self)
+        return f"FieldNode({self})"
 
     def __iter__(self):
         return iter(self.children)
@@ -238,7 +238,7 @@ class FieldNode(str):
         return new_node
 
 
-class FieldTreeReader(object):
+class FieldTreeReader:
     def __init__(self, tree):
         self.map_cls = tree.map_cls
         self.trace = set()
@@ -332,7 +332,7 @@ def no_dollar_prefix_field(doc, map_cls, root_path):
             no_dollar_prefix_field(elem, map_cls, root_path + "." + str(i))
 
 
-class FieldTreeWriter(object):
+class FieldTreeWriter:
     def __init__(self, tree):
         self.map_cls = tree.map_cls
         self.filters = None
@@ -347,8 +347,8 @@ class FieldTreeWriter(object):
 
         if field.startswith("."):
             msg = (
-                "The update path {} contains an empty field name, which is "
-                "not allowed".format(field)
+                f"The update path {field} contains an empty field name, which is "
+                "not allowed"
             )
             raise FieldWriteError(msg, code=56)
 
@@ -359,15 +359,13 @@ class FieldTreeWriter(object):
 
         if not node.exists and is_multi_position_operator(field):
             msg = (
-                "The path {0!r} must exist in the document in order "
-                "to apply array updates.".format(node.full_path)
+                f"The path {node.full_path!r} must exist in the document in order "
+                "to apply array updates."
             )
             raise FieldWriteError(msg, code=2)
 
         if is_multi_position_operator(field) and not isinstance(node.value, list):
-            msg = "Cannot apply array updates to non-array element {0}: {1}".format(
-                str(node), node.value
-            )
+            msg = f"Cannot apply array updates to non-array element {str(node)}: {node.value}"
             raise FieldWriteError(msg, code=2)
 
         if isinstance(node.value, self.map_cls):
@@ -381,9 +379,7 @@ class FieldTreeWriter(object):
             result += self.write_array(node, field)
 
         elif not self.on_delete:
-            msg = "Cannot create field {0!r} in element {1}".format(
-                field, {str(node): node.value}
-            )
+            msg = f"Cannot create field {field!r} in element {({str(node): node.value})}"
             raise FieldWriteError(msg, code=28)
 
         return result
@@ -457,7 +453,7 @@ def is_conflict(path_a, path_b):
     )
 
 
-class FieldTree(object):
+class FieldTree:
     def __init__(self, doc, doc_type=None):
         self.map_cls = doc_type or type(doc)
         self.root = FieldNode("", doc, exists=True)
@@ -482,10 +478,10 @@ class FieldTree(object):
 
             return tree_str
 
-        return "FieldTree({})".format(print_tree(self.root))
+        return f"FieldTree({print_tree(self.root)})"
 
     def __repr__(self):
-        return "FieldTree({})".format(self)
+        return f"FieldTree({self})"
 
     def clear(self):
         self.root.children = list()
@@ -547,8 +543,8 @@ class FieldTree(object):
             for changed in self.changes:
                 if is_conflict(update, changed):
                     msg = (
-                        "Updating the path {0!r} would create a conflict "
-                        "at {1!r}".format(update, changed)
+                        f"Updating the path {update!r} would create a conflict "
+                        f"at {changed!r}"
                     )
                     raise FieldWriteError(msg, code=40)
 
@@ -596,8 +592,8 @@ class FieldTree(object):
 
                 if identifier and identifier not in array_filters:
                     msg = (
-                        "No array filter found for identifier {0!r} in "
-                        "path {1!r}".format(identifier, ".".join(fields))
+                        "No array filter found for identifier {!r} in "
+                        "path {!r}".format(identifier, ".".join(fields))
                     )
                     raise FieldWriteError(msg, code=2)
         return fields
@@ -675,7 +671,7 @@ class FieldTree(object):
         return _extract(self.root, visited_only)
 
 
-class FieldWalker(object):
+class FieldWalker:
     """Document field traversal interface for MontyDB
 
     Key component to make everything run. Every document operation in MontyDB

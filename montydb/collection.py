@@ -76,7 +76,7 @@ class MontyCollection(BaseObject):
         **kwargs
     ):
         """ """
-        super(MontyCollection, self).__init__(
+        super().__init__(
             codec_options or database.codec_options,
             write_concern or database.write_concern,
         )
@@ -88,7 +88,7 @@ class MontyCollection(BaseObject):
         self._components = (database, self)
 
     def __repr__(self):
-        return "MontyCollection({!r}, {!r})".format(self._database, self._name)
+        return f"MontyCollection({self._database!r}, {self._name!r})"
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -101,13 +101,13 @@ class MontyCollection(BaseObject):
     def __getattr__(self, name):
         if name in NotImplementeds:
             raise NotImplementedError(
-                "'MontyCollection.%s' is NOT implemented !" % name
+                f"'MontyCollection.{name}' is NOT implemented !"
             )
         if name.startswith("_"):
             full_name = ".".join((self._name, name))
             raise AttributeError(
-                "MontyCollection has no attribute {0!r}. To access the {1}"
-                " collection, use database[{1!r}].".format(name, full_name)
+                f"MontyCollection has no attribute {name!r}. To access the {full_name}"
+                f" collection, use database[{full_name!r}]."
             )
         return self.__getitem__(name)
 
@@ -117,7 +117,7 @@ class MontyCollection(BaseObject):
     @property
     def full_name(self):
         """ """
-        return u".".join((self._database.name, self._name))
+        return ".".join((self._database.name, self._name))
 
     @property
     def name(self):
@@ -154,8 +154,8 @@ class MontyCollection(BaseObject):
             result = self._storage.write_one(self, document)
         except StorageDuplicateKeyError:
             message = (
-                "E11000 duplicate key error collection: %s index: "
-                '_id_ dup key: { : "%s" }' % (self.full_name, str(document["_id"]))
+                "E11000 duplicate key error collection: {} index: "
+                '_id_ dup key: {{ : "{}" }}'.format(self.full_name, str(document["_id"]))
             )
             details = {"index": 0, "code": 11000, "errmsg": message}
             raise DuplicateKeyError(message, code=11000, details=details)
@@ -184,8 +184,8 @@ class MontyCollection(BaseObject):
             result = self._storage.write_many(self, counter, ordered)
         except StorageDuplicateKeyError:
             message = (
-                "E11000 duplicate key error collection: %s index: "
-                '_id_ dup key: { : "%s" }' % (self.full_name, str(counter.data))
+                f"E11000 duplicate key error collection: {self.full_name} index: "
+                f'_id_ dup key: {{ : "{str(counter.data)}" }}'
             )
             index = counter.count - 1
             result = {
@@ -554,7 +554,7 @@ class MontyCollection(BaseObject):
         """ """
         if not isinstance(key, string_types):
             raise TypeError(
-                "key must be an instance of %s" % (string_types.__name__,)
+                f"key must be an instance of {string_types.__name__}"
             )
 
         result = list()

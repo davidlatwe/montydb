@@ -9,7 +9,7 @@ INVALID_CHARS = ("$", "\0", "\x00")
 
 class MontyDatabase(BaseObject):
     def __init__(self, client, name, codec_options=None, write_concern=None):
-        super(MontyDatabase, self).__init__(
+        super().__init__(
             codec_options or client.codec_options, write_concern or client.write_concern
         )
 
@@ -27,13 +27,13 @@ class MontyDatabase(BaseObject):
         return not self == other
 
     def __repr__(self):
-        return "MontyDatabase({!r}, {!r})".format(self._client, self._name)
+        return f"MontyDatabase({self._client!r}, {self._name!r})"
 
     def __getattr__(self, name):
         if name.startswith("_"):
             raise AttributeError(
-                "MontyDatabase has no attribute {0!r}. To access the {0}"
-                " collection, use database[{0!r}].".format(name)
+                f"MontyDatabase has no attribute {name!r}. To access the {name}"
+                f" collection, use database[{name!r}]."
             )
         return self.get_collection(name)
 
@@ -61,7 +61,7 @@ class MontyDatabase(BaseObject):
         Create a collection or raise an error if it already exists.
         """
         if self.client._storage.collection_exists(self, name):
-            error_msg = "collection {} already exists".format(encode_(name))
+            error_msg = f"collection {encode_(name)} already exists"
 
             raise errors.CollectionInvalid(error_msg)
 
@@ -90,12 +90,12 @@ class MontyDatabase(BaseObject):
         for c in INVALID_CHARS:
             if c in name:
                 raise errors.OperationFailure(
-                    "Collection name contains special characters: {}".format(name)
+                    f"Collection name contains special characters: {name}"
                 )
 
         if name.startswith("system."):
             raise errors.OperationFailure(
-                "Invalid prefix in collection name: {}".format(name)
+                f"Invalid prefix in collection name: {name}"
             )
 
         return MontyCollection(

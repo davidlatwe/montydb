@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import types
 
 
@@ -45,7 +44,7 @@ class BSON_(types.ModuleType):
 
     def __init__(self):
         self.bson_used = True
-        super(BSON_, self).__init__(__name__)
+        super().__init__(__name__)
 
     @classmethod
     def parse_codec_options(cls, options):

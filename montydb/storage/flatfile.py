@@ -37,7 +37,7 @@ def _write_pretty(file_path, documents):
         fp.write("[\n{}\n]".format(",\n".join(serialized)))
 
 
-class FlatFileKVEngine(object):
+class FlatFileKVEngine:
 
     def __init__(self, file_path, conn_config):
         """
@@ -95,7 +95,7 @@ class FlatFileStorage(AbstractStorage):
     """
 
     def __init__(self, repository, storage_config):
-        super(FlatFileStorage, self).__init__(repository, storage_config)
+        super().__init__(repository, storage_config)
         self._init_cache_manager()
 
     def _init_cache_manager(self):
@@ -153,7 +153,7 @@ class FlatFileDatabase(AbstractDatabase):
     """
 
     def __init__(self, storage, subject):
-        super(FlatFileDatabase, self).__init__(storage, subject)
+        super().__init__(storage, subject)
         if self._name not in storage._cache_manager:
             storage._cache_manager[self._name] = {}
         self._db_path = storage._db_path(self._name)
@@ -201,7 +201,7 @@ class FlatFileCollection(AbstractCollection):
 
     def __init__(self, database, subject):
         config = database._storage._config
-        super(FlatFileCollection, self).__init__(database, subject)
+        super().__init__(database, subject)
 
         self._col_path = self._database._col_path(self._name)
         if self._name not in database._cache_manager:
@@ -282,7 +282,7 @@ class FlatFileCursor(AbstractCursor):
     """
 
     def __init__(self, collection, subject):
-        super(FlatFileCursor, self).__init__(collection, subject)
+        super().__init__(collection, subject)
 
     @property
     def _flatfile(self):

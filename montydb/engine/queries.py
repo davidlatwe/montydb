@@ -128,14 +128,14 @@ class LogicBox(list):
         content = []
         name = "[{}]"
         if not self.implicitly:
-            content = ["LogicBox({})".format(self.theme)]
+            content = [f"LogicBox({self.theme})"]
             name = "{}"
 
         for i in self[:]:
             if callable(i):
                 if hasattr(i, "_keep"):
                     # query ops
-                    content.append("{}({})".format(i.__name__, i._keep()))
+                    content.append(f"{i.__name__}({i._keep()})")
                 else:
                     # LogicBox
                     content.append(i.__name__)
@@ -173,8 +173,7 @@ class LogicBox(list):
 
                 def elem_iter():
                     try:
-                        for e in elem:
-                            yield e
+                        yield from elem
                     except TypeError:
                         pass
                     finally:
@@ -197,7 +196,7 @@ class LogicBox(list):
         return not all(self._gen(fieldwalker))
 
 
-class QueryFilter(object):
+class QueryFilter:
     """Document query filter
 
     Parsing MongoDB document query language, generate a callable instance for
@@ -253,7 +252,7 @@ class QueryFilter(object):
         # ready to be called.
 
     def __repr__(self):
-        return "QueryFilter({})".format(str(self.conditions))
+        return f"QueryFilter({str(self.conditions)})"
 
     def __call__(self, doc, doc_type=None):
         """Recursively calling `LogicBox` or operators content within
@@ -285,7 +284,7 @@ class QueryFilter(object):
                     logic_box.append(self.pathless_ops[path](sub_spec))
                 except KeyError:
                     raise OperationFailure(
-                        "unknown top level operator: {}".format(path)
+                        f"unknown top level operator: {path}"
                     )
             else:
                 logic_box.append(self.subparser(path, sub_spec))
@@ -335,13 +334,13 @@ class QueryFilter(object):
                     if isinstance(value, (RE_PATTERN_TYPE, bson.Regex)):
                         raise OperationFailure(
                             "Can't have RegEx as arg to predicate over "
-                            "field {!r}.".format(path)
+                            f"field {path!r}."
                         )
 
                 try:
                     logic_box.append(self.field_ops[op](value))
                 except KeyError:
-                    raise OperationFailure("unknown operator: {}".format(op))
+                    raise OperationFailure(f"unknown operator: {op}")
         else:
             logic_box.append(parse_eq(sub_spec))
 
@@ -353,7 +352,7 @@ class QueryFilter(object):
         def _parse_logic(sub_spec):
             """Themed logical operator"""
             if not isinstance(sub_spec, list):
-                raise OperationFailure("{} must be an array".format(theme))
+                raise OperationFailure(f"{theme} must be an array")
 
             logic_box = LogicBox(theme)
 
@@ -376,7 +375,7 @@ class QueryFilter(object):
         elif is_duckument_type(sub_spec):
             for op in sub_spec:
                 if op not in self.field_ops:
-                    raise OperationFailure("unknown operator: {}".format(op))
+                    raise OperationFailure(f"unknown operator: {op}")
                 _not_subspec_op_check(op)
 
             return self.subparser("$not", sub_spec)
@@ -395,7 +394,7 @@ class QueryFilter(object):
             elif not op.startswith("$") or op in self.pathless_ops:
                 return parse_elemMatch(sub_spec)
             else:
-                raise OperationFailure("unknown operator: {}".format(op))
+                raise OperationFailure(f"unknown operator: {op}")
 
 
 def _is_expression_obj(sub_spec):
@@ -416,7 +415,7 @@ _not_subspec_op_check = _not_validate_subspec_op_
 
 # Only for preserving `int` type flags to bypass
 # internal "flags must be string" type check
-class _FALG(object):
+class _FALG:
     def __init__(self, int_flags):
         self.retrieve = int_flags
 
@@ -628,7 +627,7 @@ def _in_match(fieldwalker, query):
             try:
                 q_regex.append(q.try_compile())
             except re.error as e:
-                raise OperationFailure("Regular expression is invalid: {}".format(e))
+                raise OperationFailure(f"Regular expression is invalid: {e}")
         else:
             q_value.append(q)
 
@@ -834,7 +833,7 @@ def obj_to_bson_type_id(obj):
             type_id = None
     finally:
         if type_id is None:
-            raise TypeError("Unknown data type: {!r}".format(type(obj)))
+            raise TypeError(f"Unknown data type: {type(obj)!r}")
 
         return type_id
 
@@ -853,10 +852,10 @@ def parse_type(query):
                 try:
                     int_types.append(BSON_TYPE_ALIAS_ID[q])
                 except KeyError:
-                    raise OperationFailure("Unknown type name alias: {}".format(q))
+                    raise OperationFailure(f"Unknown type name alias: {q}")
             elif isinstance(q, int):
                 if q not in _BSON_TYPE_ID:
-                    raise OperationFailure("Invalid numerical type code: {}".format(q))
+                    raise OperationFailure(f"Invalid numerical type code: {q}")
                 int_types.append(q)
             else:
                 raise OperationFailure(
