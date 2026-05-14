@@ -502,7 +502,7 @@ class FieldTree:
                 old_picked = []
                 for node in [child for node in self.picked for child in node]:
                     if field == node and node.parent in self.previous:
-                        old_picked.append(node)
+                        old_picked.append(node)  # noqa: PERF401
 
                 if old_picked:
                     self.picked = old_picked

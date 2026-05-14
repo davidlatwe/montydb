@@ -29,10 +29,7 @@ def _read_pretty(file_path):
 
 
 def _write_pretty(file_path, documents):
-    serialized = []
-    for doc in documents.values():
-        serialized.append(bson.json_dumps(bson.document_decode(doc)))
-
+    serialized = [bson.json_dumps(bson.document_decode(doc)) for doc in documents.values()]
     with open(file_path, "w") as fp:
         fp.write("[\n{}\n]".format(",\n".join(serialized)))
 
