@@ -20,7 +20,7 @@ jobs:
         experimental: [ false ]
         monty-storage: [ memory, flatfile, sqlite ]
         mongodb-version: [ "3.6", "4.0", "4.2" ]
-        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13" ]
+        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12", "3.13" , "3.14" , "3.14t", "3.15" , "3.15t" ]
 
     steps:
     - uses: actions/checkout@v6
@@ -38,6 +38,7 @@ jobs:
       uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
+        allow-prereleases: true
 
     - name: Install dependencies
       run: uv sync

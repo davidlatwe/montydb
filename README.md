@@ -29,7 +29,7 @@ Most of the CRUD operators have been implemented. You can visit [issue #14](http
 This project is tested against:
 
 - MongoDB: 3.6, 4.0, 4.2 (4.4 on the way💦)
-- Python: 3.7, 3.8, 3.9, 3.10, 3.11, 3.12
+- Python: >= 3.7
 
 
 ## Install
@@ -88,7 +88,7 @@ set_storage(
     
     repository="/db/repo",  # dir path for database to live on disk, default is {cwd}
     storage="flatfile",     # storage name, default "flatfile"
-    mongo_version="4.0",    # try matching behavior with this mongodb version
+    mongo_version="4.2",    # try matching behavior with this mongodb version
     use_bson=False,         # default None, and will import pymongo's bson if None or True
 
     # any other kwargs are storage engine settings.
