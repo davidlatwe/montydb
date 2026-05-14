@@ -55,10 +55,6 @@ dev = [
   "toml",
 ]
 
-[tool.ruff]
-line-length = 88
-exclude = [ ".venv", "venv" ]
-
 [tool.ruff.lint]
 extend-select = [
   "UP",
