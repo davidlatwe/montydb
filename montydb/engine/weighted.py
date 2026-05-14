@@ -81,7 +81,7 @@ class _cmp_decimal:
         return self._le_ge(other, True)
 
 
-class Weighted(tuple):
+class Weighted(tuple):  # noqa: SLOT001
     """
     """
     def __new__(cls, value):

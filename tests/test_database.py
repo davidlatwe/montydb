@@ -19,7 +19,7 @@ def test_database_eq(monty_database, monty_client):
 
 
 def test_database_eq_other_type(monty_database):
-    assert not monty_database == "other_type"
+    assert monty_database != "other_type"
 
 
 def test_database_ne(monty_database, monty_client):

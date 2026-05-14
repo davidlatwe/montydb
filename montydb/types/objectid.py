@@ -258,10 +258,7 @@ class ObjectId:
         """
         # Provide backwards compatibility with OIDs
         # pickled with pymongo-1.9 or older.
-        if isinstance(value, dict):
-            oid = value["_ObjectId__id"]
-        else:
-            oid = value
+        oid = value["_ObjectId__id"] if isinstance(value, dict) else value
         # ObjectIds pickled in python 2.x used `str` for __id.
         # In python 3.x this has to be converted to `bytes`
         # by encoding latin-1.

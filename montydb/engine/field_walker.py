@@ -222,9 +222,7 @@ class FieldNode(str):
     def is_missing(self):
         if self.in_array and not self.located:
             return not self.exists  # doc in array, missing if not exists
-        if not self.in_array and not self.exists:
-            return True
-        return False
+        return bool(not self.in_array and not self.exists)
 
     def concat_parents(self):
         forepath = getattr(self.parent, "concat_parents", lambda: "")()

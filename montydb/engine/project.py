@@ -11,7 +11,7 @@ def _is_include(val):
     """
     [] and "" will be `True` as well
     """
-    return bool(isinstance(val, list) or isinstance(val, string_types) or val)
+    return bool(isinstance(val, (list, string_types)) or val)
 
 
 def _is_positional_match(conditions, match_field):
@@ -121,7 +121,7 @@ class Projector:
         for key, val in spec.items():
             # Parsing options
             if is_duckument_type(val):
-                if not len(val) == 1:
+                if len(val) != 1:
                     _v = _perr_doc(val)
                     raise OperationFailure(f">1 field in obj: {_v}", code=2)
 
@@ -129,10 +129,7 @@ class Projector:
                 sub_k, sub_v = next(iter(val.items()))
                 if sub_k == "$slice":
                     if isinstance(sub_v, int):
-                        if sub_v >= 0:
-                            slicing = slice(sub_v)
-                        else:
-                            slicing = slice(sub_v, None)
+                        slicing = slice(sub_v) if sub_v >= 0 else slice(sub_v, None)
                     elif isinstance(sub_v, list):
                         if not len(sub_v) == 2:
                             raise OperationFailure("$slice array wrong size")
@@ -270,10 +267,7 @@ class Projector:
             doc = fieldwalker.doc
             if field_path in doc and isinstance(doc[field_path], list):
                 for index, emb_doc in enumerate(doc[field_path]):
-                    if wrapped_field_op:
-                        query_doc = {field_path: emb_doc}
-                    else:
-                        query_doc = emb_doc
+                    query_doc = {field_path: emb_doc} if wrapped_field_op else emb_doc
 
                     if qfilter_(query_doc):
                         fieldwalker.go(field_path).set([emb_doc])
