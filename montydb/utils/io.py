@@ -7,6 +7,7 @@ from datetime import datetime
 from ..types import string_types, init_bson, bson as bson_
 from ..client import MontyClient
 from ..errors import DuplicateKeyError
+import contextlib
 
 
 def _collection(database, collection):
@@ -140,10 +141,8 @@ def montyrestore(database, collection, dumpfile):
     with open(dumpfile, "rb") as fp:
         raw = fp.read()
 
-    try:
+    with contextlib.suppress(DuplicateKeyError):
         collection.insert_many(decode_all(raw))
-    except DuplicateKeyError:
-        pass
 
 
 def montydump(database, collection, dumpfile):

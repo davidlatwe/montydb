@@ -498,7 +498,7 @@ def parse_pull(field, value_or_conditions, array_filters):
     if is_duckument_type(value_or_conditions):
         query_spec = {}
         for k, v in value_or_conditions.items():
-            if not k[:1] == "$":
+            if k[:1] != "$":
                 query_spec[".".join((field, k))] = v
             else:
                 query_spec[field] = {k: v}
@@ -678,10 +678,7 @@ class EachPusher:
             new_array[:position] += new_elems
 
         if slice is not None:
-            if slice >= 0:
-                new_array = new_array[:slice]
-            else:
-                new_array = new_array[slice:]
+            new_array = new_array[:slice] if slice >= 0 else new_array[slice:]
 
         if sort is not None:
             if is_duckument_type(sort):

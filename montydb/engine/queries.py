@@ -82,7 +82,7 @@ def ordering(fieldwalkers, order, doc_type=None):
 
             # define section
             # maintain the sorting result in next level sorting
-            if not value == last_doc:
+            if value != last_doc:
                 sect_id += 1
             sect_stack.append(sect_id)
             last_doc = value
@@ -513,9 +513,8 @@ def _eq_match(fieldwalker, query):
     """ """
     if is_duckument_type(query):
         for val in fieldwalker.value:
-            if is_duckument_type(val):
-                if compare_documents(query, val):
-                    return True
+            if is_duckument_type(val) and compare_documents(query, val):
+                return True
 
     else:
         if query is None:
@@ -569,8 +568,8 @@ def parse_gte(query):
         for value in fieldwalker.value:
             if _is_comparable(value, query):
                 if query in bson.decimal128_NaN_ls:
-                    return True if value in bson.decimal128_NaN_ls else False
-                if query == bson.decimal128_INF and not value == bson.decimal128_INF:
+                    return value in bson.decimal128_NaN_ls
+                if query == bson.decimal128_INF and value != bson.decimal128_INF:
                     return False
                 if Weighted(value) >= Weighted(query):
                     return True
@@ -603,7 +602,7 @@ def parse_lte(query):
         for value in fieldwalker.value:
             if _is_comparable(value, query):
                 if query in bson.decimal128_NaN_ls:
-                    return True if value in bson.decimal128_NaN_ls else False
+                    return value in bson.decimal128_NaN_ls
                 if query == bson.decimal128_INF and value in bson.decimal128_NaN_ls:
                     return False
                 if query not in _dec_NaN_INF_ls and value in _dec_NaN_INF_ls:
@@ -706,10 +705,7 @@ def parse_all(query):
                         return False
             return True
         else:
-            for q in query:
-                if q not in fieldwalker.value:
-                    return False
-            return True
+            return all(q in fieldwalker.value for q in query)
 
     return _all
 
