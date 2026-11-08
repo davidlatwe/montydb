@@ -46,7 +46,7 @@ dev = [
   "codespell>=2",
   "lmdb>=1.5.1",
   "mongoengine",
-  "pymongo==3.11.3",
+  "pymongo==4.18.3",
   "pytest",
   "pytest-cov",
   "ruff",
