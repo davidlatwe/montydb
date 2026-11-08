@@ -66,6 +66,9 @@ ignore = [
   "C408",
   "UP015",
 ]
+# Ruff 0.17 changed its default rule set. Keep the earlier defaults here,
+# and add rule families one at a time with extend-select.
+select = [ "E4", "E7", "E9", "F" ]
 
 [tool.codespell]
 skip = ".venv,venv,.git"
