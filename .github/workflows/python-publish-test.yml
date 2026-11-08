@@ -32,7 +32,7 @@ jobs:
         python-version: "3.x"
 
     - name: Install dependencies
-      run: uv sync
+      run: uv sync --locked
 
     - name: Build test version
       run: uv run python build_version.py 0.0.0.dev${{ github.run_number }}
