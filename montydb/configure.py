@@ -301,7 +301,7 @@ def _bson_init(use_bson):
 
 def _mongo_compat(version):
     from . import storage
-    from .engine import queries
+    from .engine import project, queries
 
     def patch(mod, func, ver_func):
         setattr(mod, func, getattr(mod, ver_func))
@@ -328,8 +328,20 @@ def _mongo_compat(version):
         patch(queries, "_mod_remainder_not_num", "_mod_remainder_not_num_v42")
         patch(queries, "_not_subspec_op_check", "_not_validate_subspec_op_v4")
 
-    else:
+    else:  # 4.4 and later
         patch(queries, "_is_comparable", "_is_comparable_ver4")
-        patch(queries, "_regex_options_check", "_regex_options_")
+        patch(queries, "_regex_options_check", "_regex_options_v42")
         patch(queries, "_mod_remainder_not_num", "_mod_remainder_not_num_v42")
         patch(queries, "_not_subspec_op_check", "_not_validate_subspec_op_v4")
+
+    # Projection changes in MongoDB 4.4
+    suffix = "_v44" if version_info >= (4, 4) else "_"
+    for name in (
+        "_check_positional_key",
+        "_check_path_collision",
+        "_positional_mismatch",
+        "_positional_project_rest",
+        "_positional_empty_leaf_doc",
+        "_positional_located_match_error",
+    ):
+        patch(project, name, name + suffix)

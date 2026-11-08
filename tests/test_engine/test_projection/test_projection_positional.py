@@ -79,7 +79,7 @@ def test_projection_positional_4(monty_proj, mongo_proj):
     assert next(mongo_c) == next(monty_c)
 
 
-def test_projection_positional_5(monty_proj, mongo_proj):
+def test_projection_positional_5(monty_proj, mongo_proj, mongo_version):
     docs = [
         {"a": {"b": [1, 2, 3], "c": [4, 5, 6]}},
         {"a": {"b": [1, 2, 3], "c": [4]}},
@@ -92,8 +92,16 @@ def test_projection_positional_5(monty_proj, mongo_proj):
 
     assert count_documents(mongo_c, spec) == 2
     assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
-    for i in range(2):
-        assert next(mongo_c) == next(monty_c)
+
+    if mongo_version[:2] >= [4, 4]:
+        with pytest.raises(mongo_op_fail):
+            next(mongo_c)
+
+        with pytest.raises(monty_op_fail):
+            next(monty_c)
+    else:
+        for i in range(1):
+            assert next(mongo_c) == next(monty_c)
 
 
 def test_projection_positional_6(monty_proj, mongo_proj):
@@ -171,38 +179,45 @@ def test_projection_positional_10(monty_proj, mongo_proj):
     assert next(mongo_c) == next(monty_c)
 
 
-def test_projection_positional_11(monty_proj, mongo_proj):
+def test_projection_positional_11(monty_proj, mongo_proj, mongo_version):
     docs = [
-        {"a": [{"b": [0, 1, 2]}, {"b": [3, 2, 4]}]},
+        {"a": [{"b": [0, 1, 2], "c": {"d": "eek", "e": "arr"}},
+               {"b": [3, 2, 4], "c": {"d": "foo", "e": "bar"}}]},
     ]
 
-    def run(spec, proj):
+    def run(spec, proj, debug=None):
         monty_c = monty_proj(docs, spec, proj)
         mongo_c = mongo_proj(docs, spec, proj)
 
         assert count_documents(mongo_c, spec) == 1
         assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
-        assert next(mongo_c) == next(monty_c)
+        mongo_doc = next(mongo_c)
+        monty_doc = next(monty_c)
+        if debug:
+            print(debug, mongo_doc)
+            print(debug, monty_doc)
+        assert monty_doc == mongo_doc
 
     spec = {"a.b.2": 4}
     proj = {"a.b.$": 1}
     run(spec, proj)
 
+    spec = {"a.b.2": 4}
+    proj = {"a.c.d.$": 1}
+    run(spec, proj)
+
     spec = {"a.b": 2}
     proj = {"a.b.$": 1}
     run(spec, proj)
 
-    spec = {"a.b": 2}
-    proj = {"a.$.b": 1}
-    run(spec, proj)
-
-    spec = {"a.b": 2}
-    proj = {"$.a.b": 1}
-    run(spec, proj)
-
-    spec = {"a.b": 2}
-    proj = {"a": 1, "$.a.b": 1}
-    run(spec, proj)
+    # mongo-4.4+: positional operator in the middle of a path, or a field
+    # path that starts with '$', is an error.
+    for proj in ({"a.$.b": 1}, {"$.a.b": 1}, {"a": 1, "$.a.b": 1}):
+        spec = {"a.b": 2}
+        if mongo_version[:2] >= [4, 4]:
+            _run_positional(monty_proj, mongo_proj, docs, spec, proj, fail=True)
+        else:
+            run(spec, proj)
 
     for ie in range(2):
         spec = {"a.b": 2}
@@ -221,12 +236,12 @@ def test_projection_positional_11(monty_proj, mongo_proj):
     proj = {"a.b.0.1.x.$": 1}
     run(spec, proj)
 
-    for ie in range(2):
+    for ie in range(2):  # exclude/include
         spec = {"a.b": 2}
         proj = {"a.b.0.1.x": ie}
         run(spec, proj)
 
-    for ie in range(2):
+    for ie in range(2):  # exclude/include
         spec = {}
         proj = {"a.0.b.x": ie}
         run(spec, proj)
@@ -238,7 +253,7 @@ def test_projection_positional_11(monty_proj, mongo_proj):
         run(spec, proj)
 
 
-def test_projection_positional_12(monty_proj, mongo_proj):
+def test_projection_positional_12(monty_proj, mongo_proj, mongo_version):
     docs = [
         {"a": [{"b": [{"c": 1}, {"x": 1}]}, {"b": [{"c": 1}, {"x": 1}]}]},
 
@@ -255,6 +270,16 @@ def test_projection_positional_12(monty_proj, mongo_proj):
         assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
         for i in range(2):
             assert next(mongo_c) == next(monty_c)
+
+    def fail(proj):
+        monty_c = monty_proj(docs, spec, proj)
+        mongo_c = mongo_proj(docs, spec, proj)
+
+        with pytest.raises(mongo_op_fail):
+            next(mongo_c)
+
+        with pytest.raises(monty_op_fail):
+            next(monty_c)
 
     for ie in range(2):
         proj = {"a.b.5": ie}
@@ -273,13 +298,13 @@ def test_projection_positional_12(monty_proj, mongo_proj):
         run(proj)
 
         proj = {"a.b.c.": ie}  # Redundant dot
-        run(proj)
+        run(proj) if mongo_version[:2] < [4, 4] else fail(proj)
 
         proj = {"a.b.c": ie}
         run(proj)
 
 
-def test_projection_positional_13(monty_proj, mongo_proj):
+def test_projection_positional_13(monty_proj, mongo_proj, mongo_version):
     docs = [
         {"a": [{"b": [1, 5]}, {"b": 2}, {"b": [3, 10, 4]}],
          "c": [{"b": [1]}, {"b": 2}, {"b": [3, 5]}]},
@@ -294,11 +319,21 @@ def test_projection_positional_13(monty_proj, mongo_proj):
         assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
         assert next(mongo_c) == next(monty_c)
 
+    def fail(proj):
+        monty_c = monty_proj(docs, spec, proj)
+        mongo_c = mongo_proj(docs, spec, proj)
+
+        with pytest.raises(mongo_op_fail):
+            next(mongo_c)
+
+        with pytest.raises(monty_op_fail):
+            next(monty_c)
+
     proj = {"a.b.$": 1}
     run(proj)
 
     proj = {"a.$.b": 1}
-    run(proj)
+    run(proj) if mongo_version[:2] < [4, 4] else fail(proj)
 
 
 def test_projection_positional_14(monty_proj, mongo_proj):
@@ -320,7 +355,7 @@ def test_projection_positional_14(monty_proj, mongo_proj):
         run(proj)
 
 
-def test_projection_positional_15(monty_proj, mongo_proj):
+def test_projection_positional_15(monty_proj, mongo_proj, mongo_version):
     docs = [
         {"a": [{"b": [0, 1, {"c": 5}]}, {"b": [3, 2, {"x": 5}]}]},
     ]
@@ -332,7 +367,15 @@ def test_projection_positional_15(monty_proj, mongo_proj):
 
     assert count_documents(mongo_c, spec) == 1
     assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
-    assert next(mongo_c) == next(monty_c)
+
+    if mongo_version[:2] < [4, 4]:
+        assert next(mongo_c) == next(monty_c)
+    else:
+        # Path collision at a.b.x remaining portion b.x
+        with pytest.raises(mongo_op_fail):
+            next(mongo_c)
+        with pytest.raises(monty_op_fail):
+            next(monty_c)
 
 
 def test_projection_positional_err_2(monty_proj, mongo_proj):
@@ -404,88 +447,71 @@ def test_projection_positional_err_96_3(monty_proj, mongo_proj):
     # assert mongo_err.value.code == monty_err.value.code
 
 
-def test_projection_positional_16(monty_proj, mongo_proj):
+def _run_positional(monty_proj, mongo_proj, docs, spec, proj, fail=False):
+    monty_c = monty_proj(docs, spec, proj)
+    mongo_c = mongo_proj(docs, spec, proj)
+
+    if fail:
+        with pytest.raises(mongo_op_fail):
+            next(mongo_c)
+        with pytest.raises(monty_op_fail):
+            next(monty_c)
+        return
+
+    assert count_documents(mongo_c, spec) == 1
+    assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
+    assert next(mongo_c) == next(monty_c)
+
+
+def test_projection_positional_16(monty_proj, mongo_proj, mongo_version):
     docs = [
         {"a": {"b": {"c": [1, 2, 3]}, "d": [1]}}
     ]
     spec = {"a.b.c": 2}
+    v44 = mongo_version[:2] >= [4, 4]
 
-    def run(proj):
-        monty_c = monty_proj(docs, spec, proj)
-        mongo_c = mongo_proj(docs, spec, proj)
+    _run_positional(monty_proj, mongo_proj, docs, spec, {"a.b.$": 1})
+    # The matched index 1 is out of range for "d" (mongo-4.4+)
+    _run_positional(monty_proj, mongo_proj, docs, spec, {"a.d.$": 1}, fail=v44)
 
-        assert count_documents(mongo_c, spec) == 1
-        assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
-        assert next(mongo_c) == next(monty_c)
-
-    proj = {"a.b.$": 1}
-    run(proj)
-
-    proj = {"a.d.$": 1}
-    run(proj)
+    docs = [
+        {"a": {"b": {"c": [1, 2, 3]}, "d": [1, 2]}}
+    ]
+    _run_positional(monty_proj, mongo_proj, docs, spec, {"a.d.$": 1})
 
 
-def test_projection_positional_17(monty_proj, mongo_proj):
+def test_projection_positional_17(monty_proj, mongo_proj, mongo_version):
     docs = [
         {"a": {"b": [0, 1]}},
     ]
     spec = {"a.b.1": 1}
+    v44 = mongo_version[:2] >= [4, 4]
 
-    def run(proj):
-        monty_c = monty_proj(docs, spec, proj)
-        mongo_c = mongo_proj(docs, spec, proj)
-
-        assert count_documents(mongo_c, spec) == 1
-        assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
-        assert next(mongo_c) == next(monty_c)
-
-    proj = {"a.b.$": 1}
-    run(proj)
-
-    proj = {"a.b.1": 1}
-    run(proj)
+    # The query uses an array index, so no element is matched (mongo-4.4+)
+    _run_positional(monty_proj, mongo_proj, docs, spec, {"a.b.$": 1}, fail=v44)
+    _run_positional(monty_proj, mongo_proj, docs, spec, {"a.b.1": 1})
 
 
-def test_projection_positional_18(monty_proj, mongo_proj):
+def test_projection_positional_18(monty_proj, mongo_proj, mongo_version):
     docs = [
         {"a": {"b": [[1], 1]}},
     ]
     spec = {"a.b.1": 1}
+    v44 = mongo_version[:2] >= [4, 4]
 
-    def run(proj):
-        monty_c = monty_proj(docs, spec, proj)
-        mongo_c = mongo_proj(docs, spec, proj)
-
-        assert count_documents(mongo_c, spec) == 1
-        assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
-        assert next(mongo_c) == next(monty_c)
-
-    proj = {"a.b.$": 1}
-    run(proj)
-
-    proj = {"a.b.1": 1}
-    run(proj)
+    _run_positional(monty_proj, mongo_proj, docs, spec, {"a.b.$": 1}, fail=v44)
+    _run_positional(monty_proj, mongo_proj, docs, spec, {"a.b.1": 1})
 
 
-def test_projection_positional_19(monty_proj, mongo_proj):
+def test_projection_positional_19(monty_proj, mongo_proj, mongo_version):
     docs = [
         {"a": {"b": {"c": [0, 1]}}},
     ]
     spec = {"a.b.c.1": 1}
+    v44 = mongo_version[:2] >= [4, 4]
 
-    def run(proj):
-        monty_c = monty_proj(docs, spec, proj)
-        mongo_c = mongo_proj(docs, spec, proj)
-
-        assert count_documents(mongo_c, spec) == 1
-        assert count_documents(monty_c, spec) == count_documents(mongo_c, spec)
-        assert next(mongo_c) == next(monty_c)
-
-    proj = {"a.b.c.$": 1}
-    run(proj)
-
-    proj = {"a.b.c.1": 1}
-    run(proj)
+    _run_positional(monty_proj, mongo_proj, docs, spec, {"a.b.c.$": 1}, fail=v44)
+    _run_positional(monty_proj, mongo_proj, docs, spec, {"a.b.c.1": 1})
 
 
 def test_projection_positional_20(monty_proj, mongo_proj):
