@@ -61,3 +61,10 @@ jobs:
 
     - name: Run static analysis with bandit
       run: uv run bandit montydb -r
+
+    - name: Show MongoDB logs
+      if: failure()
+      run: |
+        docker ps --all --filter name=mongodb
+        docker inspect --format '{{.State.Status}} exit={{.State.ExitCode}} oom={{.State.OOMKilled}} error={{.State.Error}}' mongodb || true
+        docker logs --tail 100 mongodb || true
