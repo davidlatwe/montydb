@@ -254,11 +254,8 @@ class MontyCursor:
             # "modifiers",
             # "collation"
         )
-        data = dict(
-            (k, v)
-            for k, v in iteritems(self.__dict__)
-            if k.startswith("_") and k[1:] in values_to_clone
-        )
+        data = {k: v for k, v in iteritems(self.__dict__)
+                if k.startswith("_") and k[1:] in values_to_clone}
         if deepcopy:
             data = self._deepcopy(data)
         base.__dict__.update(data)
@@ -305,11 +302,7 @@ class MontyCursor:
         storage = self._collection.database.client._storage
         documents = storage.query(self, max_scan)
         # Filtering
-        fieldwalkers = []
-        for doc in documents:
-            if queryfilter(doc):
-                fieldwalkers.append(queryfilter.fieldwalker)
-
+        fieldwalkers = [queryfilter.fieldwalker for doc in documents if queryfilter(doc)]
         self._doc_count = len(fieldwalkers)
 
         # Sorting
