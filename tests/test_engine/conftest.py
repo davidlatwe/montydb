@@ -134,10 +134,7 @@ def mongo_replace(mongo_database):
 
 def insert_and_delete(db, docs, spec, del_one):
     col = insert(db, docs)
-    if del_one:
-        result = col.delete_one(spec)
-    else:
-        result = col.delete_many(spec)
+    result = col.delete_one(spec) if del_one else col.delete_many(spec)
     return col.find({}, {"_id": 0}), result
 
 

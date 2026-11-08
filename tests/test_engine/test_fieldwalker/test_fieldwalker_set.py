@@ -88,9 +88,8 @@ def test_fieldwalker_value_set_7():
     value = 10
 
     fieldwalker = FieldWalker(doc)
-    with fieldwalker.go(path):
-        with pytest.raises(FieldWriteError):
-            fieldwalker.set(value)
+    with fieldwalker.go(path), pytest.raises(FieldWriteError):
+        fieldwalker.set(value)
 
 
 def test_fieldwalker_value_set_8():

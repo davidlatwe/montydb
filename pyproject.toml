@@ -59,13 +59,21 @@ dev = [
 extend-select = [
   "C4",
   "PERF",
+  "S",
+  "SIM",
+  "SLOT",
   "UP",
   "W",
 ]
 ignore = [
   "C408",
+  "S101",
+  "SIM102",
   "UP015",
 ]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"montydb/storage/sqlite.py" = [ "SIM117" ]
 
 [tool.codespell]
 skip = ".venv,venv,.git"
