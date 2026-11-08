@@ -6,6 +6,7 @@ from montydb.results import BulkWriteResult
 
 @pytest.mark.parametrize("bulk_api_result", [
     {},
+    {"nInserted": 1, "nUpserted": 0, "upserted": []},
     {
         "nUpserted": 2,
         "upserted": [{"index": 0, "_id": "a"}, {"index": 3, "_id": "b"}],
