@@ -13,7 +13,10 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    # MongoDB 8.0 does not start on Linux kernel 6.19 and newer (SERVER-121912),
+    # and ubuntu-latest (26.04) uses such a kernel. Thus run the 8.0 jobs on
+    # ubuntu-24.04, which uses an older kernel.
+    runs-on: ${{ matrix.mongodb-version == '8.0' && 'ubuntu-24.04' || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
