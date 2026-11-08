@@ -314,6 +314,10 @@ _dollar_prefixed_err_msg = (
     "The dollar ($) prefixed field {0!r} in {1!r} is not valid for storage."
 )
 
+# MongoDB 5.0 allows updates to write field names that start with '$', except
+# at the top level of the document. See `configure._mongo_compat`.
+_allow_dollar_prefixed_field = True
+
 
 def no_dollar_prefix_field(doc, map_cls, root_path):
     if isinstance(doc, map_cls):
@@ -351,9 +355,11 @@ class FieldTreeWriter:
             raise FieldWriteError(msg, code=56)
 
         if field.startswith("$") and not field.startswith("$["):
-            full_path = node.full_path + "." + field
-            msg = _dollar_prefixed_err_msg.format(field, full_path)
-            raise FieldWriteError(msg, code=52)
+            top_level = not node.full_path
+            if top_level or field == "$" or not _allow_dollar_prefixed_field:
+                full_path = node.full_path + "." + field
+                msg = _dollar_prefixed_err_msg.format(field, full_path)
+                raise FieldWriteError(msg, code=52)
 
         if not node.exists and is_multi_position_operator(field):
             msg = (
@@ -549,7 +555,8 @@ class FieldTree:
             new_value = evaluator(node, value)
 
             if node.value != new_value:
-                no_dollar_prefix_field(new_value, self.map_cls, node.full_path)
+                if not _allow_dollar_prefixed_field:
+                    no_dollar_prefix_field(new_value, self.map_cls, node.full_path)
                 node.value = new_value
                 updates.append(update)
 

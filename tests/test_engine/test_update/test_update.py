@@ -457,52 +457,44 @@ def test_update_array_faild_3(monty_update, mongo_update):
     # assert mongo_err.value.code == monty_err.value.code
 
 
-def test_update_with_dollar_prefixed_field_1(monty_update, mongo_update):
-    docs = [
-        {"a": {"1": 4}}
-    ]
-    spec = {"$inc": {"a.$a": 1}}
+@pytest.mark.parametrize("docs, spec", [
+    ([{"a": {"1": 4}}], {"$inc": {"a.$a": 1}}),
+    ([{"a": 1}], {"$set": {"b": {"$ey": [5]}}}),
+    ([{"a": 1}], {"$set": {"a": {"b": [{"$a": 5}]}}}),
+    ([{"a": 1}], {"$set": {"b.$c": 2}}),
+])
+def test_update_with_dollar_prefixed_field(
+    monty_update, mongo_update, mongo_version, docs, spec
+):
+    if mongo_version[:2] < [5, 0]:
+        with pytest.raises(mongo_write_err):
+            mongo_update(docs, spec)
 
-    with pytest.raises(mongo_write_err):
-        mongo_update(docs, spec)
+        with pytest.raises(monty_write_err):
+            monty_update(docs, spec)
+        return
 
-    with pytest.raises(monty_write_err):
-        monty_update(docs, spec)
+    # MongoDB 5.0 allows field names that start with '$', but not at the
+    # top level of the document.
+    monty_c = monty_update(docs, spec)
+    mongo_c = mongo_update(docs, spec)
 
-    # ignore comparing error code
-    # assert mongo_err.value.code == monty_err.value.code
-
-
-def test_update_with_dollar_prefixed_field_2(monty_update, mongo_update):
-    docs = [
-        {"a": 1}
-    ]
-    spec = {"$set": {"b": {"$ey": [5]}}}
-
-    with pytest.raises(mongo_write_err):
-        mongo_update(docs, spec)
-
-    with pytest.raises(monty_write_err):
-        monty_update(docs, spec)
-
-    # ignore comparing error code
-    # assert mongo_err.value.code == monty_err.value.code
+    assert next(mongo_c) == next(monty_c)
 
 
-def test_update_with_dollar_prefixed_field_3(monty_update, mongo_update):
+def test_update_with_dollar_prefixed_field_top_level(monty_update, mongo_update):
     docs = [
         {"a": 1}
     ]
-    spec = {"$set": {"a": {"b": [{"$a": 5}]}}}
+    spec = {"$set": {"$b": 2}}
 
-    with pytest.raises(mongo_write_err):
+    with pytest.raises(mongo_write_err) as mongo_err:
         mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err):
+    with pytest.raises(monty_write_err) as monty_err:
         monty_update(docs, spec)
 
-    # ignore comparing error code
-    # assert mongo_err.value.code == monty_err.value.code
+    assert mongo_err.value.code == monty_err.value.code == 52
 
 
 def test_update_with_dot_prefixed_nest_field(monty_update, mongo_update):

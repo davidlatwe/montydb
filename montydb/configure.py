@@ -301,7 +301,7 @@ def _bson_init(use_bson):
 
 def _mongo_compat(version):
     from . import storage
-    from .engine import project, queries
+    from .engine import field_walker, project, queries
 
     def patch(mod, func, ver_func):
         setattr(mod, func, getattr(mod, ver_func))
@@ -310,6 +310,7 @@ def _mongo_compat(version):
 
     # MongoDB 5.0 accepts field names that start with '$' or contain '.'
     storage._check_doc_keys = version_info < (5, 0)
+    field_walker._allow_dollar_prefixed_field = version_info >= (5, 0)
 
     if version.startswith("3"):
         patch(queries, "_is_comparable", "_is_comparable_ver3")
