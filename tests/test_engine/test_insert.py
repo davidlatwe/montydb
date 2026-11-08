@@ -4,32 +4,30 @@ from montydb import errors
 from montydb.types import bson
 
 
-def test_insert_invalid_doc_1(monty_find, mongo_find):
-    docs = [
-        {".b": 1},
-    ]
+@pytest.mark.parametrize("doc", [
+    {".b": 1},
+    {"$b": 1},
+    {"a.b": 1},
+    {"a": {"$b": 1}},
+])
+def test_insert_dot_or_dollar_key(monty_find, mongo_find, mongo_version, doc):
     spec = {}
 
-    if bson.bson_used:
+    if mongo_version[:2] < [5, 0]:
+        # MongoDB 5.0 began to accept these field names
+        if bson.bson_used:
+            with pytest.raises(errors.InvalidDocument):
+                mongo_find([dict(doc)], spec)
+
         with pytest.raises(errors.InvalidDocument):
-            mongo_find(docs, spec)
+            monty_find([dict(doc)], spec)
+        return
 
-    with pytest.raises(errors.InvalidDocument):
-        monty_find(docs, spec)
+    docs = [dict(doc)]
+    monty_c = monty_find(docs, spec)
+    mongo_c = mongo_find(docs, spec)
 
-
-def test_insert_invalid_doc_2(monty_find, mongo_find):
-    docs = [
-        {"$b": 1},
-    ]
-    spec = {}
-
-    if bson.bson_used:
-        with pytest.raises(errors.InvalidDocument):
-            mongo_find(docs, spec)
-
-    with pytest.raises(errors.InvalidDocument):
-        monty_find(docs, spec)
+    assert next(mongo_c) == next(monty_c)
 
 
 def test_insert_bytes(monty_find, mongo_find):

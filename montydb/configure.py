@@ -18,13 +18,18 @@ MEMORY_REPOSITORY = ":memory:"
 
 URI_SCHEME_PREFIX = "montydb://"
 
-MONGO_COMPAT_VERSIONS = ("3.6", "4.0", "4.2", "4.4")  # 4.4 is experimenting
+MONGO_COMPAT_VERSIONS = (
+    # Not tested in CI anymore, kept for existing configurations
+    "3.6", "4.0", "4.2", "4.4",
+    # Tested in CI
+    "5.0", "6.0", "7.0", "8.0", "9.0",
+)
 
 
 _pinned_repository = {"_": None}
 _session = {}
 _session_default = {
-    "mongo_version": "4.2",
+    "mongo_version": "8.0",
     "use_bson": None,
 }
 # TODO:
@@ -192,8 +197,8 @@ def set_storage(
             Default to current working dir.
         storage (str, optional): Storage module name. Default "flatfile".
         mongo_version (str, optional): Which mongodb version's behavior should
-            montydb try to match with. Default "4.2", other versions are "3.6",
-            "4.0".
+            montydb try to match with. Default "8.0". See
+            `MONGO_COMPAT_VERSIONS` for all versions.
         use_bson (bool, optional): Use bson module. Default `None`.
 
     keyword args:
@@ -295,10 +300,16 @@ def _bson_init(use_bson):
 
 
 def _mongo_compat(version):
+    from . import storage
     from .engine import queries
 
     def patch(mod, func, ver_func):
         setattr(mod, func, getattr(mod, ver_func))
+
+    version_info = tuple(int(v) for v in version.split("."))
+
+    # MongoDB 5.0 accepts field names that start with '$' or contain '.'
+    storage._check_doc_keys = version_info < (5, 0)
 
     if version.startswith("3"):
         patch(queries, "_is_comparable", "_is_comparable_ver3")
