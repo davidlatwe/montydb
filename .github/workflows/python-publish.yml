@@ -26,13 +26,13 @@ jobs:
         enable-cache: true
     
     - name: Install dependencies
-      run: uv sync
+      run: uv sync --locked
 
     - name: Build version ${{github.ref_name}}
       run: uv run python build_version.py ${{github.ref_name}}
     
     - name: Check versions are in sync
-      run: uv run pytest tests/test_packaging.py
+      run: uv run --no-sync pytest tests/test_packaging.py
     
     - name: Build and publish
       env:

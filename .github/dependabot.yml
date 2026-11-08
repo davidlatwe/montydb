@@ -11,3 +11,11 @@ updates:
           - "*"  # Group all Actions updates into a single larger pull request
     schedule:
       interval: weekly
+  - package-ecosystem: uv
+    directory: /
+    groups:
+      uv:
+        patterns:
+          - "*"  # Group all uv.lock updates into a single larger pull request
+    schedule:
+      interval: weekly
