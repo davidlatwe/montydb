@@ -13,10 +13,7 @@ on:
 jobs:
   build:
 
-    # MongoDB 8.0 does not start on Linux kernel 6.19 and newer (SERVER-121912),
-    # and ubuntu-latest (26.04) uses such a kernel. Thus run the 8.0 jobs on
-    # ubuntu-24.04, which uses an older kernel.
-    runs-on: ${{ matrix.mongodb-version == '8.0' && 'ubuntu-24.04' || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -33,9 +30,33 @@ jobs:
         enable-cache: true
 
     - name: Set up MongoDB ${{ matrix.mongodb-version }}
-      uses: supercharge/mongodb-github-action@1.12.1
-      with:
-        mongodb-version: ${{ matrix.mongodb-version }}
+      env:
+        MONGODB_VERSION: ${{ matrix.mongodb-version }}
+        MONGODB_CONTAINER: mongodb
+        MONGODB_PORT: 27017
+      run: |
+        options=""
+        if [ "$MONGODB_VERSION" = "8.0" ]; then
+          # MongoDB 8.0 refuses to start on Linux kernel 6.19 and newer while
+          # TCMalloc per-CPU caches are active (SERVER-121912), and the runners
+          # use such a kernel. Let glibc own rseq, so TCMalloc does not use
+          # per-CPU caches. Remove this when MongoDB 8.0.35 is released.
+          options="--env GLIBC_TUNABLES=glibc.pthread.rseq=1"
+        fi
+        # shellcheck disable=SC2086
+        docker run --name "$MONGODB_CONTAINER" --publish "$MONGODB_PORT:27017" \
+          $options --detach "mongo:$MONGODB_VERSION"
+        for _ in $(seq 1 60); do
+          if docker exec "$MONGODB_CONTAINER" mongosh --quiet --eval \
+              "db.runCommand({ping: 1}).ok" > /dev/null 2>&1; then
+            docker exec "$MONGODB_CONTAINER" mongosh --quiet --eval \
+              "const s = db.serverStatus({tcmalloc: 1}); print('MongoDB ' + s.version + ', TCMalloc per-CPU caches: ' + (s.tcmalloc ? s.tcmalloc.usingPerCPUCaches : 'n/a'))"
+            exit 0
+          fi
+          sleep 1
+        done
+        echo "MongoDB $MONGODB_VERSION did not start"
+        exit 1
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v7
