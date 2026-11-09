@@ -46,10 +46,13 @@ jobs:
         # shellcheck disable=SC2086
         docker run --name "$MONGODB_CONTAINER" --publish "$MONGODB_PORT:27017" \
           $options --detach "mongo:$MONGODB_VERSION"
+        # Run mongosh with HOME=/tmp. The default HOME is /data/db, and the
+        # entrypoint changes the owner of all files there at start (with
+        # `set -e`), so mongosh files in /data/db/.mongodb can make it fail.
         for _ in $(seq 1 60); do
-          if docker exec "$MONGODB_CONTAINER" mongosh --quiet --eval \
+          if docker exec --env HOME=/tmp "$MONGODB_CONTAINER" mongosh --quiet --eval \
               "db.runCommand({ping: 1}).ok" > /dev/null 2>&1; then
-            docker exec "$MONGODB_CONTAINER" mongosh --quiet --eval \
+            docker exec --env HOME=/tmp "$MONGODB_CONTAINER" mongosh --quiet --eval \
               "const s = db.serverStatus({tcmalloc: 1}); print('MongoDB ' + s.version + ', TCMalloc per-CPU caches: ' + (s.tcmalloc ? s.tcmalloc.usingPerCPUCaches : 'n/a'))"
             exit 0
           fi
