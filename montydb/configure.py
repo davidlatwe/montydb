@@ -29,7 +29,7 @@ MONGO_COMPAT_VERSIONS = (
 _pinned_repository = {"_": None}
 _session = {}
 _session_default = {
-    "mongo_version": "8.0",
+    "mongo_version": "9.0",
     "use_bson": None,
 }
 # TODO:
@@ -197,7 +197,7 @@ def set_storage(
             Default to current working dir.
         storage (str, optional): Storage module name. Default "flatfile".
         mongo_version (str, optional): Which mongodb version's behavior should
-            montydb try to match with. Default "8.0". See
+            montydb try to match with. Default "9.0". See
             `MONGO_COMPAT_VERSIONS` for all versions.
         use_bson (bool, optional): Use bson module. Default `None`.
 

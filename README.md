@@ -88,7 +88,7 @@ set_storage(
     
     repository="/db/repo",  # dir path for database to live on disk, default is {cwd}
     storage="flatfile",     # storage name, default "flatfile"
-    mongo_version="8.0",    # try matching behavior with this mongodb version
+    mongo_version="9.0",    # try matching behavior with this mongodb version
     use_bson=False,         # default None, and will import pymongo's bson if None or True
 
     # any other kwargs are storage engine settings.
@@ -345,9 +345,16 @@ uv build
 Most of our tests compare montydb CRUD results against real mongodb instance, therefore we must have a running
 mongodb before testing.
 
-For example, if we want to test against mongo 8.0:
+For example, if we want to test against mongo 9.0:
 ```shell
-docker run --name monty-8.0 -p 30080:27017 -d mongo:8.0
+docker run --name monty-9.0 -p 30090:27017 -d mongo:9.0
+```
+
+MongoDB 8.0 does not start on Linux kernel 6.19 and newer
+([SERVER-121912](https://jira.mongodb.org/browse/SERVER-121912)). To test against
+mongo 8.0 on such a kernel, let glibc own rseq:
+```shell
+docker run --name monty-8.0 -p 30080:27017 -e GLIBC_TUNABLES=glibc.pthread.rseq=1 -d mongo:8.0
 ```
 
 ### Tests
@@ -356,7 +363,7 @@ uv run pytest --storage {storage engin name} --mongodb {mongo instance url} [--u
 ```
 Example:
 ```shell
-uv run pytest --storage memory --mongodb localhost:30080 --use-bson
+uv run pytest --storage memory --mongodb localhost:30090 --use-bson
 ```
 
 ## Why did I make this?
