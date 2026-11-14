@@ -152,6 +152,17 @@ class NoBSON(types.ModuleType):
         if key.startswith("$"):
             raise cls.InvalidDocument(f"key '{key}' must not start with '$'")
 
+    _type_markers = ("$oid", "$binary", "$date", "$regex")
+
+    @classmethod
+    def _key_not_type_marker(cls, key):
+        # `object_hook` reads a document with one of these keys as a value of
+        # another type, so such a document would not come back as written.
+        if key in cls._type_markers or key in cls.custom_json_hooks:
+            raise cls.InvalidDocument(
+                f"key '{key}' is reserved for type markers when bson is not used"
+            )
+
     @classmethod
     def document_encode(cls, doc, check_keys=False, *args, **kwargs):
         _encoder = cls.BSONEncoder()
@@ -167,6 +178,7 @@ class NoBSON(types.ModuleType):
                         )
                     if check_keys:
                         cls._key_validate(key)
+                    cls._key_not_type_marker(key)
                 _encoder.key_is_keyword = False
             candidate = s
             serialized += s

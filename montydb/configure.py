@@ -18,15 +18,23 @@ MEMORY_REPOSITORY = ":memory:"
 
 URI_SCHEME_PREFIX = "montydb://"
 
-MONGO_COMPAT_VERSIONS = ("3.6", "4.0", "4.2", "4.4")  # 4.4 is experimenting
+MONGO_COMPAT_VERSIONS = (
+    # Not tested in CI anymore, kept for existing configurations
+    "3.6", "4.0", "4.2", "4.4",
+    # Tested in CI
+    "5.0", "6.0", "7.0", "8.0", "9.0",
+)
 
 
 _pinned_repository = {"_": None}
 _session = {}
 _session_default = {
-    "mongo_version": "4.2",
+    "mongo_version": "9.0",
     "use_bson": None,
 }
+# A configuration without `mongo_version` (montydb before 2.3.10, or written
+# by hand) got MongoDB 4.2 behavior, the default before 9.0. Keep it so.
+_legacy_config_default = dict(_session_default, mongo_version="4.2")
 # TODO:
 #   The mongo version compating may fail if calling `set_storage()` multiple
 #   times with different version.
@@ -192,8 +200,8 @@ def set_storage(
             Default to current working dir.
         storage (str, optional): Storage module name. Default "flatfile".
         mongo_version (str, optional): Which mongodb version's behavior should
-            montydb try to match with. Default "4.2", other versions are "3.6",
-            "4.0".
+            montydb try to match with. Default "9.0". See
+            `MONGO_COMPAT_VERSIONS` for all versions.
         use_bson (bool, optional): Use bson module. Default `None`.
 
     keyword args:
@@ -263,7 +271,7 @@ def provide_storage(repository):
     config = storage_cls.read_config(repository)
 
     for key in ("use_bson", "mongo_version"):
-        _session[key] = config.get(key, _session_default[key])
+        _session[key] = config.get(key, _legacy_config_default[key])
 
     _bson_init(_session["use_bson"])
     _mongo_compat(_session["mongo_version"])
@@ -295,10 +303,17 @@ def _bson_init(use_bson):
 
 
 def _mongo_compat(version):
-    from .engine import queries
+    from . import storage
+    from .engine import field_walker, project, queries
 
     def patch(mod, func, ver_func):
         setattr(mod, func, getattr(mod, ver_func))
+
+    version_info = tuple(int(v) for v in version.split("."))
+
+    # MongoDB 5.0 accepts field names that start with '$' or contain '.'
+    storage._check_doc_keys = version_info < (5, 0)
+    field_walker._allow_dollar_prefixed_field = version_info >= (5, 0)
 
     if version.startswith("3"):
         patch(queries, "_is_comparable", "_is_comparable_ver3")
@@ -317,8 +332,24 @@ def _mongo_compat(version):
         patch(queries, "_mod_remainder_not_num", "_mod_remainder_not_num_v42")
         patch(queries, "_not_subspec_op_check", "_not_validate_subspec_op_v4")
 
-    else:
+    else:  # 4.4 and later
         patch(queries, "_is_comparable", "_is_comparable_ver4")
-        patch(queries, "_regex_options_check", "_regex_options_")
+        patch(queries, "_regex_options_check", "_regex_options_v42")
         patch(queries, "_mod_remainder_not_num", "_mod_remainder_not_num_v42")
         patch(queries, "_not_subspec_op_check", "_not_validate_subspec_op_v4")
+
+    # Projection changes in MongoDB 4.4
+    suffix = "_v44" if version_info >= (4, 4) else "_"
+    for name in (
+        "_check_positional_key",
+        "_check_path_collision",
+        "_positional_mismatch",
+        "_positional_project_rest",
+        "_positional_empty_leaf_doc",
+        "_positional_index_from_any_field",
+    ):
+        patch(project, name, name + suffix)
+
+    # Projection changes in MongoDB 7.0
+    suffix = "_v70" if version_info >= (7, 0) else "_"
+    patch(project, "_positional_index_after_rest", "_positional_index_after_rest" + suffix)

@@ -189,6 +189,11 @@ class AbstractDatabase:
         return NotImplemented
 
 
+# Check if document keys start with '$' or contain '.' on write. MongoDB 5.0
+# and later accept such keys, see `montydb.configure._mongo_compat`.
+_check_doc_keys = False
+
+
 class AbstractCollection:
 
     def __init__(self, database, subject):
@@ -200,8 +205,7 @@ class AbstractCollection:
     def _encode_doc(self, doc, check_keys=False):
         return bson.document_encode(
             doc,
-            # Check if keys start with '$' or contain '.'
-            check_keys=check_keys,
+            check_keys=check_keys and _check_doc_keys,
             codec_options=self.coptions
         )
 

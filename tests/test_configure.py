@@ -69,3 +69,26 @@ def test_config_int_value(tmp_config_repo):
                 cache_modified=str(expected))
     storage = provide_storage(repository=tmp_dir).launch(tmp_dir)
     assert storage._config["cache_modified"] == expected
+
+
+def test_config_without_mongo_version(tmp_config_repo):
+    # A configuration from before montydb 2.3.10 has no `mongo_version`, and
+    # it must keep the MongoDB 4.2 behavior that it had.
+    from montydb import configure
+
+    tmp_dir = os.path.join(tmp_config_repo, "no_mongo_version")
+    set_storage(repository=tmp_dir, storage="flatfile")
+    config_file = os.path.join(tmp_dir, FlatFileStorage.config_fname)
+    with open(config_file) as fp:
+        lines = [line for line in fp if not line.startswith("mongo_version")]
+    with open(config_file, "w") as fp:
+        fp.writelines(lines)
+
+    session = configure.session_config()
+    try:
+        provide_storage(repository=tmp_dir)
+        assert configure.session_config()["mongo_version"] == "4.2"
+    finally:
+        # The version settings are global, so give the other tests theirs back
+        configure._session.update(session)
+        configure._mongo_compat(session["mongo_version"])

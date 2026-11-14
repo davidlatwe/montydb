@@ -95,7 +95,7 @@ def test_qop_regex_6(monty_find, mongo_find, mongo_version):
     monty_c = monty_find(docs, spec)
     mongo_c = mongo_find(docs, spec)
 
-    if mongo_version[:2] == [4, 2]:
+    if mongo_version[:2] >= [4, 2]:
         # options set in both $regex and $options
         with pytest.raises(MongoOpFail):
             next(mongo_c)

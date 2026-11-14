@@ -19,7 +19,7 @@ jobs:
       matrix:
         experimental: [ false ]
         monty-storage: [ memory, flatfile, sqlite ]
-        mongodb-version: [ "3.6", "4.0", "4.2" ]
+        mongodb-version: [ "5.0", "6.0", "7.0", "8.0", "9.0" ]
         python-version: [ "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t", "3.15", "3.15t" ]
 
     steps:
@@ -30,9 +30,36 @@ jobs:
         enable-cache: true
 
     - name: Set up MongoDB ${{ matrix.mongodb-version }}
-      uses: supercharge/mongodb-github-action@1.12.1
-      with:
-        mongodb-version: ${{ matrix.mongodb-version }}
+      env:
+        MONGODB_VERSION: ${{ matrix.mongodb-version }}
+        MONGODB_CONTAINER: mongodb
+        MONGODB_PORT: 27017
+      run: |
+        options=""
+        if [ "$MONGODB_VERSION" = "8.0" ]; then
+          # MongoDB 8.0 refuses to start on Linux kernel 6.19 and newer while
+          # TCMalloc per-CPU caches are active (SERVER-121912), and the runners
+          # use such a kernel. Let glibc own rseq, so TCMalloc does not use
+          # per-CPU caches. Remove this when MongoDB 8.0.35 is released.
+          options="--env GLIBC_TUNABLES=glibc.pthread.rseq=1"
+        fi
+        # shellcheck disable=SC2086
+        docker run --name "$MONGODB_CONTAINER" --publish "$MONGODB_PORT:27017" \
+          $options --detach "mongo:$MONGODB_VERSION"
+        # Run mongosh with HOME=/tmp. The default HOME is /data/db, and the
+        # entrypoint changes the owner of all files there at start (with
+        # `set -e`), so mongosh files in /data/db/.mongodb can make it fail.
+        for _ in $(seq 1 60); do
+          if docker exec --env HOME=/tmp "$MONGODB_CONTAINER" mongosh --quiet --eval \
+              "db.runCommand({ping: 1}).ok" > /dev/null 2>&1; then
+            docker exec --env HOME=/tmp "$MONGODB_CONTAINER" mongosh --quiet --eval \
+              "const s = db.serverStatus({tcmalloc: 1}); print('MongoDB ' + s.version + ', TCMalloc per-CPU caches: ' + (s.tcmalloc ? s.tcmalloc.usingPerCPUCaches : 'n/a'))"
+            exit 0
+          fi
+          sleep 1
+        done
+        echo "MongoDB $MONGODB_VERSION did not start"
+        exit 1
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v7
@@ -61,3 +88,10 @@ jobs:
 
     - name: Run static analysis with bandit
       run: uv run bandit montydb -r
+
+    - name: Show MongoDB logs
+      if: failure()
+      run: |
+        docker ps --all --filter name=mongodb
+        docker inspect --format '{{.State.Status}} exit={{.State.ExitCode}} oom={{.State.OOMKilled}} error={{.State.Error}}' mongodb || true
+        docker logs --tail 100 mongodb || true

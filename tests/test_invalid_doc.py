@@ -1,4 +1,3 @@
-
 import pytest
 from montydb import errors
 
@@ -10,11 +9,17 @@ def monty_collection(monty_database):
     return col
 
 
-def test_invalid_doc_1(monty_collection):
-    with pytest.raises(errors.InvalidDocument):
-        monty_collection.insert_one({"x.y": "z"})
+@pytest.mark.parametrize("doc", [
+    {"x.y": "z"},
+    {"$m": "n"},
+])
+def test_dot_or_dollar_key(monty_collection, mongo_version, doc):
+    if mongo_version[:2] < [5, 0]:
+        with pytest.raises(errors.InvalidDocument):
+            monty_collection.insert_one(doc)
+        return
 
-
-def test_invalid_doc_2(monty_collection):
-    with pytest.raises(errors.InvalidDocument):
-        monty_collection.insert_one({"$m": "n"})
+    # MongoDB 5.0 began to accept these field names
+    monty_collection.insert_one(doc)
+    found = monty_collection.find_one({}, {"_id": 0})
+    assert found == {k: v for k, v in doc.items() if k != "_id"}

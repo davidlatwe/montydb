@@ -25,6 +25,7 @@ from .types import (
     Counter,
     on_err_close,
 )
+from . import storage as monty_storage
 from .storage import StorageDuplicateKeyError
 from .errors import (
     DuplicateKeyError,
@@ -60,6 +61,73 @@ NotImplementeds = {
     "inline_map_reduce",
     "parallel_scan",
 }
+
+
+# DBRef field names, which MongoDB accepts inside `_id`
+_DBREF_FIELDS = ("$ref", "$id", "$db")
+
+
+def _dollar_field_in_id(value):
+    """Return the first '$'-prefixed field name in an `_id` value, or None"""
+    if is_duckument_type(value):
+        subs = []
+        for field, sub in value.items():
+            if field[:1] == "$" and field not in _DBREF_FIELDS:
+                return field
+            subs.append(sub)
+    elif isinstance(value, (list, tuple)):
+        subs = value
+    else:
+        return None
+
+    for sub in subs:
+        field = _dollar_field_in_id(sub)
+        if field:
+            return field
+    return None
+
+
+def _invalid_id_message(doc):
+    """Return the error message if `doc` has an `_id` that MongoDB rejects"""
+    # MongoDB 5.0 accepts '$'-prefixed field names on write, but not inside
+    # `_id`. Before 5.0, the key check on write rejects them everywhere.
+    if monty_storage._check_doc_keys:
+        return None
+    field = _dollar_field_in_id(doc["_id"])
+    if field:
+        return (
+            "_id fields may not contain '$'-prefixed fields: "
+            f"{field} is not valid for storage."
+        )
+    return None
+
+
+def _check_id(doc):
+    message = _invalid_id_message(doc)
+    if message:
+        details = {"index": 0, "code": 52, "errmsg": message}
+        raise WriteError(message, code=52, details=details)
+
+
+def _bulk_write_error(documents, index, code, message):
+    result = {
+        "writeErrors": [
+            {
+                "index": index,
+                "code": code,
+                "errmsg": message,
+                "op": documents[index],
+            }
+        ],
+        "writeConcernErrors": [],
+        "nInserted": index,
+        "nUpserted": 0,
+        "nMatched": 0,
+        "nModified": 0,
+        "nRemoved": 0,
+        "upserted": [],
+    }
+    return BulkWriteError(result)
 
 
 class MontyCollection(BaseObject):
@@ -149,6 +217,7 @@ class MontyCollection(BaseObject):
 
         if "_id" not in document:
             document["_id"] = bson.ObjectId()
+        _check_id(document)
 
         try:
             result = self._storage.write_one(self, document)
@@ -172,9 +241,17 @@ class MontyCollection(BaseObject):
         if bypass_document_validation:
             pass
 
+        invalid_id = {}
+
         def set_id(doc):
             if "_id" not in doc:
                 doc["_id"] = bson.ObjectId()
+            message = _invalid_id_message(doc)
+            if message:
+                # End the iteration here, so that the storage still writes
+                # the documents before this one, like MongoDB does.
+                invalid_id["message"] = message
+                raise StopIteration
             # Keep _id in track for error message
             return doc["_id"]
 
@@ -187,25 +264,13 @@ class MontyCollection(BaseObject):
                 f"E11000 duplicate key error collection: {self.full_name} index: "
                 f'_id_ dup key: {{ : "{str(counter.data)}" }}'
             )
-            index = counter.count - 1
-            result = {
-                "writeErrors": [
-                    {
-                        "index": index,
-                        "code": 11000,
-                        "errmsg": message,
-                        "op": documents[index],
-                    }
-                ],
-                "writeConcernErrors": [],
-                "nInserted": index,
-                "nUpserted": 0,
-                "nMatched": 0,
-                "nModified": 0,
-                "nRemoved": 0,
-                "upserted": [],
-            }
-            raise BulkWriteError(result)
+            raise _bulk_write_error(documents, counter.count - 1, 11000, message)
+
+        if invalid_id:
+            # The counter did not count the document with the invalid `_id`
+            raise _bulk_write_error(
+                documents, counter.count, 52, invalid_id["message"]
+            )
 
         return InsertManyResult(result)
 
@@ -234,6 +299,7 @@ class MontyCollection(BaseObject):
             if upsert:
                 if "_id" not in replacement:
                     replacement["_id"] = bson.ObjectId()
+                _check_id(replacement)
                 raw_result["upserted"] = replacement["_id"]
                 raw_result["n"] = 1
                 self._storage.write_one(self, replacement, check_keys=False)
@@ -288,6 +354,7 @@ class MontyCollection(BaseObject):
 
         fieldwalker = FieldWalker(document)
         updator(fieldwalker, do_insert=True)
+        _check_id(fieldwalker.doc)
         self._storage.write_one(self, fieldwalker.doc)
 
     def _no_id_update(self, updator, filter=None):

@@ -13,10 +13,6 @@ updates:
       interval: weekly
   - package-ecosystem: uv
     directory: /
-    ignore:
-      # pymongo is pinned on purpose: CI compares montydb with MongoDB 3.6-4.2,
-      # and pymongo 4.18 needs MongoDB 4.4 or later.
-      - dependency-name: pymongo
     groups:
       uv:
         patterns:

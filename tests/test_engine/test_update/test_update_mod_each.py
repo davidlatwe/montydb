@@ -64,20 +64,26 @@ def test_update_mod_each_4(monty_update, mongo_update):
     # assert mongo_err.value.code == monty_err.value.code
 
 
-def test_update_mod_each_5(monty_update, mongo_update):
+def test_update_mod_each_5(monty_update, mongo_update, mongo_version):
     docs = [
         {"a": [10]}
     ]
     spec = {"$addToSet": {"a": {"$sort": 1, "$each": [5]}}}
 
-    with pytest.raises(mongo_write_err):
-        mongo_update(docs, spec)
+    if mongo_version[:2] < [5, 0]:
+        with pytest.raises(mongo_write_err):
+            mongo_update(docs, spec)
 
-    with pytest.raises(monty_write_err):
-        monty_update(docs, spec)
+        with pytest.raises(monty_write_err):
+            monty_update(docs, spec)
+        return
 
-    # ignore comparing error code
-    # assert mongo_err.value.code == monty_err.value.code
+    # "$each" is not the first field, so MongoDB 5.0 adds the document as a
+    # value, and its '$' prefixed fields are allowed.
+    monty_c = monty_update(docs, spec)
+    mongo_c = mongo_update(docs, spec)
+
+    assert next(mongo_c) == next(monty_c)
 
 
 def test_update_mod_each_6(monty_update, mongo_update):
