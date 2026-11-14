@@ -32,6 +32,9 @@ _session_default = {
     "mongo_version": "9.0",
     "use_bson": None,
 }
+# A configuration without `mongo_version` (montydb before 2.3.10, or written
+# by hand) got MongoDB 4.2 behavior, the default before 9.0. Keep it so.
+_legacy_config_default = dict(_session_default, mongo_version="4.2")
 # TODO:
 #   The mongo version compating may fail if calling `set_storage()` multiple
 #   times with different version.
@@ -268,7 +271,7 @@ def provide_storage(repository):
     config = storage_cls.read_config(repository)
 
     for key in ("use_bson", "mongo_version"):
-        _session[key] = config.get(key, _session_default[key])
+        _session[key] = config.get(key, _legacy_config_default[key])
 
     _bson_init(_session["use_bson"])
     _mongo_compat(_session["mongo_version"])
