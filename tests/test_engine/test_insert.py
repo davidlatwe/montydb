@@ -80,9 +80,9 @@ def test_insert_dollar_field_in_id(monty_database, mongo_database, mongo_version
     actions = [
         lambda col: col.insert_one({"_id": _id}),
     ]
-    # MongoDB 6.0 and 7.0 accept a nested '$' field in an upserted `_id`,
-    # although their insert rejects it. montydb keeps the strict rule.
-    if "$bad" in _id or mongo_version[:2] not in ([6, 0], [7, 0]):
+    # Some releases (5.0.33, 6.0, 7.0) accept a nested '$' field in an upserted
+    # `_id`, although their insert rejects it. montydb keeps the strict rule.
+    if "$bad" in _id:
         actions.append(
             lambda col: col.replace_one({"x": 1}, {"_id": _id}, upsert=True)
         )
