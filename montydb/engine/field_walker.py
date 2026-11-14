@@ -831,9 +831,16 @@ class FieldWalker:
         """
         return self.tree.extract(visited_only=True)
 
-    def get_matched(self, position_path=None):
-        for path, node in self.matched.items():
-            if position_path is None or path.startswith(position_path + "."):
+    def get_matched(self, position_path=None, last=False):
+        records = self.matched.items()
+        if last:
+            records = reversed(list(records))
+        for path, node in records:
+            if (
+                position_path is None
+                or path == position_path
+                or path.startswith(position_path + ".")
+            ):
                 matched = node
 
                 first = None

@@ -530,3 +530,44 @@ def test_projection_positional_20(monty_proj, mongo_proj):
 
     proj = {"a.$": 1}
     run(proj)
+
+
+def _outcome(proj_fn, op_fail, docs, spec, proj):
+    try:
+        return "docs", list(proj_fn(docs, spec, proj))
+    except op_fail as e:
+        return "error", e.code
+
+
+@pytest.mark.parametrize("docs, spec, proj", [
+    # The query names the array field itself
+    ([{"a": [10, 20]}], {"a": 20}, {"a.$": 1}),
+    ([{"a": [10, 20]}], {"a": {"$gt": 15}}, {"a.$": 1}),
+    ([{"x": {"y": 1}, "a": [1, 2]}], {"a": 2}, {"x": 1, "a.$": 1}),
+    ([{"x": {"y": 1}, "a": [1, 2]}], {"a": 2}, {"a.$": 1, "x": 1}),
+    ([{"a": [{"b": 1}, {"b": 2}]}], {"a.1.b": 2}, {"a.$": 1}),
+    # The index comes from another array field
+    ([{"a": [10, 20], "b": [1, 2]}], {"b": 2}, {"a.$": 1}),
+    ([{"a": [{"x": 1}, {"x": 2}], "b": [1, 2]}], {"b": 2}, {"a.$": 1}),
+    ([{"a": {"c": [10, 20]}, "b": [1, 2]}], {"b": 2}, {"a.c.$": 1}),
+    ([{"a": 5, "b": [1, 2]}], {"b": 2}, {"a.$": 1}),
+    ([{"a": [10], "b": [1, 2]}], {"b": 2}, {"a.$": 1}),
+    # The last query field that matched an array element gives the index
+    ([{"a": [10, 20], "b": [1, 2]}], {"a": 10, "b": 2}, {"a.$": 1}),
+    ([{"a": [10, 20], "b": [1, 2], "c": [5, 6, 7]}], {"b": 2, "c": 7}, {"a.$": 1}),
+    # No query field matched an array element
+    ([{"a": [1, 2], "x": 1}], {"x": 1}, {"a.$": 1}),
+    ([{"a": [1, 2], "x": 1}], {}, {"a.$": 1}),
+    ([{"a": 5, "x": 1}], {"x": 1}, {"a.$": 1}),
+    # A path after the array. MongoDB 7.0 changed the second case.
+    ([{"a": {"y": [1]}}], {"a.y": 1}, {"a.y.b.$": 1}),
+    ([{"a": {"y": [1, {"b": 3}]}}], {"a.y": 1}, {"a.y.b.$": 1}),
+    ([{"a": {"y": [{"b": 3}, 1]}}], {"a.y.b": 3}, {"a.y.b.$": 1}),
+])
+def test_projection_positional_matched_index(monty_proj, mongo_proj, mongo_version,
+                                             docs, spec, proj):
+    if mongo_version[:2] < [4, 4]:
+        pytest.skip("MongoDB 4.4 changed the positional projection")
+
+    expected = _outcome(mongo_proj, mongo_op_fail, docs, spec, proj)
+    assert _outcome(monty_proj, monty_op_fail, docs, spec, proj) == expected

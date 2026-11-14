@@ -346,6 +346,10 @@ def _mongo_compat(version):
         "_positional_mismatch",
         "_positional_project_rest",
         "_positional_empty_leaf_doc",
-        "_positional_located_match_error",
+        "_positional_index_from_any_field",
     ):
         patch(project, name, name + suffix)
+
+    # Projection changes in MongoDB 7.0
+    suffix = "_v70" if version_info >= (7, 0) else "_"
+    patch(project, "_positional_index_after_rest", "_positional_index_after_rest" + suffix)
